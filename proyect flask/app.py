@@ -1,5 +1,5 @@
-from config import Config
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from config import config
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash
 import pyodbc
 
 app = Flask(__name__)
@@ -9,8 +9,16 @@ app.secret_key = "mysecretkey"
 def session_temporal():
     session.permanent = False
 
-def connectDB(index):
-    return Config(index).cursor()
+def connectDB(
+        SERVER = 'POLISTP98', 
+        DRIVER = 'ODBC Driver 18 for SQL Server', 
+        DATABASE = 'ROUTINE4LIFE_DB', 
+        Trusted_Connection = True,
+        Encrypt = True, 
+        TrustServerCertificate = True):
+    
+    connection = config(DRIVER, SERVER, DATABASE, Trusted_Connection, Encrypt, TrustServerCertificate)
+    return connection
 
 # Ruta de login
 @app.route("/", methods=['GET', 'POST'])
@@ -35,7 +43,7 @@ def home():
         return redirect(url_for('login'))
     
     try:
-        conn = Config(0)
+        conn = connectDB()
         cursor = conn.cursor()
         
         # Consulta de ejemplo - ajusta según tu esquema de base de datos
@@ -58,7 +66,7 @@ def logout():
 @app.route("/dbcheck")
 def dbcheck():
     try:
-        conn = Config(0)
+        conn = connectDB()
         cursor = conn.cursor()
         cursor.execute("SELECT 1")
         resultado = cursor.fetchone()

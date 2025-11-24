@@ -1,20 +1,28 @@
 import pyodbc
 
-def Config(index):
-    connections = [
-        f"DRIVER={{SQL Server}};"
-        f"SERVER=IANDAVID\\SQLSERVER;"
-        f"DATABASE=ROUTINE4LIFE_DB;"
-        f"Trusted_Connection=yes;"
-        f"Encrypt=yes;"
-        f"TrustServerCertificate=yes"
-    ]
-    
-    if index not in range(len(connections)):
-        raise IndexError("Índice de conexión fuera de rango")
+def config(
+        DRIVER, 
+        SERVER, 
+        DATABASE, 
+        Trusted_Connection, 
+        Encrypt, 
+        TrustServerCertificate):
+
+    connection_str = f"""
+DRIVER={{{DRIVER}}};
+SERVER={SERVER};
+DATABASE={DATABASE};
+Trusted_Connection={'yes' if Trusted_Connection else 'no'};
+Encrypt={'yes' if Encrypt else 'no'};
+TrustServerCertificate={'yes' if TrustServerCertificate else 'no'};
+""".strip()
 
     try:
-        connection = pyodbc.connect(connections[index])
-        return connection
+        return pyodbc.connect(connection_str)
     except pyodbc.Error as e:
-        raise ConnectionError(f"Error al conectar a la base de datos: {e}")
+        raise ConnectionError(f"""
+Error al conectar a la base de datos: {e}
+
+Cadena de conexión utilizada:
+{connection_str}
+""")
