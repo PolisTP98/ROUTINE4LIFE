@@ -1,6 +1,5 @@
 from config import config
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash
-import pyodbc
 
 app = Flask(__name__)
 app.secret_key = "mysecretkey"
