@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# SQL Server Management Studio Solution File, Format Version 18.00
+VisualStudioVersion = 15.0.28307.421
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "ROUTINE4LIFE_DB", "ROUTINE4LIFE_DB\ROUTINE4LIFE_DB.ssmssqlproj", "{B1E776D1-0C95-4F79-BAEC-DF7C52066BCD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Default|Default = Default|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B1E776D1-0C95-4F79-BAEC-DF7C52066BCD}.Default|Default.ActiveCfg = Default
+		{EB81D73D-DB0D-4F74-B84D-9119174899D2}.Default|Default.ActiveCfg = Default
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {65C796AC-4C5F-42F8-8163-CBD09621FEAE}
+	EndGlobalSection
+EndGlobal

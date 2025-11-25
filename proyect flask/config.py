@@ -2,8 +2,8 @@ import pyodbc
 
 def Config(index):
     connections = [
-        f"DRIVER={{SQL Server}};"
-        f"SERVER=IANDAVID\\SQLSERVER;"
+        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+        f"SERVER=DESKTOP-6RRSB8S\\SQLEXPRESS01;"
         f"DATABASE=ROUTINE4LIFE_DB;"
         f"Trusted_Connection=yes;"
         f"Encrypt=yes;"
