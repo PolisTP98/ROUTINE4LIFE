@@ -1,45 +1,30 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, {useEffect, useState} from "react";
+import {View, Text, StyleSheet} from "react-native";
+import {checkConnection} from "./src/services/queries";
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+// -------------------------------------------
+// | EJECUTAR LA API EN EL DISPOSITIVO MÓVIL |
+// -------------------------------------------
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+export default function App() {
+  const [response, setResponse] = useState("Conectando a la API...");
 
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+  useEffect(() => {
+    checkConnection()
+      .then((data) => setResponse(JSON.stringify(data, null, 2)))
+      .catch((err) => setResponse("Error: " + err));
+  }, []);
 
   return (
     <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
+      <Text style={styles.title}>Estado de la API:</Text>
+      <Text style={styles.response}>{response}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: {padding: 20, marginTop: 40},
+  title: {fontSize: 22, fontWeight: "bold"},
+  response: {fontFamily: "monospace", fontSize: 16, marginTop: 10},
 });
-
-export default App;
