@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Agregar Médico - Routine4Life</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Routine4Life</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    {{ tipo_usuario | title }}
+                </span>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('home') }}">Inicio</a>
+                <a class="btn btn-outline-light btn-sm ms-2" href="{{ url_for('logout') }}">Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>Agregar Nuevo Médico</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="mt-3">
+            <h5>Información Personal</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="nombres" class="form-label">Nombres *</label>
+                        <input type="text" class="form-control" id="nombres" name="nombres" required maxlength="200">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="apellido_paterno" class="form-label">Apellido Paterno *</label>
+                        <input type="text" class="form-control" id="apellido_paterno" name="apellido_paterno" required maxlength="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="apellido_materno" class="form-label">Apellido Materno</label>
+                        <input type="text" class="form-control" id="apellido_materno" name="apellido_materno" maxlength="100">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento *</label>
+                        <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="id_sexo" class="form-label">Sexo *</label>
+                        <select class="form-control" id="id_sexo" name="id_sexo" required>
+                            <option value="">Seleccionar sexo</option>
+                            {% for id_sexo, nombre in sexos %}
+                            <option value="{{ id_sexo }}">{{ nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="id_pais" class="form-label">País *</label>
+                        <select class="form-control" id="id_pais" name="id_pais" required>
+                            <option value="">Seleccionar país</option>
+                            {% for id_pais, nombre in paises %}
+                            <option value="{{ id_pais }}">{{ nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="mt-4">Información de Identificación</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="id_documento" class="form-label">Tipo de Documento *</label>
+                        <select class="form-control" id="id_documento" name="id_documento" required>
+                            <option value="">Seleccionar documento</option>
+                            {% for id_documento, nombre in documentos %}
+                            <option value="{{ id_documento }}">{{ nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="numero_identificacion" class="form-label">Número de Identificación *</label>
+                        <input type="text" class="form-control" id="numero_identificacion" name="numero_identificacion" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="rfc" class="form-label">RFC</label>
+                        <input type="text" class="form-control" id="rfc" name="rfc" maxlength="13" placeholder="Ej: ABC123456XYZ">
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="mt-4">Información de Contacto</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="telefono" class="form-label">Teléfono *</label>
+                        <input type="tel" class="form-control" id="telefono" name="telefono" required placeholder="Ej: 5512345678">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="email_personal" class="form-label">Email Personal *</label>
+                        <input type="email" class="form-control" id="email_personal" name="email_personal" required placeholder="Ej: medico@ejemplo.com">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="direccion" class="form-label">Dirección</label>
+                <textarea class="form-control" id="direccion" name="direccion" rows="3" placeholder="Ej: Calle Principal #123, Col. Centro"></textarea>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Agregar Médico</button>
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Médico - Routine4Life</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <!-- Navbar con logo al lado del nombre -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+                <img src="{{ url_for('static', filename='imagenes/logoroutine4life.jpg') }}" 
+                     alt="Routine4Life Logo" 
+                     class="me-2" 
+                     style="height: 32px; width: auto;">
+                Routine4Life
+            </a>
+            <div class="navbar-nav ms-auto align-items-center">
+                <span class="navbar-text me-3 text-light">
+                    <i class="bi bi-person-circle me-1"></i>Dr. {{ nombre_completo }}
+                </span>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">
+                    <i class="bi bi-box-arrow-right me-1"></i>Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header del dashboard -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-dark fw-bold mb-1">Dashboard - Mis Pacientes</h2>
+                        <p class="text-muted mb-0">Bienvenido Doctor</p>
+                    </div>
+                    <div class="text-end">
+                        <a href="{{ url_for('medico_agregar_paciente') }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>Agregar Paciente
+                        </a>
+                        <span class="badge bg-secondary ms-2">Total: {{ pacientes|length }} pacientes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensajes flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show rounded-2 border-0 shadow-sm" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }} me-2"></i>
+                            <span class="flex-grow-1">{{ message }}</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Tabla de pacientes -->
+        {% if pacientes %}
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="border-0 py-3 ps-4">ID</th>
+                                <th class="border-0 py-3">Nombre Completo</th>
+                                <th class="border-0 py-3">Fecha Nacimiento</th>
+                                <th class="border-0 py-3">Sexo</th>
+                                <th class="border-0 py-3">País</th>
+                                <th class="border-0 py-3">Fecha Registro</th>
+                                <th class="border-0 py-3 text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for paciente in pacientes %}
+                            <tr class="border-top">
+                                <td class="ps-4 fw-semibold text-muted">{{ paciente[0] }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 36px; height: 36px;">
+                                            <i class="bi bi-person text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-semibold text-dark">{{ paciente[1] }} {{ paciente[2] }} {{ paciente[3] or '' }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-muted">{{ paciente[4] }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'info' if paciente[5] == 'Masculino' else 'warning' }} bg-opacity-25 text-{{ 'info' if paciente[5] == 'Masculino' else 'warning' }} rounded-pill">
+                                        {{ paciente[5] or 'N/A' }}
+                                    </span>
+                                </td>
+                                <td class="text-muted">{{ paciente[6] or 'N/A' }}</td>
+                                <td class="text-muted">{{ paciente[7] }}</td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group" role="group">
+                                        <a href="#" class="btn btn-outline-primary btn-sm rounded-2 me-1" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <!-- BOTÓN EDITAR AÑADIDO -->
+                                        <a href="{{ url_for('editar_paciente', id_paciente=paciente[0]) }}" 
+                                           class="btn btn-outline-warning btn-sm rounded-2 me-1" 
+                                           title="Editar paciente">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{{ url_for('eliminar_paciente', id_paciente=paciente[0]) }}" 
+                                           class="btn btn-outline-danger btn-sm rounded-2" 
+                                           onclick="return confirm('¿Está seguro de que desea eliminar este paciente?')"
+                                           title="Eliminar paciente">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Estado vacío -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-people display-1 text-muted opacity-25"></i>
+                </div>
+                <h4 class="text-muted mb-3">No hay pacientes registrados</h4>
+                <p class="text-muted mb-4">Comience agregando su primer paciente al sistema</p>
+                <a href="{{ url_for('medico_agregar_paciente') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Agregar Primer Paciente
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Footer informativo -->
+        <div class="row mt-4">
+            <div class="col">
+                <div class="text-center">
+                    <p class="text-muted small">
+                        <i class="bi bi-shield-check me-1"></i>Sistema seguro - Routine4Life © 2024
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Confirmación mejorada para eliminar
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButtons = document.querySelectorAll('a[href*="eliminar_paciente"]');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    if (!confirm('¿Está seguro de que desea eliminar este paciente?\n\nEl paciente se marcará como inactivo y podrá ser reactivado por un administrador.')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // Efectos hover en filas
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-1px)';
+                    this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                });
+                
+                row.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

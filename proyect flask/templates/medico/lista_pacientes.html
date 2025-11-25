@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lista de Pacientes - Routine4Life</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Routine4Life</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    {{ tipo_usuario | title }}
+                </span>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('home') }}">Inicio</a>
+                <a class="btn btn-outline-light btn-sm ms-2" href="{{ url_for('logout') }}">Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>Lista de Pacientes</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{{ url_for('medico_agregar_paciente') }}" class="btn btn-primary">Agregar Nuevo Paciente</a>
+            <span class="text-muted">Total: {{ pacientes|length }} pacientes</span>
+        </div>
+
+        {% if pacientes %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre Completo</th>
+                        <th>Fecha Nacimiento</th>
+                        <th>Sexo</th>
+                        <th>País</th>
+                        <th>Fecha Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paciente in pacientes %}
+                    <tr>
+                        <td>{{ paciente[0] }}</td>
+                        <td>{{ paciente[1] }} {{ paciente[2] }} {{ paciente[3] or '' }}</td>
+                        <td>{{ paciente[4] }}</td>
+                        <td>{{ paciente[5] or 'N/A' }}</td>
+                        <td>{{ paciente[6] or 'N/A' }}</td>
+                        <td>{{ paciente[7] }}</td>
+                        <td>
+                            <a href="{{ url_for('eliminar_paciente', id_paciente=paciente[0]) }}" 
+                               class="btn btn-danger btn-sm" 
+                               onclick="return confirm('¿Está seguro de que desea eliminar este paciente?')">
+                               Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            No hay pacientes registrados. <a href="{{ url_for('medico_agregar_paciente') }}">Agregar el primer paciente</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Confirmación antes de eliminar
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButtons = document.querySelectorAll('a[href*="eliminar-paciente"]');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    if (!confirm('¿Está seguro de que desea eliminar este paciente? Esta acción no se puede deshacer.')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
