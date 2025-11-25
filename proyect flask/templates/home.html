@@ -1,0 +1,68 @@
+<div class="container mt-4">
+    <h2>Home - Routine4Life</h2>
+    <p>Bienvenido al sistema de gestión médica.</p>
+    
+    <!-- Menú según tipo de usuario -->
+    <div class="row mb-4">
+        {% if tipo_usuario in ['admin', 'medico'] %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Gestión de Pacientes</h5>
+                    <p class="card-text">Administre la información de los pacientes.</p>
+                    <a href="{{ url_for('agregar_paciente') }}" class="btn btn-primary">Agregar Paciente</a>
+                    <a href="{{ url_for('lista_pacientes') }}" class="btn btn-secondary">Ver Pacientes</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if tipo_usuario == 'admin' %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Gestión de Médicos</h5>
+                    <p class="card-text">Administre la información del personal médico.</p>
+                    <a href="{{ url_for('agregar_medico') }}" class="btn btn-primary">Agregar Médico</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Información del sistema -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Tablas del Sistema</h5>
+        </div>
+        <div class="card-body">
+            {% if tablas %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Tabla</th>
+                                <th>Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tabla in tablas %}
+                            <tr>
+                                <td>{{ tabla[0] }}</td>
+                                <td><span class="badge bg-secondary">{{ tabla[1] }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <small class="text-muted">Mostrando {{ tablas|length }} tablas principales</small>
+            {% else %}
+                <div class="alert alert-info">No se encontraron tablas principales</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="mt-3">
+        <a href="{{ url_for('dbcheck') }}" class="btn btn-info" target="_blank">Verificar Conexión BD</a>
+    </div>
+</div>
