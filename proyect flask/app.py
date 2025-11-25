@@ -50,17 +50,25 @@ def home():
         conn = Config(0)
         cursor = conn.cursor()
         
-        # Consulta simple de tablas
-        cursor.execute("SELECT TOP 10 TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES")
-        tablas = cursor.fetchall()
-        print(f"DEBUG: Se encontraron {len(tablas)} tablas")
+        if id_rol == 1:  # Médico admin - mostrar médicos
+            # DEBUG: Ver qué médicos existen
+            query_debug = "SELECT id_medico, username FROM r4l.usuarios WHERE id_estatus = 1"
+            medicos_debug = Database.execute_query(query_debug)
+            print(f"DEBUG - Médicos en sistema: {medicos_debug}")
+            
+            medicos = MedicoController.obtener_medicos()
+            return render_template('admin/dashboard_admin.html',
+                                 medicos=medicos,
+                                 usuario=session['user'],
+                                 nombre_completo=session.get('nombre_completo', ''),
+                                 tipo_usuario=session.get('tipo_usuario', ''))
         
         return render_template('home.html', tablas=tablas, usuario=session['user'])
     
     except Exception as e:
         print(f"DEBUG: Error en home: {str(e)}")
         return f"Error al cargar la página: {str(e)}"
-
+    
 @app.route("/logout")
 def logout():
     session.clear()
@@ -383,5 +391,230 @@ def reactivar_paciente(id_paciente):
     except Exception as e:
         flash(f"Error al reactivar paciente: {str(e)}", "danger")
     return redirect(url_for('pacientes_eliminados'))
+# Ruta para editar médico
+@app.route("/admin/editar-medico/<int:id_medico>", methods=['GET', 'POST'])
+@requiere_rol([1])  # Solo admin
+def admin_editar_medico(id_medico):
+    print(f"=== DEBUG EDITAR MÉDICO - INICIO ===")
+    print(f"ID médico recibido: {id_medico}")
+    print(f"Tipo de ID: {type(id_medico)}")
+    print(f"Usuario en sesión: {session.get('user')}")
+    print(f"Rol en sesión: {session.get('id_rol')}")
+    
+    if request.method == 'POST':
+        print("=== MÉTODO POST DETECTADO ===")
+        try:
+            datos = {
+                'id_rol': int(request.form['id_rol']),
+                'id_sexo': int(request.form['id_sexo']),
+                'id_pais': int(request.form['id_pais']),
+                'id_documento': int(request.form['id_documento']),
+                'numero_identificacion': request.form['numero_identificacion'],
+                'nombres': request.form['nombres'],
+                'apellido_paterno': request.form['apellido_paterno'],
+                'apellido_materno': request.form.get('apellido_materno', ''),
+                'fecha_nacimiento': request.form['fecha_nacimiento'],
+                'telefono': request.form['telefono'],
+                'email_personal': request.form['email_personal'],
+                'email_laboral': request.form['email_laboral'],
+                'rfc': request.form.get('rfc', ''),
+                'direccion': request.form.get('direccion', '')
+            }
+            
+            print(f"DEBUG: Datos del formulario: {datos}")
+            
+            if MedicoController.actualizar_medico(id_medico, datos):
+                print("DEBUG: Médico actualizado exitosamente")
+                flash("Médico actualizado exitosamente", "success")
+            else:
+                print("DEBUG: Error al actualizar el médico")
+                flash("Error al actualizar el médico", "danger")
+                
+            return redirect(url_for('home'))
+            
+        except Exception as e:
+            print(f"DEBUG: Error en POST: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            flash(f"Error al actualizar médico: {str(e)}", "danger")
+            return redirect(url_for('admin_editar_medico', id_medico=id_medico))
+    
+    # GET - Mostrar formulario de edición
+    print("=== MÉTODO GET - BUSCANDO MÉDICO ===")
+    try:
+        print(f"DEBUG: Llamando a obtener_medico_por_id({id_medico})")
+        medico = MedicoController.obtener_medico_por_id(id_medico)
+        print(f"DEBUG: Resultado de obtener_medico_por_id: {medico}")
+        
+        if not medico:
+            print("DEBUG: Médico NO encontrado - redirigiendo a home con flash")
+            flash("Médico no encontrado", "warning")
+            return redirect(url_for('home'))
+        
+        print("DEBUG: Médico ENCONTRADO - obteniendo datos para dropdowns")
+        
+        # Obtener sexos
+        print("DEBUG: Obteniendo sexos...")
+        sexos = PacienteController.obtener_sexos()
+        print(f"DEBUG: Sexos obtenidos: {sexos}")
+        
+        # Obtener países
+        print("DEBUG: Obteniendo países...")
+        paises = PacienteController.obtener_paises()
+        print(f"DEBUG: Países obtenidos: {paises}")
+        
+        # Obtener documentos
+        print("DEBUG: Obteniendo documentos...")
+        documentos = MedicoController.obtener_documentos_legales()
+        print(f"DEBUG: Documentos obtenidos: {documentos}")
+        
+        # Obtener roles
+        print("DEBUG: Obteniendo roles...")
+        roles = MedicoController.obtener_roles()
+        print(f"DEBUG: Roles obtenidos: {roles}")
+        
+        print("DEBUG: Todos los datos obtenidos - renderizando template")
+        
+        return render_template('admin/editar_medico.html',
+                             medico=medico,
+                             sexos=sexos,
+                             paises=paises,
+                             documentos=documentos,
+                             roles=roles,
+                             tipo_usuario=session.get('tipo_usuario', ''))
+                             
+    except Exception as e:
+        print(f"DEBUG: Error EXCEPCIÓN en editar médico: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error al cargar médico: {str(e)}", "danger")
+        return redirect(url_for('home'))
+
+# Ruta para eliminar médico (soft delete)
+@app.route("/admin/eliminar-medico/<int:id_medico>")
+@requiere_rol([1])  # Solo admin
+def admin_eliminar_medico(id_medico):
+    try:
+        # No permitir eliminarse a sí mismo
+        if id_medico == session.get('id_medico'):
+            flash("No puedes eliminar tu propio usuario", "warning")
+            return redirect(url_for('home'))
+            
+        if MedicoController.eliminar_medico(id_medico):
+            flash("Médico eliminado correctamente", "success")
+        else:
+            flash("Error al eliminar el médico", "danger")
+            
+    except Exception as e:
+        flash(f"Error al eliminar médico: {str(e)}", "danger")
+    
+    return redirect(url_for('home'))
+
+# Ruta para ver médicos eliminados
+@app.route("/admin/medicos-eliminados")
+@requiere_rol([1])  # Solo admin
+def admin_medicos_eliminados():
+    try:
+        medicos = MedicoController.obtener_medicos_eliminados()
+        return render_template('admin/medicos_eliminados.html',
+                             medicos=medicos,
+                             tipo_usuario=session.get('tipo_usuario', ''))
+    except Exception as e:
+        flash(f"Error al cargar médicos eliminados: {str(e)}", "danger")
+        return redirect(url_for('home'))
+
+# Ruta para reactivar médico
+@app.route("/admin/reactivar-medico/<int:id_medico>")
+@requiere_rol([1])  # Solo admin
+def admin_reactivar_medico(id_medico):
+    try:
+        if MedicoController.reactivar_medico(id_medico):
+            flash("Médico reactivado correctamente", "success")
+        else:
+            flash("Error al reactivar el médico", "danger")
+    except Exception as e:
+        flash(f"Error al reactivar médico: {str(e)}", "danger")
+    return redirect(url_for('admin_medicos_eliminados'))
+
+# Ruta para consultar médico (ver detalles)
+@app.route("/admin/consultar-medico/<int:id_medico>")
+@requiere_rol([1])  # Solo admin
+def admin_consultar_medico(id_medico):
+    try:
+        medico = MedicoController.obtener_medico_por_id(id_medico)
+        if not medico:
+            flash("Médico no encontrado", "warning")
+            return redirect(url_for('home'))
+        
+        return render_template('admin/consultar_medico.html',
+                             medico=medico,
+                             tipo_usuario=session.get('tipo_usuario', ''))
+                             
+    except Exception as e:
+        flash(f"Error al cargar médico: {str(e)}", "danger")
+        return redirect(url_for('home'))
+    
+# Rutas temporales
+@app.route("/debug-medico/<int:id_medico>")
+@requiere_rol([1])
+def debug_medico(id_medico):
+    """Ruta temporal para diagnosticar el problema"""
+    try:
+        print(f"=== DEBUG MÉDICO ID: {id_medico} ===")
+        
+        # 1. Verificar en la tabla usuarios
+        query_usuarios = "SELECT * FROM r4l.usuarios WHERE id_medico = ?"
+        resultado_usuarios = Database.execute_query(query_usuarios, (id_medico,))
+        usuario = resultado_usuarios[0] if resultado_usuarios else None
+        print(f"Usuario encontrado: {usuario}")
+        
+        # 2. Verificar en la tabla medico_personal
+        query_personal = "SELECT * FROM r4l.medico_personal WHERE id_medico = ?"
+        resultado_personal = Database.execute_query(query_personal, (id_medico,))
+        personal = resultado_personal[0] if resultado_personal else None
+        print(f"Personal encontrado: {personal}")
+        
+        # 3. Verificar la consulta completa
+        query_completa = """
+            SELECT u.id_medico, u.username, mp.nombres, mp.apellido_paterno
+            FROM r4l.usuarios u
+            INNER JOIN r4l.medico_personal mp ON u.id_medico = mp.id_medico
+            WHERE u.id_medico = ?
+        """
+        resultado_completo = Database.execute_query(query_completa, (id_medico,))
+        completo = resultado_completo[0] if resultado_completo else None
+        print(f"Consulta completa: {completo}")
+        
+        return f"""
+        <h1>Debug Médico ID: {id_medico}</h1>
+        <h3>Tabla usuarios:</h3>
+        <pre>{usuario}</pre>
+        <h3>Tabla medico_personal:</h3>
+        <pre>{personal}</pre>
+        <h3>Consulta JOIN:</h3>
+        <pre>{completo}</pre>
+        """
+        
+    except Exception as e:
+        return f"Error en debug: {str(e)}"
+
+@app.route("/test-medico/<int:id_medico>")
+@requiere_rol([1])
+def test_medico(id_medico):
+    """Ruta simple para testear la búsqueda de médico"""
+    try:
+        medico = MedicoController.obtener_medico_por_id(id_medico)
+        if medico:
+            return f"""
+            <h1>Médico Encontrado</h1>
+            <p>ID: {medico[0]}</p>
+            <p>Nombre: {medico[8]} {medico[9]} {medico[10] or ''}</p>
+            <p>Usuario: {medico[4]}</p>
+            <p>Email: {medico[5]}</p>
+            """
+        else:
+            return f"<h1>Médico con ID {id_medico} NO encontrado</h1>"
+    except Exception as e:
+        return f"Error: {str(e)}"
 if __name__ == "__main__":
     app.run(port=3000, debug=True)
