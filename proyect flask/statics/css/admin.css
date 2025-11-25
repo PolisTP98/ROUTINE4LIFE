@@ -1,0 +1,44 @@
+/* static/css/admin.css */
+.medico-card {
+    transition: all 0.3s ease;
+}
+
+.medico-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.avatar-medico {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #007bff20, #0056b320);
+    border: 2px solid #007bff30;
+}
+
+/* Efectos para los botones de acción */
+.btn-action {
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+    transform: translateY(-1px);
+}
+
+/* Estados de las tarjetas */
+.card-empty-state {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.card-empty-state:hover {
+    opacity: 1;
+}
+
+/* Badges personalizados */
+.badge-admin {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+}
+
+.badge-medico {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+}
