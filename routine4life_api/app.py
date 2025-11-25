@@ -39,6 +39,6 @@ def connectionStatus():
 
 if __name__ == '__main__':
     # USAMOS EL HOST '0.0.0.0' PARA QUE SEA ACCESIBLE DESDE EL AVD (10.0.2.2) 
-    # Y DESDE LA RED LOCAL CON EL PUERTO 3000 POR DEFECTO
-    print("Iniciando servidor Flask en http://0.0.0.0:3000")
-    app.run(host='0.0.0.0', port=3000, debug=True)
+    # Y DESDE LA RED LOCAL CON EL PUERTO 5000 POR DEFECTO
+    print("Iniciando servidor Flask en http://0.0.0.0:5000")
+    app.run(host='0.0.0.0', port=5000, debug=True)
