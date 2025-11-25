@@ -14,11 +14,7 @@ def Config(index):
         raise IndexError("Índice de conexión fuera de rango")
 
     try:
-        return pyodbc.connect(connection_str)
+        connection = pyodbc.connect(connections[index])
+        return connection
     except pyodbc.Error as e:
-        raise ConnectionError(f"""
-Error al conectar a la base de datos: {e}
-
-Cadena de conexión utilizada:
-{connection_str}
-""")
+        raise ConnectionError(f"Error al conectar a la base de datos: {e}")
