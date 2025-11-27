@@ -6,6 +6,7 @@
     <title>Editar Médico - Routine4Life</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/forms.css') }}" rel="stylesheet">
 </head>
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
@@ -70,13 +71,17 @@
                                             <i class="bi bi-person me-2 text-primary"></i>Nombres *
                                         </label>
                                         <input type="text" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.nombres else 'is-valid' if datos and datos.nombres }}" 
                                                id="nombres" 
                                                name="nombres" 
-                                               value="{{ medico[8] }}" 
-                                               required 
+                                               value="{{ datos.nombres if datos else medico[8] }}" 
                                                maxlength="200"
                                                placeholder="Ingrese los nombres">
+                                        {% if errores and errores.nombres %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.nombres }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -86,13 +91,17 @@
                                             <i class="bi bi-person me-2 text-primary"></i>Apellido Paterno *
                                         </label>
                                         <input type="text" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.apellido_paterno else 'is-valid' if datos and datos.apellido_paterno }}" 
                                                id="apellido_paterno" 
                                                name="apellido_paterno" 
-                                               value="{{ medico[9] }}" 
-                                               required 
+                                               value="{{ datos.apellido_paterno if datos else medico[9] }}" 
                                                maxlength="100"
                                                placeholder="Ingrese el apellido paterno">
+                                        {% if errores and errores.apellido_paterno %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.apellido_paterno }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -102,12 +111,17 @@
                                             <i class="bi bi-person me-2 text-primary"></i>Apellido Materno
                                         </label>
                                         <input type="text" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.apellido_materno }}" 
                                                id="apellido_materno" 
                                                name="apellido_materno" 
-                                               value="{{ medico[10] or '' }}" 
+                                               value="{{ datos.apellido_materno if datos else medico[10] or '' }}" 
                                                maxlength="100"
                                                placeholder="Ingrese el apellido materno (opcional)">
+                                        {% if errores and errores.apellido_materno %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.apellido_materno }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -117,11 +131,15 @@
                                             <i class="bi bi-calendar-event me-2 text-primary"></i>Fecha de Nacimiento *
                                         </label>
                                         <input type="date" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.fecha_nacimiento else 'is-valid' if datos and datos.fecha_nacimiento }}" 
                                                id="fecha_nacimiento" 
                                                name="fecha_nacimiento" 
-                                               value="{{ medico[11] }}" 
-                                               required>
+                                               value="{{ datos.fecha_nacimiento if datos else medico[11] }}">
+                                        {% if errores and errores.fecha_nacimiento %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.fecha_nacimiento }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -130,17 +148,22 @@
                                         <label for="id_sexo" class="form-label fw-semibold text-dark">
                                             <i class="bi bi-gender-ambiguous me-2 text-primary"></i>Sexo *
                                         </label>
-                                        <select class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                        <select class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.id_sexo else 'is-valid' if datos and datos.id_sexo }}" 
                                                 id="id_sexo" 
-                                                name="id_sexo" 
-                                                required>
+                                                name="id_sexo">
                                             <option value="">Seleccionar sexo</option>
                                             {% for id_sexo, nombre in sexos %}
-                                            <option value="{{ id_sexo }}" {% if id_sexo == medico[12] %}selected{% endif %}>
+                                            <option value="{{ id_sexo }}" 
+                                                    {{ 'selected' if (datos and datos.id_sexo == id_sexo|string) or (not datos and id_sexo == medico[12]) }}>
                                                 {{ nombre }}
                                             </option>
                                             {% endfor %}
                                         </select>
+                                        {% if errores and errores.id_sexo %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.id_sexo }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -149,17 +172,22 @@
                                         <label for="id_pais" class="form-label fw-semibold text-dark">
                                             <i class="bi bi-globe me-2 text-primary"></i>País *
                                         </label>
-                                        <select class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                        <select class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.id_pais else 'is-valid' if datos and datos.id_pais }}" 
                                                 id="id_pais" 
-                                                name="id_pais" 
-                                                required>
+                                                name="id_pais">
                                             <option value="">Seleccionar país</option>
                                             {% for id_pais, nombre in paises %}
-                                            <option value="{{ id_pais }}" {% if id_pais == medico[13] %}selected{% endif %}>
+                                            <option value="{{ id_pais }}" 
+                                                    {{ 'selected' if (datos and datos.id_pais == id_pais|string) or (not datos and id_pais == medico[13]) }}>
                                                 {{ nombre }}
                                             </option>
                                             {% endfor %}
                                         </select>
+                                        {% if errores and errores.id_pais %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.id_pais }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -178,13 +206,17 @@
                                             <i class="bi bi-phone me-2 text-primary"></i>Teléfono *
                                         </label>
                                         <input type="tel" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.telefono else 'is-valid' if datos and datos.telefono }}" 
                                                id="telefono" 
                                                name="telefono" 
-                                               value="{{ medico[16] or '' }}" 
-                                               required 
+                                               value="{{ datos.telefono if datos else medico[16] or '' }}" 
                                                maxlength="20"
                                                placeholder="Ingrese el teléfono">
+                                        {% if errores and errores.telefono %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.telefono }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -194,13 +226,17 @@
                                             <i class="bi bi-envelope me-2 text-primary"></i>Email Personal *
                                         </label>
                                         <input type="email" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.email_personal else 'is-valid' if datos and datos.email_personal }}" 
                                                id="email_personal" 
                                                name="email_personal" 
-                                               value="{{ medico[17] or '' }}" 
-                                               required 
+                                               value="{{ datos.email_personal if datos else medico[17] or '' }}" 
                                                maxlength="200"
                                                placeholder="Ingrese el email personal">
+                                        {% if errores and errores.email_personal %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.email_personal }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -210,13 +246,17 @@
                                             <i class="bi bi-briefcase me-2 text-primary"></i>Email Laboral *
                                         </label>
                                         <input type="email" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.email_laboral else 'is-valid' if datos and datos.email_laboral }}" 
                                                id="email_laboral" 
                                                name="email_laboral" 
-                                               value="{{ medico[5] or '' }}" 
-                                               required 
+                                               value="{{ datos.email_laboral if datos else medico[5] or '' }}" 
                                                maxlength="200"
                                                placeholder="Ingrese el email laboral">
+                                        {% if errores and errores.email_laboral %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.email_laboral }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -226,13 +266,17 @@
                                             <i class="bi bi-geo-alt me-2 text-primary"></i>Dirección *
                                         </label>
                                         <input type="text" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.direccion else 'is-valid' if datos and datos.direccion }}" 
                                                id="direccion" 
                                                name="direccion" 
-                                               value="{{ medico[19] or '' }}" 
-                                               required 
+                                               value="{{ datos.direccion if datos else medico[19] or '' }}" 
                                                maxlength="500"
                                                placeholder="Ingrese la dirección completa">
+                                        {% if errores and errores.direccion %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.direccion }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -250,17 +294,22 @@
                                         <label for="id_rol" class="form-label fw-semibold text-dark">
                                             <i class="bi bi-person-badge me-2 text-primary"></i>Rol *
                                         </label>
-                                        <select class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                        <select class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.id_rol else 'is-valid' if datos and datos.id_rol }}" 
                                                 id="id_rol" 
-                                                name="id_rol" 
-                                                required>
+                                                name="id_rol">
                                             <option value="">Seleccionar rol</option>
                                             {% for id_rol, nombre_rol in roles %}
-                                            <option value="{{ id_rol }}" {% if id_rol == medico[1] %}selected{% endif %}>
+                                            <option value="{{ id_rol }}" 
+                                                    {{ 'selected' if (datos and datos.id_rol == id_rol|string) or (not datos and id_rol == medico[1]) }}>
                                                 {{ nombre_rol }}
                                             </option>
                                             {% endfor %}
                                         </select>
+                                        {% if errores and errores.id_rol %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.id_rol }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -269,17 +318,22 @@
                                         <label for="id_documento" class="form-label fw-semibold text-dark">
                                             <i class="bi bi-card-text me-2 text-primary"></i>Tipo de Documento *
                                         </label>
-                                        <select class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                        <select class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.id_documento else 'is-valid' if datos and datos.id_documento }}" 
                                                 id="id_documento" 
-                                                name="id_documento" 
-                                                required>
+                                                name="id_documento">
                                             <option value="">Seleccionar documento</option>
                                             {% for id_documento, nombre in documentos %}
-                                            <option value="{{ id_documento }}" {% if id_documento == medico[14] %}selected{% endif %}>
+                                            <option value="{{ id_documento }}" 
+                                                    {{ 'selected' if (datos and datos.id_documento == id_documento|string) or (not datos and id_documento == medico[14]) }}>
                                                 {{ nombre }}
                                             </option>
                                             {% endfor %}
                                         </select>
+                                        {% if errores and errores.id_documento %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.id_documento }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -289,13 +343,17 @@
                                             <i class="bi bi-credit-card me-2 text-primary"></i>Número de Identificación *
                                         </label>
                                         <input type="text" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.numero_identificacion else 'is-valid' if datos and datos.numero_identificacion }}" 
                                                id="numero_identificacion" 
                                                name="numero_identificacion" 
-                                               value="{{ medico[15] or '' }}" 
-                                               required 
+                                               value="{{ datos.numero_identificacion if datos else medico[15] or '' }}" 
                                                maxlength="50"
                                                placeholder="Ingrese el número de identificación">
+                                        {% if errores and errores.numero_identificacion %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.numero_identificacion }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -305,12 +363,17 @@
                                             <i class="bi bi-file-text me-2 text-primary"></i>RFC
                                         </label>
                                         <input type="text" 
-                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm" 
+                                               class="form-control rounded-2 border-1 border-primary border-opacity-25 shadow-sm {{ 'is-invalid' if errores and errores.rfc }}" 
                                                id="rfc" 
                                                name="rfc" 
-                                               value="{{ medico[18] or '' }}" 
+                                               value="{{ datos.rfc if datos else medico[18] or '' }}" 
                                                maxlength="20"
                                                placeholder="Ingrese el RFC (opcional)">
+                                        {% if errores and errores.rfc %}
+                                            <div class="invalid-feedback">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ errores.rfc }}
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>

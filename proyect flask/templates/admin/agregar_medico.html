@@ -3,8 +3,10 @@
 <head>
     <title>Agregar Médico - Routine4Life</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/forms.css') }}" rel="stylesheet">
 </head>
-<body>
+<body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="#">Routine4Life</a>
@@ -19,129 +21,337 @@
     </nav>
 
     <div class="container mt-4">
-        <h2>Agregar Nuevo Médico</h2>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form method="POST" class="mt-3">
-            <h5>Información Personal</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="nombres" class="form-label">Nombres *</label>
-                        <input type="text" class="form-control" id="nombres" name="nombres" required maxlength="200">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-person-plus me-2"></i>Agregar Nuevo Médico
+                        </h4>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="apellido_paterno" class="form-label">Apellido Paterno *</label>
-                        <input type="text" class="form-control" id="apellido_paterno" name="apellido_paterno" required maxlength="100">
+                    <div class="card-body p-4">
+                        
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show mb-4">
+                                        <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }} me-2"></i>
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST" class="mt-3">
+                            <!-- Información Personal -->
+                            <div class="form-section">
+                                <h5><i class="bi bi-person-vcard me-2"></i>Información Personal</h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="nombres" class="form-label fw-bold">Nombres *</label>
+                                            <input type="text" 
+                                                   class="form-control {{ 'is-invalid' if errores and errores.nombres else 'is-valid' if datos and datos.nombres }}" 
+                                                   id="nombres" 
+                                                   name="nombres" 
+                                                   value="{{ datos.nombres if datos else '' }}" 
+                                                   maxlength="200"
+                                                   placeholder="Ej: Juan Carlos">
+                                            {% if errores and errores.nombres %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.nombres }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="apellido_paterno" class="form-label fw-bold">Apellido Paterno *</label>
+                                            <input type="text" 
+                                                   class="form-control {{ 'is-invalid' if errores and errores.apellido_paterno else 'is-valid' if datos and datos.apellido_paterno }}" 
+                                                   id="apellido_paterno" 
+                                                   name="apellido_paterno" 
+                                                   value="{{ datos.apellido_paterno if datos else '' }}" 
+                                                   maxlength="100"
+                                                   placeholder="Ej: García">
+                                            {% if errores and errores.apellido_paterno %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.apellido_paterno }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="apellido_materno" class="form-label">Apellido Materno</label>
+                                            <input type="text" 
+                                                   class="form-control {{ 'is-invalid' if errores and errores.apellido_materno }}" 
+                                                   id="apellido_materno" 
+                                                   name="apellido_materno" 
+                                                   value="{{ datos.apellido_materno if datos else '' }}" 
+                                                   maxlength="100"
+                                                   placeholder="Ej: López">
+                                            {% if errores and errores.apellido_materno %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.apellido_materno }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="fecha_nacimiento" class="form-label fw-bold">Fecha de Nacimiento *</label>
+                                            <input type="date" 
+                                                   class="form-control {{ 'is-invalid' if errores and errores.fecha_nacimiento else 'is-valid' if datos and datos.fecha_nacimiento }}" 
+                                                   id="fecha_nacimiento" 
+                                                   name="fecha_nacimiento" 
+                                                   value="{{ datos.fecha_nacimiento if datos else '' }}">
+                                            {% if errores and errores.fecha_nacimiento %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.fecha_nacimiento }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="id_sexo" class="form-label fw-bold">Sexo *</label>
+                                            <select class="form-select {{ 'is-invalid' if errores and errores.id_sexo else 'is-valid' if datos and datos.id_sexo }}" 
+                                                    id="id_sexo" 
+                                                    name="id_sexo">
+                                                <option value="">Seleccionar sexo</option>
+                                                {% for id_sexo, nombre in sexos %}
+                                                <option value="{{ id_sexo }}" 
+                                                    {{ 'selected' if datos and datos.id_sexo == id_sexo|string }}>
+                                                    {{ nombre }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                            {% if errores and errores.id_sexo %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.id_sexo }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="id_pais" class="form-label fw-bold">País *</label>
+                                            <select class="form-select {{ 'is-invalid' if errores and errores.id_pais else 'is-valid' if datos and datos.id_pais }}" 
+                                                    id="id_pais" 
+                                                    name="id_pais">
+                                                <option value="">Seleccionar país</option>
+                                                {% for id_pais, nombre in paises %}
+                                                <option value="{{ id_pais }}" 
+                                                    {{ 'selected' if datos and datos.id_pais == id_pais|string }}>
+                                                    {{ nombre }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                            {% if errores and errores.id_pais %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.id_pais }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Información de Identificación -->
+                            <div class="form-section">
+                                <h5><i class="bi bi-card-checklist me-2"></i>Información de Identificación</h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="id_documento" class="form-label fw-bold">Tipo de Documento *</label>
+                                            <select class="form-select {{ 'is-invalid' if errores and errores.id_documento else 'is-valid' if datos and datos.id_documento }}" 
+                                                    id="id_documento" 
+                                                    name="id_documento">
+                                                <option value="">Seleccionar documento</option>
+                                                {% for id_documento, nombre in documentos %}
+                                                <option value="{{ id_documento }}" 
+                                                    {{ 'selected' if datos and datos.id_documento == id_documento|string }}>
+                                                    {{ nombre }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                            {% if errores and errores.id_documento %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.id_documento }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="numero_identificacion" class="form-label fw-bold">Número de Identificación *</label>
+                                            <input type="text" 
+                                                   class="form-control {{ 'is-invalid' if errores and errores.numero_identificacion else 'is-valid' if datos and datos.numero_identificacion }}" 
+                                                   id="numero_identificacion" 
+                                                   name="numero_identificacion" 
+                                                   value="{{ datos.numero_identificacion if datos else '' }}" 
+                                                   placeholder="Ej: 1234567890">
+                                            {% if errores and errores.numero_identificacion %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.numero_identificacion }}
+                                                </div>
+                                            {% else %}
+                                                <div class="form-text">Número único de identificación</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="rfc" class="form-label">RFC</label>
+                                            <input type="text" 
+                                                   class="form-control {{ 'is-invalid' if errores and errores.rfc }}" 
+                                                   id="rfc" 
+                                                   name="rfc" 
+                                                   value="{{ datos.rfc if datos else '' }}" 
+                                                   maxlength="13" 
+                                                   placeholder="Ej: ABC123456XYZ">
+                                            {% if errores and errores.rfc %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.rfc }}
+                                                </div>
+                                            {% else %}
+                                                <div class="form-text">13 caracteres (letras y números)</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Información de Contacto -->
+                            <div class="form-section">
+                                <h5><i class="bi bi-telephone me-2"></i>Información de Contacto</h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="telefono" class="form-label fw-bold">Teléfono *</label>
+                                            <input type="tel" 
+                                                   class="form-control {{ 'is-invalid' if errores and errores.telefono else 'is-valid' if datos and datos.telefono }}" 
+                                                   id="telefono" 
+                                                   name="telefono" 
+                                                   value="{{ datos.telefono if datos else '' }}" 
+                                                   placeholder="Ej: 5512345678"
+                                                   pattern="[0-9]{10}">
+                                            {% if errores and errores.telefono %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.telefono }}
+                                                </div>
+                                            {% else %}
+                                                <div class="form-text">10 dígitos sin espacios ni guiones</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="email_personal" class="form-label fw-bold">Email Personal *</label>
+                                            <input type="email" 
+                                                   class="form-control {{ 'is-invalid' if errores and errores.email_personal else 'is-valid' if datos and datos.email_personal }}" 
+                                                   id="email_personal" 
+                                                   name="email_personal" 
+                                                   value="{{ datos.email_personal if datos else '' }}" 
+                                                   placeholder="Ej: medico@ejemplo.com">
+                                            {% if errores and errores.email_personal %}
+                                                <div class="invalid-feedback">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>{{ errores.email_personal }}
+                                                </div>
+                                            {% else %}
+                                                <div class="form-text">Email único para cada médico</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="direccion" class="form-label">Dirección</label>
+                                    <textarea class="form-control {{ 'is-invalid' if errores and errores.direccion }}" 
+                                              id="direccion" 
+                                              name="direccion" 
+                                              rows="3" 
+                                              placeholder="Ej: Calle Principal #123, Col. Centro">{{ datos.direccion if datos else '' }}</textarea>
+                                    {% if errores and errores.direccion %}
+                                        <div class="invalid-feedback">
+                                            <i class="bi bi-exclamation-circle me-1"></i>{{ errores.direccion }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                <a href="{{ url_for('home') }}" class="btn btn-secondary me-md-2">
+                                    <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-person-plus me-1"></i>Agregar Médico
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="apellido_materno" class="form-label">Apellido Materno</label>
-                        <input type="text" class="form-control" id="apellido_materno" name="apellido_materno" maxlength="100">
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento *</label>
-                        <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" required>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="id_sexo" class="form-label">Sexo *</label>
-                        <select class="form-control" id="id_sexo" name="id_sexo" required>
-                            <option value="">Seleccionar sexo</option>
-                            {% for id_sexo, nombre in sexos %}
-                            <option value="{{ id_sexo }}">{{ nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="id_pais" class="form-label">País *</label>
-                        <select class="form-control" id="id_pais" name="id_pais" required>
-                            <option value="">Seleccionar país</option>
-                            {% for id_pais, nombre in paises %}
-                            <option value="{{ id_pais }}">{{ nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <h5 class="mt-4">Información de Identificación</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="id_documento" class="form-label">Tipo de Documento *</label>
-                        <select class="form-control" id="id_documento" name="id_documento" required>
-                            <option value="">Seleccionar documento</option>
-                            {% for id_documento, nombre in documentos %}
-                            <option value="{{ id_documento }}">{{ nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="numero_identificacion" class="form-label">Número de Identificación *</label>
-                        <input type="text" class="form-control" id="numero_identificacion" name="numero_identificacion" required>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="rfc" class="form-label">RFC</label>
-                        <input type="text" class="form-control" id="rfc" name="rfc" maxlength="13" placeholder="Ej: ABC123456XYZ">
-                    </div>
-                </div>
-            </div>
-
-            <h5 class="mt-4">Información de Contacto</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="telefono" class="form-label">Teléfono *</label>
-                        <input type="tel" class="form-control" id="telefono" name="telefono" required placeholder="Ej: 5512345678">
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="email_personal" class="form-label">Email Personal *</label>
-                        <input type="email" class="form-control" id="email_personal" name="email_personal" required placeholder="Ej: medico@ejemplo.com">
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="direccion" class="form-label">Dirección</label>
-                <textarea class="form-control" id="direccion" name="direccion" rows="3" placeholder="Ej: Calle Principal #123, Col. Centro"></textarea>
-            </div>
-
-            <div class="mt-4">
-                <button type="submit" class="btn btn-primary">Agregar Médico</button>
-                <a href="{{ url_for('home') }}" class="btn btn-secondary">Cancelar</a>
-            </div>
-        </form>
+        </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Validaciones en JavaScript (opcional) -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Limpiar validaciones cuando el usuario escribe
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                this.classList.remove('is-invalid', 'is-valid');
+            });
+        });
+
+        // Validar email en tiempo real
+        const emailInput = document.getElementById('email_personal');
+        if (emailInput) {
+            emailInput.addEventListener('blur', function() {
+                const email = this.value;
+                const patron = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                
+                if (email && !patron.test(email)) {
+                    this.classList.add('is-invalid');
+                } else if (email) {
+                    this.classList.add('is-valid');
+                }
+            });
+        }
+
+        // Validar teléfono en tiempo real
+        const telefonoInput = document.getElementById('telefono');
+        if (telefonoInput) {
+            telefonoInput.addEventListener('blur', function() {
+                const telefono = this.value.replace(/[\s\-\(\)]/g, '');
+                
+                if (telefono && (!/^\d+$/.test(telefono) || telefono.length !== 10)) {
+                    this.classList.add('is-invalid');
+                } else if (telefono) {
+                    this.classList.add('is-valid');
+                }
+            });
+        }
+    });
+    </script>
 </body>
 </html>
