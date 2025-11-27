@@ -1,5 +1,6 @@
 import pyodbc
 
+# Configuraciones Para la base de datos
 def Config(index):
     connections = [
         f"DRIVER={{ODBC Driver 18 for SQL Server}};"
