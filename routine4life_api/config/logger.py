@@ -1,24 +1,36 @@
-# IMPORTAR MÓDULOS NECESARIOS
+# -------------------------------
+# | IMPORTAR MÓDULOS NECESARIOS |
+# -------------------------------
+
 import os
 import logging
+from logging.handlers import TimedRotatingFileHandler
+
 
 # -----------------
 # | CREAR LOGGERS |
 # -----------------
 
-# GUARDAR LOS MENSAJES DE INFORMACIÓN Y ERROR DEL SISTEMA EN UN ARCHIVO .log
-# Y MOSTRARLOS EN LA CONSOLA
+# GUARDAR MENSAJES DE INFORMACIÓN Y ERROR DEL SISTEMA EN UN ARCHIVO ".log"
+# TAMBIÉN MOSTRARLOS EN CONSOLA
 def create_logger(
-    name: str,
-    log_file: str,
-    log_dir: str = "storage/logs",
+    name: str, 
+    log_file: str, 
+    log_dir: str = "storage/logs", 
     log_level = logging.INFO
     ):
+
     # CREAR CARPETAS SI NO EXISTEN
-    os.makedirs(log_dir, exist_ok=True)
+    os.makedirs(log_dir, exist_ok = True)
+
+    # CREAR RUTA DE CADA ARCHIVO ".log"
     log_path = os.path.join(log_dir, log_file)
     logger = logging.getLogger(name)
+
+    # ESTABLECER NIVEL DEL LOGGER
     logger.setLevel(log_level)
+
+    # EVITA LOGS DUPLICADOS CON FLASK
     logger.propagate = False
 
     # EVITAR DUPLICAR HANDLERS
@@ -26,8 +38,17 @@ def create_logger(
         formatter = logging.Formatter(
             "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
         )
-        # ARCHIVO
-        file_handler = logging.FileHandler(log_path, encoding="utf-8")
+
+        # ARCHIVO (ROTACIÓN DIARIA)
+        file_handler = TimedRotatingFileHandler(
+            log_path, 
+            when = "midnight", 
+            interval = 1, 
+            backupCount = 7, 
+            encoding = "utf-8", 
+            utc = False
+        )
+        file_handler.suffix = "%Y-%m-%d"
         file_handler.setFormatter(formatter)
 
         # CONSOLA
@@ -40,11 +61,11 @@ def create_logger(
     return logger
 
 
-# ------------------------------
-# | CREAR UN LOGGER POR MÓDULO |
-# ------------------------------
+# ---------------------------
+# | CREAR LOGGER POR MÓDULO |
+# ---------------------------
 
-db_logger   = create_logger("db",   "db.log")
-api_logger  = create_logger("api",  "api.log")
-app_logger  = create_logger("app",  "app.log")
+db_logger = create_logger("db", "db.log")
+api_logger = create_logger("api", "api.log")
+app_logger = create_logger("app", "app.log")
 auth_logger = create_logger("auth", "auth.log")
