@@ -12,8 +12,8 @@ from database import Base
 # ------------------------------------
 
 class Paises(Base):
-    __tablename__ = 'paises'
-    __table_args__ = {'schema': 'r4l'}
+    __tablename__ = "paises"
+    __table_args__ = {"schema": "r4l"}
     
     id_pais: Mapped[int] = mapped_column(
         Integer, 
@@ -22,7 +22,7 @@ class Paises(Base):
     )
     id_continente: Mapped[int] = mapped_column(
         Integer, 
-        ForeignKey('r4l.continentes.id_continente', ondelete = 'CASCADE', onupdate = 'CASCADE'),
+        ForeignKey("r4l.continentes.id_continente", ondelete = "CASCADE", onupdate = "CASCADE"), 
         nullable = False
     )
     nombre: Mapped[str] = mapped_column(
@@ -38,11 +38,21 @@ class Paises(Base):
         nullable = False
     )
     
-    # ESTABLECER "relationship" CON "Continentes"
+
+    # -----------------
+    # | RELATIONSHIPS |
+    # -----------------
+
     # "paises.py" TIENE LLAVE FORÁNEA CON "continentes.py"
-    continente: Mapped["Continentes"] = relationship(
+    continentes: Mapped["Continentes"] = relationship(
+        "Continentes", 
         back_populates = "paises"
     )
     
+
+    # ----------------------------------------
+    # | MOSTRAR OBJETO DE MANERA INFORMATIVA |
+    # ----------------------------------------
+
     def __repr__(self):
         return f"<Paises(id_pais = {self.id_pais}, nombre = '{self.nombre}', codigo_iso = '{self.codigo_iso}')>"
