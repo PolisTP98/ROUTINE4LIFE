@@ -48,6 +48,24 @@ class Paises(Base):
         "Continentes", 
         back_populates = "paises"
     )
+
+    # "medico_personal.py" TIENE LLAVE FORÁNEA CON "paises.py"
+    medico_personal: Mapped[list["MedicoPersonal"]] = relationship(
+        "MedicoPersonal", 
+        back_populates = "paises"
+    )
+
+    # "pacientes.py" TIENE LLAVE FORÁNEA CON "paises.py"
+    pacientes: Mapped[list["Pacientes"]] = relationship(
+        "Pacientes", 
+        back_populates = "paises"
+    )
+
+    # "pacientes_aplicacion.py" TIENE LLAVE FORÁNEA CON "paises.py"
+    pacientes_aplicacion: Mapped[list["PacientesAplicacion"]] = relationship(
+        "PacientesAplicacion", 
+        back_populates = "paises"
+    )
     
 
     # ----------------------------------------

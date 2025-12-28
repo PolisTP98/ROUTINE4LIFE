@@ -106,7 +106,7 @@ class RutinaAlimentacion(Base):
         back_populates = "rutina_alimentacion"
     )
 
-    # "rutina_alimentacion.py" TIENE LLAVE FORÁNEA CON "descripcion_rutina.py"
+    # "descripcion_rutina.py" TIENE LLAVE PRIMARIA CON "rutina_alimentacion.py"
     descripcion_rutina: Mapped["DescripcionRutina"] = relationship(
         "DescripcionRutina", 
         back_populates = "rutina_alimentacion", 

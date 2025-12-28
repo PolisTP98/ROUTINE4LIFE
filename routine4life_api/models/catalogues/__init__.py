@@ -2,7 +2,6 @@
 # | IMPORTAR TODOS LOS MÓDULOS DE CATÁLOGOS |
 # -------------------------------------------
 
-# CONTIENE TODAS LAS TABLAS BAJO EL ESQUEMA "r4l"
 from .sexos import Sexos
 from .roles_usuarios import RolesUsuarios
 from .estatus_usuarios import EstatusUsuarios
@@ -15,16 +14,21 @@ from .tipos_contratos import TiposContratos
 from .especialidades import Especialidades
 from .comidas import Comidas
 
+
+# ----------------------------------------------------
+# | LISTA CON TODAS LAS TABLAS BAJO EL ESQUEMA "r4l" |
+# ----------------------------------------------------
+
 __all__ = [
-    'Sexos',
-    'RolesUsuarios',
-    'EstatusUsuarios',
-    'Continentes',
-    'Paises',
-    'DocumentosLegales',
-    'Sucursales',
-    'Departamentos',
-    'TiposContratos',
-    'Especialidades',
-    'Comidas'
+    "Sexos", 
+    "RolesUsuarios", 
+    "EstatusUsuarios", 
+    "Continentes", 
+    "Paises", 
+    "DocumentosLegales", 
+    "Sucursales", 
+    "Departamentos", 
+    "TiposContratos", 
+    "Especialidades", 
+    "Comidas"
 ]

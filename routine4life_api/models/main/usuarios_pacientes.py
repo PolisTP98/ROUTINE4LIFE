@@ -99,4 +99,4 @@ class UsuariosPacientes(Base):
     # ----------------------------------------
 
     def __repr__(self):
-        return f"<UsuariosPacientes(username = '{self.username}', email = '{self.email}')>"
+        return f"<UsuariosPacientes(id_paciente_aplicacion = {self.id_paciente_aplicacion}, username = '{self.username}', email = '{self.email}')>"

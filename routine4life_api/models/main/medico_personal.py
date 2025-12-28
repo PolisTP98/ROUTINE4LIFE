@@ -133,14 +133,14 @@ class MedicoPersonal(Base):
         uselist = False
     )
 
-    # "medico_personal.py" TIENE LLAVE FORÁNEA CON "especialidades.py"
+    # "especialidades_medico.py" TIENE LLAVE FORÁNEA CON "medico_personal.py"
     especialidades_medico: Mapped[list["EspecialidadesMedico"]] = relationship(
         "EspecialidadesMedico", 
         back_populates = "medico_personal", 
         cascade = "all, delete-orphan"
     )
 
-    # "medico_personal.py" TIENE LLAVE FORÁNEA CON "cita_paciente.py"
+    # "cita_paciente.py" TIENE LLAVE FORÁNEA CON "medico_personal.py"
     cita_paciente: Mapped[list["CitaPaciente"]] = relationship(
         "CitaPaciente", 
         back_populates = "medico_personal"

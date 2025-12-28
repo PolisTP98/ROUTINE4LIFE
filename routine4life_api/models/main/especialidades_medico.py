@@ -62,10 +62,10 @@ class EspecialidadesMedico(Base):
     # | RELATIONSHIPS |
     # -----------------
 
-    # "medico_personal.py" TIENE LLAVE FORÁNEA CON "especialidades.py"
+    # "especialidades_medico.py" TIENE LLAVE FORÁNEA CON "medico_personal.py"
     medico_personal: Mapped["MedicoPersonal"] = relationship(
         "MedicoPersonal", 
-        back_populates = "especialidades"
+        back_populates = "especialidades_medico"
     )
 
     # "especialidades_medico.py" TIENE LLAVE FORÁNEA CON "especialidades.py"

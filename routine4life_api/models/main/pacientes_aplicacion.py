@@ -108,7 +108,7 @@ class PacientesAplicacion(Base):
     # "usuarios_pacientes.py" TIENE LLAVE PRIMARIA CON "pacientes_aplicacion.py"
     usuarios_pacientes: Mapped["UsuariosPacientes"] = relationship(
         "UsuariosPacientes", 
-        back_populates = "paciente_aplicacion", 
+        back_populates = "pacientes_aplicacion", 
         cascade = "all, delete-orphan", 
         uselist = False
     )

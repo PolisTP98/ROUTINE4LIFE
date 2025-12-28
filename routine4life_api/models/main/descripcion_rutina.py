@@ -69,4 +69,4 @@ class DescripcionRutina(Base):
     
     def __repr__(self):
         descripcion_corta = self.descripcion[:50] + "..." if len(self.descripcion) > 50 else self.descripcion
-        return f"<DescripcionRutina(id_rutina_alimentacion = {self.id_rutina_alimentacion}, desc = '{descripcion_corta}')>"
+        return f"<DescripcionRutina(id_rutina_alimentacion = {self.id_rutina_alimentacion}, descripcion = '{descripcion_corta}')>"

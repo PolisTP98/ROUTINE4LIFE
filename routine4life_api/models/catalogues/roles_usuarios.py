@@ -3,7 +3,7 @@
 # -------------------------------
 
 from sqlalchemy import Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
 
@@ -12,8 +12,8 @@ from database import Base
 # --------------------------------------------
 
 class RolesUsuarios(Base):
-    __tablename__ = 'roles_usuarios'
-    __table_args__ = {'schema': 'r4l'}
+    __tablename__ = "roles_usuarios"
+    __table_args__ = {"schema": "r4l"}
     
     id_rol: Mapped[int] = mapped_column(
         Integer, 
@@ -24,6 +24,22 @@ class RolesUsuarios(Base):
         String(50), 
         nullable = False
     )
+
+
+    # -----------------
+    # | RELATIONSHIPS |
+    # -----------------
+
+    # "usuarios_pacientes.py" TIENE LLAVE FORÁNEA CON "roles_usuarios.py"
+    usuarios_pacientes: Mapped[list["UsuariosPacientes"]] = relationship(
+        "UsuariosPacientes", 
+        back_populates = "roles_usuarios"
+    )
+
+
+    # ----------------------------------------
+    # | MOSTRAR OBJETO DE MANERA INFORMATIVA |
+    # ----------------------------------------
     
     def __repr__(self):
         return f"<RolesUsuarios(id_rol = {self.id_rol}, nombre = '{self.nombre}')>"

@@ -92,7 +92,7 @@ class Pacientes(Base):
         back_populates = "pacientes"
     )
 
-    # "pacientes.py" TIENE LLAVE FORÁNEA CON "cita_paciente.py"
+    # "cita_paciente.py" TIENE LLAVE FORÁNEA CON "pacientes.py"
     cita_paciente: Mapped[list["CitaPaciente"]] = relationship(
         "CitaPaciente", 
         back_populates = "pacientes", 
@@ -103,7 +103,7 @@ class Pacientes(Base):
     pacientes_aplicacion: Mapped[list["PacientesAplicacion"]] = relationship(
         "PacientesAplicacion", 
         back_populates = "pacientes", 
-        cascade="all, delete-orphan"
+        cascade = "all, delete-orphan"
     )
     
 

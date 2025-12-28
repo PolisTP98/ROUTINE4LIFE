@@ -3,7 +3,7 @@
 # -------------------------------
 
 from sqlalchemy import Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
 
@@ -12,8 +12,8 @@ from database import Base
 # ----------------------------------------
 
 class Sucursales(Base):
-    __tablename__ = 'sucursales'
-    __table_args__ = {'schema': 'r4l'}
+    __tablename__ = "sucursales"
+    __table_args__ = {"schema": "r4l"}
     
     id_sucursal: Mapped[int] = mapped_column(
         Integer, 
@@ -34,5 +34,21 @@ class Sucursales(Base):
         unique = True
     )
     
+
+    # -----------------
+    # | RELATIONSHIPS |
+    # -----------------
+
+    # "medico_laboral.py" TIENE LLAVE FORÁNEA CON "sucursales.py"
+    medico_laboral: Mapped[list["MedicoLaboral"]] = relationship(
+        "MedicoLaboral", 
+        back_populates = "sucursales"
+    )
+
+
+    # ----------------------------------------
+    # | MOSTRAR OBJETO DE MANERA INFORMATIVA |
+    # ----------------------------------------
+
     def __repr__(self):
         return f"<Sucursales(id_sucursal = {self.id_sucursal}, nombre = '{self.nombre}', codigo = '{self.codigo}')>"

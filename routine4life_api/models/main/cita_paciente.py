@@ -129,23 +129,32 @@ class CitaPaciente(Base):
     # | RELATIONSHIPS |
     # -----------------
 
+    # "cita_paciente.py" TIENE LLAVE FORÁNEA CON "medico_personal.py"
     medico_personal: Mapped["MedicoPersonal"] = relationship(
         "MedicoPersonal", 
         back_populates = "cita_paciente"
     )
+
+    # "cita_paciente.py" TIENE LLAVE FORÁNEA CON "pacientes.py"
     pacientes: Mapped["Pacientes"] = relationship(
         "Pacientes", 
         back_populates = "cita_paciente"
     )
+
+    # "cita_paciente.py" TIENE LLAVE FORÁNEA CON "estatus_usuarios.py"
     estatus_usuarios: Mapped["EstatusUsuarios"] = relationship(
         "EstatusUsuarios", 
         back_populates = "cita_paciente"
     )
+
+    # "rutina_ejercicio.py" TIENE LLAVE FORÁNEA CON "cita_paciente.py"
     rutina_ejercicio: Mapped[list["RutinaEjercicio"]] = relationship(
         "RutinaEjercicio", 
         back_populates = "cita_paciente", 
         cascade = "all, delete-orphan"
     )
+
+    # "rutina_alimentacion.py" TIENE LLAVE FORÁNEA CON "cita_paciente.py"
     rutina_alimentacion: Mapped[list["RutinaAlimentacion"]] = relationship(
         "RutinaAlimentacion", 
         back_populates = "cita_paciente", 
