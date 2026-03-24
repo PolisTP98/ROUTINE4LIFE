@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Datos Personales del Paciente</title>
+    <link rel="stylesheet" href="/static/detalle_paciente.css">
+</head>
+<body>
+
+    <div class="detalle_paciente_container">
+        
+        <header>
+            <h2>ROUTINE4LIFE</h2>
+            <nav>
+                <a href="#">Inicio</a> |
+                <a href="#">Médicos</a> |
+                <a href="#">Pacientes</a>
+            </nav>
+        </header>
+
+        <hr>
+
+        <h1 class="detalle_paciente_titulo">DATOS PERSONALES DEL PACIENTE</h1>
+
+        <form>
+            <div class="detalle_paciente_fila">
+                <!-- Columna izquierda -->
+                <div class="detalle_paciente_columna">
+                    <div class="detalle_paciente_campo">
+                        <label for="nombre">Nombre del paciente:</label>
+                        <input type="text" id="nombre" name="nombre" value="Jorge Luis Guevara Mattar" readonly>
+                    </div>
+
+                    <div class="detalle_paciente_campo">
+                        <label for="fecha">Fecha de nacimiento:</label>
+                        <input type="text" id="fecha" name="fecha" value="31/08/2006" readonly>
+                    </div>
+
+                    <div class="detalle_paciente_campo">
+                        <label for="curp">CURP:</label>
+                        <input type="text" id="curp" name="curp" value="1127384300" readonly>
+                    </div>
+
+                    <div class="detalle_paciente_campo">
+                        <label for="correo">Correo electrónico:</label>
+                        <input type="email" id="correo" name="correo" value="14jorgeguevara32@gmail.com" readonly>
+                    </div>
+                </div>
+
+                <!-- Columna derecha -->
+                <div class="detalle_paciente_columna">
+                    <div class="detalle_paciente_campo">
+                        <label for="genero">Género:</label>
+                        <select id="genero" name="genero">
+                            <option value="masculino" selected>Masculino</option>
+                            <option value="femenino">Femenino</option>
+                        </select>
+                    </div>
+
+                    <div class="detalle_paciente_campo">
+                        <label for="telefono">Teléfono:</label>
+                        <input type="tel" id="telefono" name="telefono" value="+57 322 4588118" readonly>
+                    </div>
+
+                    <div class="detalle_paciente_campo">
+                        <label for="direccion">Dirección:</label>
+                        <input type="text" id="direccion" name="direccion" value="Cra 28, 42 - 24" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detalle_paciente_botones">
+                <button type="submit">Aceptar</button>
+                <button type="reset">Cancelar</button>
+                <button type="button">Siguiente</button>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

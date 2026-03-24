@@ -1,0 +1,18 @@
+
+services:
+  flask_api:
+    build:
+      context: "./routine4life_web" 
+      dockerfile: dockerfile 
+    container_name: api_r4life
+    ports:
+      - "5050:5000" 
+
+    networks:
+      - app_network
+    volumes:
+      - "./routine4life_web:/app" 
+
+networks:
+  app_network:
+    driver: bridge
