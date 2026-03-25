@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Sistema Médico</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+
+<body>
+
+    <center>
+
+        <h1>Sistema Médico</h1>
+
+        <h2>Iniciar Sesión</h2>
+
+        <!-- Mostrar mensajes flash (errores, éxito) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" style="padding: 10px; margin: 10px; border-radius: 5px; 
+                        {% if category == 'success' %}background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+                        {% elif category == 'danger' %}background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+                        {% elif category == 'warning' %}background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+                        {% else %}background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;
+                        {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- FORMULARIO DE LOGIN - CON METHOD POST -->
+        <form method="POST" action="{{ url_for('login') }}">
+            <table>
+                <tr>
+                    <td>Usuario o correo:</td>
+                    <td><input type="email" name="email" placeholder="Ingrese su correo electrónico" required></td>
+                </tr>
+
+                <tr>
+                    <td>Contraseña:</td>
+                    <td><input type="password" name="password" placeholder="Ingrese su contraseña" required></td>
+                </tr>
+
+            </table>
+
+            <br>
+
+            <button type="submit">Iniciar Sesión</button>
+
+        </form>
+
+        <br>
+
+        <a href="{{ url_for('recuperar_contrasena') }}">¿Olvidaste tu contraseña?</a>
+
+        <br><br>
+
+        <p>¿No tienes cuenta?Contacta al administrador para que te registre.</p>
+
+    </center>
+
+</body>
+
+</html>

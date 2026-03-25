@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro - Sistema Medico</title>
+    <link rel="stylesheet" href="/static/registro.css">
+</head>
+<body>
+
+    <center>
+
+        <h1>Sistema Medico</h1>
+
+        <h2>Registro de Personal</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="padding: 10px; margin: 10px; border: 1px solid; 
+                        {% if category == 'success' %}background-color: #d4edda; color: #155724;
+                        {% elif category == 'danger' %}background-color: #f8d7da; color: #721c24;
+                        {% else %}background-color: #d1ecf1; color: #0c5460;
+                        {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('registro') }}">
+
+            <table>
+                <!-- Selector de Rol -->
+                <tr class="campo-rol">
+                    <td>Rol:</td>
+                    <td>
+                        <select name="id_rol" required>
+                            <option value="">Seleccione...</option>
+                            {% for rol in roles %}
+                            <option value="{{ rol.id_rol }}">{{ rol.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Nombre completo:</td>
+                    <td><input type="text" name="nombre_completo" placeholder="Ingrese su nombre" required></td>
+                </tr>
+
+                <tr>
+                    <td>Correo electronico:</td>
+                    <td><input type="email" name="email" placeholder="Ingrese su correo" required></td>
+                </tr>
+
+                <tr>
+                    <td>Contrasena:</td>
+                    <td><input type="password" name="contrasena" placeholder="Cree una contrasena" required></td>
+                </tr>
+
+                <tr>
+                    <td>Confirmar contrasena:</td>
+                    <td><input type="password" name="confirmar_contrasena" placeholder="Repita la contrasena" required></td>
+                </tr>
+
+                <tr>
+                    <td>RFC:</td>
+                    <td><input type="text" name="rfc" placeholder="Ejemplo: COME920101ABC" required></td>
+                </tr>
+
+                <!-- Campos especificos para medico -->
+                <tr class="campo-medico" style="display:none;">
+                    <td>Cedula profesional:</td>
+                    <td><input type="text" name="cedula_profesional" placeholder="Ingrese su cedula"></td>
+                </tr>
+
+                <tr class="campo-medico" style="display:none;">
+                    <td>Especialidad:</td>
+                    <td>
+                        <select name="id_especialidad">
+                            <option value="">Seleccione...</option>
+                            {% for esp in especialidades %}
+                            <option value="{{ esp.id_especialidad }}">{{ esp.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Codigo interno:</td>
+                    <td><input type="text" name="codigo" placeholder="Ejemplo: MED-001" required></td>
+                </tr>
+
+                <tr>
+                    <td>Fecha de nacimiento:</td>
+                    <td><input type="date" name="fecha_nacimiento" required></td>
+                </tr>
+
+                <!-- Telefono con codigo de pais -->
+                <tr>
+                    <td>Telefono:</td>
+                    <td>
+                        <select name="codigo_pais" style="width: 80px;" required>
+                            <option value="+52">+52 (Mexico)</option>
+                            <option value="+1">+1 (USA/Canada)</option>
+                            <option value="+34">+34 (Espana)</option>
+                            <option value="+54">+54 (Argentina)</option>
+                            <option value="+56">+56 (Chile)</option>
+                            <option value="+57">+57 (Colombia)</option>
+                            <option value="+51">+51 (Peru)</option>
+                            <option value="+58">+58 (Venezuela)</option>
+                            <option value="+502">+502 (Guatemala)</option>
+                            <option value="+503">+503 (El Salvador)</option>
+                            <option value="+504">+504 (Honduras)</option>
+                            <option value="+505">+505 (Nicaragua)</option>
+                            <option value="+506">+506 (Costa Rica)</option>
+                            <option value="+507">+507 (Panama)</option>
+                            <option value="+591">+591 (Bolivia)</option>
+                            <option value="+593">+593 (Ecuador)</option>
+                            <option value="+595">+595 (Paraguay)</option>
+                            <option value="+598">+598 (Uruguay)</option>
+                            <option value="+53">+53 (Cuba)</option>
+                            <option value="+809">+809 (Republica Dominicana)</option>
+                            <option value="+33">+33 (Francia)</option>
+                            <option value="+49">+49 (Alemania)</option>
+                            <option value="+44">+44 (Reino Unido)</option>
+                            <option value="+55">+55 (Brasil)</option>
+                        </select>
+                        <input type="text" name="telefono" placeholder="Ejemplo: 5512345678" style="width: 200px;" required>
+                    </td>
+                </tr>
+
+                <!-- Pais de origen -->
+                <tr>
+                    <td>Pais de origen:</td>
+                    <td>
+                        <select name="id_pais" required>
+                            <option value="">Seleccione un pais...</option>
+                            {% for pais in paises %}
+                            <option value="{{ pais.id_pais }}">{{ pais.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Sexo:</td>
+                    <td>
+                        <select name="id_sexo" required>
+                            <option value="">Seleccione...</option>
+                            {% for sexo in sexos %}
+                            <option value="{{ sexo.id_sexo }}">{{ sexo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+
+            </table>
+
+            <br>
+
+            <button type="submit">Registrar</button>
+            <button type="reset">Limpiar</button>
+
+        </form>
+
+        <br>
+
+        <a href="{{ url_for('admin_dashboard') }}">Volver al Dashboard</a>
+
+    </center>
+
+    <script>
+        // Mostrar/ocultar campos de medico segun el rol seleccionado
+        var selectRol = document.querySelector('select[name="id_rol"]');
+        var camposMedico = document.querySelectorAll('.campo-medico');
+        
+        if (selectRol) {
+            selectRol.addEventListener('change', function() {
+                if (this.value == '2') {
+                    camposMedico.forEach(function(campo) {
+                        campo.style.display = 'table-row';
+                    });
+                    document.querySelector('input[name="cedula_profesional"]').required = true;
+                    document.querySelector('select[name="id_especialidad"]').required = true;
+                } else {
+                    camposMedico.forEach(function(campo) {
+                        campo.style.display = 'none';
+                    });
+                    document.querySelector('input[name="cedula_profesional"]').required = false;
+                    document.querySelector('select[name="id_especialidad"]').required = false;
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

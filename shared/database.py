@@ -1,7 +1,4 @@
-# ----------------------------
-# | IMPORTACIONES NECESARIAS |
-# ----------------------------
-
+# shared/database.py
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -9,50 +6,39 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-
-# ----------------------------------------------------
-# | CARGAR LAS VARIABLES DE ENTORNO DEL ARCHIVO .env |
-# ----------------------------------------------------
-
+# Cargar variables de entorno
 env_path = Path(__file__).parent.parent / ".env"
-load_dotenv(dotenv_path = env_path)
+load_dotenv(dotenv_path=env_path)
 
-# OBTENER CREDENCIALES
-DB_SERVER = os.getenv("DB_SERVER")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+# Credenciales
+DB_SERVER = os.getenv("DB_SERVER", "DESKTOP-6RRSB8S\\SQLEXPRESS01")
+DB_NAME = os.getenv("DB_NAME", "routine4life")
 DB_DRIVER = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
 
-if not all([DB_SERVER, DB_NAME, DB_USER, DB_PASSWORD]):
-    raise ValueError("FALTAN VARIABLES DE ENTORNO REQUERIDAS EN EL ARCHIVO .env")
-
-
-# -----------------------------------------------------
-# | CONFIGURACIÓN PARA LOS MODELOS ORM CON SQLAlchemy |
-# -----------------------------------------------------
-
-# CONSTRUIR EL URL DE LA CONEXIÓN PARA SQLAlchemy + pyodbc
+# Para autenticación Windows (Trusted_Connection)
 DATABASE_URL = (
-    f"mssql+pyodbc://{DB_USER}:{DB_PASSWORD}@{DB_SERVER}/{DB_NAME}"
+    f"mssql+pyodbc://@{DB_SERVER}/{DB_NAME}"
     f"?driver={DB_DRIVER.replace(' ', '+')}"
+    f"&trusted_connection=yes"
 )
 
-# CREAR EL MOTOR (engine)
+print(f"Conectando a: {DB_SERVER}/{DB_NAME}")
+
+# Crear el motor
 engine = create_engine(
     DATABASE_URL, 
-    echo = False, # NO VER LAS CONSULTAS SQL EN CONSOLA
-    pool_pre_ping = True, # VERIFICAR LA CONEXIÓN ANTES DE USARLA (PARA EVITAR ERRORES POR CONEXIONES CAÍDAS)
+    echo=False,
+    pool_pre_ping=True,
 )
 
-# CREAR LA CLASE BASE PARA LOS MODELOS ORM DE SQLAlchemy
+# Base para modelos
 Base = declarative_base()
 
-# CREAR LA FÁBRICA DE SESIONES
-SessionLocal = sessionmaker(autocommit = False, autoflush = False, bind = engine)
+# Fábrica de sesiones
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# DEPENDENCIA PARA OBTENER LA SESIÓN DE LA BD Y CERRARLA AUTOMÁTICAMENTE
 def get_db():
+    """Dependencia para obtener sesión de BD"""
     db = SessionLocal()
     try:
         yield db

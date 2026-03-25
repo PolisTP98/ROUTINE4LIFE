@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Registros de Síntomas y Signos</title>
+    <link rel="stylesheet" href="/static/sintomas_detalle.css">
+</head>
+
+<body>
+
+    <header>
+        <h2>ROUTINE4LIFE</h2>
+        <nav>
+            <a href="#">Inicio</a> |
+            <a href="#">Médicos</a> |
+            <a href="#">Pacientes</a>
+        </nav>
+    </header>
+
+    <hr>
+
+    <h1>REGISTROS DE SÍNTOMAS Y SIGNOS</h1>
+
+    <form>
+
+        <h3>Información del Paciente</h3>
+
+        <label for="nombre">Nombre del paciente:</label><br>
+        <input type="text" id="nombre" name="nombre"><br><br>
+
+        <label for="nivelesGlucosa">Niveles de glucosa diarios:</label><br>
+        <input type="text" id="nivelesGlucosa" name="nivelesGlucosa"><br><br>
+
+        <label for="presionArterial">Presión arterial:</label><br>
+        <input type="text" id="presionArterial" name="presionArterial"><br><br>
+
+        <label for="sintomas">Síntomas reportados:</label><br>
+        <textarea id="sintomas" name="sintomas" rows="4" cols="40"></textarea><br><br>
+
+        <label for="eventos">Eventos importantes:</label><br>
+        <input type="text" id="eventos" name="eventos"><br><br>
+
+        <!-- Botones -->
+        <button type="submit">Aceptar</button>
+        <button type="reset">Cancelar</button>
+        <button type="button">Siguiente</button>
+
+    </form>
+
+</body>
+
+</html>

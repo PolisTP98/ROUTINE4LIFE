@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Datos Clínicos Generales</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='datos_clinicos.css') }}">  
+</head>
+<body>
+
+    <header>
+        <h2>ROUTINE4LIFE</h2>
+        <nav>
+            <a href="#">Inicio</a> |
+            <a href="#">Médicos</a> |
+            <a href="#">Pacientes</a>
+        </nav>
+    </header>
+
+    <hr>
+
+    <h1>DATOS CLÍNICOS GENERALES</h1>
+
+    <form>
+
+        <h3>Información del Paciente</h3>
+
+        <label for="nombre">Nombre del paciente:</label><br>
+        <input type="text" id="nombre" name="nombre"><br><br>
+
+        <label for="tipoDiabetes">Tipo de diabetes:</label><br>
+        <select id="tipoDiabetes" name="tipoDiabetes">
+            <option value="">Seleccione</option>
+            <option value="tipo1">Tipo 1</option>
+            <option value="tipo2">Tipo 2</option>
+            <option value="gestacional">Gestacional</option>
+        </select><br><br>
+
+        <label for="fechaDiagnostico">Fecha de diagnóstico:</label><br>
+        <input type="date" id="fechaDiagnostico" name="fechaDiagnostico"><br><br>
+
+        <label for="peso">Peso actual (kg):</label><br>
+        <input type="number" id="peso" name="peso" step="0.1"><br><br>
+
+        <label for="altura">Altura (cm):</label><br>
+        <input type="number" id="altura" name="altura"><br><br>
+
+        <label for="imc">IMC:</label><br>
+        <input type="number" id="imc" name="imc" step="0.1"><br><br>
+
+        <label for="alergias">Alergias:</label><br>
+        <input type="text" id="alergias" name="alergias"><br><br>
+
+        <label for="comorbilidades">Comorbilidades:</label><br>
+        <input type="text" id="comorbilidades" name="comorbilidades"><br><br>
+
+        <button type="submit">Aceptar</button>
+        <button type="reset">Cancelar</button>
+        <button type="button">Siguiente</button>
+
+    </form>
+
+</body>
+</html>

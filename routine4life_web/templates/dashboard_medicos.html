@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Médico - Sistema Médico</title>
+</head>
+<body>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Header -->
+    <div>
+        <h1>Routine4Life - Sistema de Gestion para Diabetes</h1>
+        <div>
+            <span>Bienvenido Dr. {{ current_user.nombre_completo or current_user.email }}</span>
+            <span>Medico</span>
+            <a href="{{ url_for('logout') }}">Cerrar Sesion</a>
+        </div>
+    </div>
+
+    <div>
+        <!-- Estadisticas Rápidas -->
+        <div>
+            <div>
+                <h3>Total Pacientes: {{ total_pacientes }}</h3>
+            </div>
+            <div>
+                <h3>Proximas Citas: {{ proximas_citas|length }}</h3>
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div>
+            <h2>Acciones</h2>
+            <div>
+                <a href="{{ url_for('nuevo_paciente') }}">Registrar Nuevo Paciente</a>
+                <a href="{{ url_for('nueva_consulta', id=0) }}">Agendar Consulta</a>
+            </div>
+        </div>
+
+        <!-- Lista de Pacientes -->
+        <div>
+            <h2>Mis Pacientes</h2>
+            {% if pacientes %}
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Edad</th>
+                        <th>Tipo Diabetes</th>
+                        <th>Ultima Consulta</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paciente in pacientes %}
+                    <tr>
+                        <td>{{ paciente.nombre_completo }}</td>
+                        <td>
+                            {% if paciente.fecha_nacimiento %}
+                                {{ (now_date.year - paciente.fecha_nacimiento.year) }} años
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if paciente.tipo_diabetes %}
+                                {{ paciente.tipo_diabetes.nombre }}
+                            {% else %}
+                                No especificado
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if paciente.ultima_consulta %}
+                                {{ paciente.ultima_consulta }}
+                            {% else %}
+                                Sin consultas
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}">Ver Detalles</a>
+                            <a href="{{ url_for('nueva_consulta', id=paciente.id_paciente) }}">Nueva Consulta</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No tienes pacientes registrados.</p>
+            {% endif %}
+        </div>
+
+        <!-- Proximas Citas -->
+        <div>
+            <h2>Proximas Citas</h2>
+            {% if proximas_citas %}
+                {% for cita in proximas_citas %}
+                <div>
+                    <div>{{ cita.fecha }} - {{ cita.hora }}</div>
+                    <div>Paciente: {{ cita.paciente.nombre_completo }}</div>
+                    <div>Motivo: {{ cita.motivo if cita.motivo else 'No especificado' }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <p>No hay citas proximas.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div>
+        <p>Routine4Life - Sistema de Gestion para Diabetes</p>
+    </div>
+
+</body>
+</html>
