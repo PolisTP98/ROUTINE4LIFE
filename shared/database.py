@@ -6,8 +6,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 
 # ----------------------------------------------------
@@ -17,32 +16,32 @@ from sqlalchemy.orm import sessionmaker
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path = env_path)
 
-# OBTENER CREDENCIALES
+# OBTENER CREDENCIALES (Sin usuario ni contraseña porque usamos Windows Authentication)
 DB_SERVER = os.getenv("DB_SERVER")
 DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_DRIVER = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
 
-if not all([DB_SERVER, DB_NAME, DB_USER, DB_PASSWORD]):
-    raise ValueError("FALTAN VARIABLES DE ENTORNO REQUERIDAS EN EL ARCHIVO .env")
+# VALIDAR QUE EXISTAN LAS VARIABLES MÍNIMAS
+if not all([DB_SERVER, DB_NAME]):
+    raise ValueError("FALTAN VARIABLES DE ENTORNO REQUERIDAS EN EL ARCHIVO .env (DB_SERVER o DB_NAME)")
 
 
 # -----------------------------------------------------
 # | CONFIGURACIÓN PARA LOS MODELOS ORM CON SQLAlchemy |
 # -----------------------------------------------------
 
-# CONSTRUIR EL URL DE LA CONEXIÓN PARA SQLAlchemy + pyodbc
+# CONSTRUIR EL URL DE LA CONEXIÓN PARA SQLAlchemy + pyodbc (Con Conexión de Confianza)
 DATABASE_URL = (
-    f"mssql+pyodbc://{DB_USER}:{DB_PASSWORD}@{DB_SERVER}/{DB_NAME}"
+    f"mssql+pyodbc://{DB_SERVER}/{DB_NAME}"
     f"?driver={DB_DRIVER.replace(' ', '+')}"
+    f"&Trusted_Connection=yes"
 )
 
 # CREAR EL MOTOR (engine)
 engine = create_engine(
     DATABASE_URL, 
     echo = False, # NO VER LAS CONSULTAS SQL EN CONSOLA
-    pool_pre_ping = True, # VERIFICAR LA CONEXIÓN ANTES DE USARLA (PARA EVITAR ERRORES POR CONEXIONES CAÍDAS)
+    pool_pre_ping = True, # VERIFICAR LA CONEXIÓN ANTES DE USARLA
 )
 
 # CREAR LA CLASE BASE PARA LOS MODELOS ORM DE SQLAlchemy
