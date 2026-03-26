@@ -2,15 +2,18 @@
 from pydantic import BaseModel
 from datetime import date
 
-class PacienteCreate(BaseModel):
+class RegistroAppCreate(BaseModel):
+    id_paciente: int  
     id_sexo: int
+    id_pais: int
     id_estatus_usuario: int
-    codigo: str
     nombre_completo: str
     fecha_nacimiento: date
+    email: str
+    telefono: str
 
-class PacienteResponse(PacienteCreate):
-    id_paciente: int
+class RegistroAppResponse(RegistroAppCreate):
+    fecha_registro: date
 
     class Config:
         from_attributes = True

@@ -324,11 +324,15 @@ class horarios_medicos(Base):
 # r4l.pacientes
 class pacientes(Base):
     __tablename__ = "pacientes"
+    
     __table_args__ = (
         Index("ix_pacientes_id_sexo", "id_sexo"), 
         Index("ix_pacientes_id_estatus_usuario", "id_estatus_usuario"), 
         Index("ix_pacientes_id_tipo_diabetes", "id_tipo_diabetes"), 
-        {"schema": "r4l"}
+        {
+            "schema": "r4l",
+            "implicit_returning": False
+        }
     )
 
     id_paciente = Column(Integer, primary_key = True, autoincrement = True, comment = "IDENTIFICADOR ÚNICO DEL PACIENTE")
@@ -357,7 +361,7 @@ class pacientes(Base):
     registros = relationship("registros_paciente", back_populates = "paciente", cascade = "all, delete-orphan")
     # RELACIÓN: pacientes -> usuarios (1:1, OPCIONAL)
     usuario = relationship("usuarios", back_populates = "paciente", uselist = False)
-
+    
 # r4l.citas_medicas
 class citas_medicas(Base):
     __tablename__ = "citas_medicas"
