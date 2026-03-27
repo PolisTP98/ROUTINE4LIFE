@@ -1,4 +1,3 @@
-# app.py
 import sys
 import os
 
@@ -12,7 +11,7 @@ from shared.models import (
     medicos, datos_personales_medico, pacientes, consultas_medicas,
     recetas_medicas, sintomas_consulta, registros_paciente, tipos_registros,
     usuarios, roles_usuarios, estatus_usuarios, especialidades_medicas,
-    sexos, tipos_diabetes, sintomas_diabetes, citas_medicas
+    sexos, tipos_diabetes, sintomas_diabetes, citas_medicas, paises
 )
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session
@@ -103,7 +102,7 @@ def registro():
         
         try:
             if db.query(medicos).filter(medicos.email == request.form.get('email')).first():
-                flash('El email ya está registrado.', 'danger')
+                flash('El email ya esta registrado.', 'danger')
                 db.close()
                 return redirect(url_for('registro'))
             
@@ -111,18 +110,27 @@ def registro():
             confirmar = request.form.get('confirmar_contrasena')
             
             if contrasena != confirmar:
-                flash('Las contraseñas no coinciden.', 'danger')
+                flash('Las contrasenas no coinciden.', 'danger')
                 db.close()
                 return redirect(url_for('registro'))
             
-            rol_seleccionado = int(request.form.get('id_rol', 2))
+            rol_seleccionado = int(request.form.get('id_rol'))
             
-            # Obtener el telefono completo con codigo de pais
             codigo_pais = request.form.get('codigo_pais')
             telefono = request.form.get('telefono')
             telefono_completo = codigo_pais + telefono if codigo_pais else telefono
             
-            # 1. Crear datos personales con id_pais
+            # Generar código único
+            ultimo_medico = db.query(medicos).order_by(medicos.id_medico.desc()).first()
+            if ultimo_medico:
+                try:
+                    num = int(ultimo_medico.codigo.split('-')[-1]) + 1
+                except:
+                    num = db.query(medicos).count() + 1
+            else:
+                num = 1
+            codigo_generado = f"MED-{num:04d}"  # Ejemplo: MED-0001, MED-0002
+            
             datos_personales = datos_personales_medico(
                 id_sexo=int(request.form.get('id_sexo')),
                 id_pais=int(request.form.get('id_pais')),
@@ -134,13 +142,12 @@ def registro():
             db.add(datos_personales)
             db.flush()
             
-            # 2. Crear personal según rol
             nuevo_personal = medicos(
                 id_medico=datos_personales.id_medico,
                 id_rol=rol_seleccionado,
                 id_especialidad=int(request.form.get('id_especialidad')) if rol_seleccionado == 2 else None,
                 id_estatus_usuario=1,
-                codigo=request.form.get('codigo'),
+                codigo=codigo_generado,
                 cedula_profesional=request.form.get('cedula_profesional') if rol_seleccionado == 2 else None,
                 email=request.form.get('email'),
                 rfc=request.form.get('rfc')
@@ -148,7 +155,6 @@ def registro():
             db.add(nuevo_personal)
             db.flush()
             
-            # 3. Crear usuario para login
             hashed_password = generate_password_hash(contrasena)
             nuevo_usuario = usuarios(
                 id_rol=rol_seleccionado,
@@ -181,15 +187,15 @@ def registro():
     db = Session(bind=engine)
     especialidades = db.query(especialidades_medicas).all()
     sexos_list = db.query(sexos).all()
-    roles = db.query(roles_usuarios).filter(roles_usuarios.id_rol.in_([2, 4, 5])).all()
-    paises = db.query(paises).order_by(paises.nombre).all()
+    paises_list = db.query(paises).order_by(paises.nombre).all()
+    roles_list = db.query(roles_usuarios).filter(roles_usuarios.id_rol.in_([2, 4, 5])).all()
     db.close()
     
     return render_template("registro.html", 
                          especialidades=especialidades,
                          sexos=sexos_list,
-                         roles=roles,
-                         paises=paises)
+                         paises=paises_list,
+                         roles=roles_list)
 
 
 @app.route("/recuperar_contrasena", methods=['GET', 'POST'])
@@ -239,39 +245,42 @@ def admin_dashboard():
     
     db = Session(bind=engine)
     
-    # Obtener medicos con sus relaciones cargadas
-    medicos_list = db.query(medicos).filter(medicos.id_rol == 2).all()
+    # Obtener medicos con relaciones cargadas (objetos completos)
+    medicos_list = db.query(medicos).options(
+        joinedload(medicos.datos_personales),
+        joinedload(medicos.especialidad)
+    ).filter(medicos.id_rol == 2).all()
     
-    # Obtener enfermeros
-    enfermeros_list = db.query(medicos).filter(medicos.id_rol == 4).all()
+    # Obtener pacientes con relaciones cargadas
+    pacientes_list = db.query(pacientes).options(
+        joinedload(pacientes.tipo_diabetes),
+        joinedload(pacientes.sexo)
+    ).filter(
+        pacientes.id_medico == current_user.id
+    ).all()
     
-    # Obtener recepcionistas
-    recepcionistas_list = db.query(medicos).filter(medicos.id_rol == 5).all()
+    # Obtener citas
+    proximas_citas = db.query(citas_medicas).options(
+        joinedload(citas_medicas.paciente),
+        joinedload(citas_medicas.medico),
+        joinedload(citas_medicas.estatus)
+    ).filter(
+        citas_medicas.fecha >= date.today()
+    ).order_by(citas_medicas.fecha).limit(10).all()
     
+    total_pacientes_admin = len(pacientes_list)
     total_pacientes = db.query(pacientes).count()
-    
-    # Cargar explícitamente los datos personales para evitar errores de sesión
-    for m in medicos_list:
-        # Esto fuerza la carga de la relación
-        _ = m.datos_personales
-        _ = m.especialidad
-    
-    for e in enfermeros_list:
-        _ = e.datos_personales
-    
-    for r in recepcionistas_list:
-        _ = r.datos_personales
     
     db.close()
     
     return render_template("dashboard.html",
                          medicos=medicos_list,
-                         enfermeros=enfermeros_list,
-                         recepcionistas=recepcionistas_list,
+                         pacientes=pacientes_list,
+                         proximas_citas=proximas_citas,
                          total_medicos=len(medicos_list),
-                         total_enfermeros=len(enfermeros_list),
-                         total_recepcionistas=len(recepcionistas_list),
-                         total_pacientes=total_pacientes)
+                         total_pacientes_admin=total_pacientes_admin,
+                         total_pacientes=total_pacientes,
+                         now_date=date.today())
     
 # ==================== ADMIN - GESTION DE MEDICOS ====================
 
@@ -624,30 +633,60 @@ def medico_dashboard():
     
     db = Session(bind=engine)
     
-    # Obtener pacientes atendidos por este medico
-    pacientes_ids = db.query(consultas_medicas.id_paciente).filter(
-        consultas_medicas.id_medico == current_user.id
-    ).distinct().all()
+    # Obtener pacientes con sus relaciones cargadas
+    pacientes_list = db.query(pacientes).options(
+        joinedload(pacientes.tipo_diabetes),
+        joinedload(pacientes.sexo)
+    ).filter(
+        pacientes.id_medico == current_user.id
+    ).all()
     
-    ids_lista = [p[0] for p in pacientes_ids]
+    # Procesar cada paciente para extraer los datos necesarios
+    pacientes_data = []
+    for paciente in pacientes_list:
+        # Obtener última consulta
+        ultima = db.query(consultas_medicas).filter(
+            consultas_medicas.id_paciente == paciente.id_paciente
+        ).order_by(consultas_medicas.fecha.desc()).first()
+        
+        # Extraer valores a variables simples
+        paciente_data = {
+            'id': paciente.id_paciente,
+            'nombre_completo': paciente.nombre_completo,
+            'fecha_nacimiento': paciente.fecha_nacimiento,
+            'codigo': paciente.codigo,
+            'tipo_diabetes_nombre': paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None,
+            'sexo_nombre': paciente.sexo.nombre if paciente.sexo else None,
+            'ultima_consulta': ultima.fecha if ultima else None
+        }
+        pacientes_data.append(paciente_data)
     
-    if ids_lista:
-        pacientes_list = db.query(pacientes).filter(pacientes.id_paciente.in_(ids_lista)).all()
-    else:
-        pacientes_list = []
-    
-    # Obtener proximas citas
-    proximas_citas = db.query(citas_medicas).filter(
+    # Obtener próximas citas con relaciones
+    proximas_citas = db.query(citas_medicas).options(
+        joinedload(citas_medicas.paciente),
+        joinedload(citas_medicas.medico)
+    ).filter(
         citas_medicas.id_medico == current_user.id,
         citas_medicas.fecha >= date.today()
     ).order_by(citas_medicas.fecha).limit(5).all()
     
+    # Extraer datos de citas a variables simples
+    citas_data = []
+    for cita in proximas_citas:
+        cita_data = {
+            'fecha': cita.fecha,
+            'hora': cita.hora,
+            'paciente_nombre': cita.paciente.nombre_completo if cita.paciente else 'No especificado',
+            'motivo': cita.motivo
+        }
+        citas_data.append(cita_data)
+    
     db.close()
     
     return render_template("dashboard_medicos.html",
-                         pacientes=pacientes_list,
-                         total_pacientes=len(pacientes_list),
-                         proximas_citas=proximas_citas,
+                         pacientes=pacientes_data,
+                         total_pacientes=len(pacientes_data),
+                         proximas_citas=citas_data,
                          now_date=date.today())
 
 # ==================== DASHBOARD ENFERMERO ====================
@@ -705,11 +744,23 @@ def nuevo_paciente():
         try:
             fecha_nac = datetime.strptime(request.form.get('fecha_nacimiento'), '%Y-%m-%d').date()
             
+            # Generar codigo automatico
+            ultimo_paciente = db.query(pacientes).order_by(pacientes.id_paciente.desc()).first()
+            if ultimo_paciente:
+                try:
+                    num = int(ultimo_paciente.codigo.split('-')[-1]) + 1
+                except:
+                    num = db.query(pacientes).count() + 1
+            else:
+                num = 1
+            codigo_generado = f"PAC-{num:04d}"
+            
             nuevo_paciente = pacientes(
+                id_medico=current_user.id,
                 id_sexo=int(request.form.get('id_sexo')),
                 id_estatus_usuario=1,
                 id_tipo_diabetes=int(request.form.get('id_tipo_diabetes')) if request.form.get('id_tipo_diabetes') else None,
-                codigo=request.form.get('codigo'),
+                codigo=codigo_generado,
                 nombre_completo=request.form.get('nombre_completo'),
                 fecha_nacimiento=fecha_nac,
                 fecha_hora_registro=datetime.now()
@@ -717,16 +768,19 @@ def nuevo_paciente():
             db.add(nuevo_paciente)
             db.commit()
             
+            paciente_id = nuevo_paciente.id_paciente
+            
             flash('Paciente registrado exitosamente.', 'success')
             db.close()
-            return redirect(url_for('detalle_paciente', id=nuevo_paciente.id_paciente))
+            return redirect(url_for('detalle_paciente', id=paciente_id))
             
         except Exception as e:
             db.rollback()
             flash(f'Error al registrar paciente: {str(e)}', 'danger')
             db.close()
+            return redirect(url_for('medico_dashboard'))
     
-    # GET: cargar catálogos
+    # GET: cargar catalogos
     db = Session(bind=engine)
     sexos_list = db.query(sexos).all()
     tipos_diabetes_list = db.query(tipos_diabetes).all()
@@ -741,31 +795,36 @@ def nuevo_paciente():
 def detalle_paciente(id):
     db = Session(bind=engine)
     
-    # Verificar que el médico ha atendido o tiene cita con este paciente
-    consulta = db.query(consultas_medicas).filter(
-        consultas_medicas.id_paciente == id,
-        consultas_medicas.id_medico == current_user.id
+    paciente = db.query(pacientes).options(
+        joinedload(pacientes.tipo_diabetes),
+        joinedload(pacientes.sexo),
+        joinedload(pacientes.aplicacion)  # Cargar datos de la app
+    ).filter(
+        pacientes.id_paciente == id,
+        pacientes.id_medico == current_user.id
     ).first()
     
-    cita = db.query(citas_medicas).filter(
-        citas_medicas.id_paciente == id,
-        citas_medicas.id_medico == current_user.id
-    ).first()
+    if not paciente:
+        flash('Paciente no encontrado o no tienes acceso.', 'danger')
+        db.close()
+        if current_user.id_rol == 1:
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return redirect(url_for('medico_dashboard'))
     
-    if not consulta and not cita:
-        flash('No tienes acceso a este paciente.', 'danger')
-        return redirect(url_for('dashboard'))
+    aplicacion = paciente.aplicacion
     
-    paciente = db.query(pacientes).filter(pacientes.id_paciente == id).first()
-    
-    # Obtener consultas del paciente
     consultas = db.query(consultas_medicas).filter(
         consultas_medicas.id_paciente == id
     ).order_by(consultas_medicas.fecha.desc()).all()
     
+    db.close()
+    
     return render_template("detalle_paciente.html",
                          paciente=paciente,
-                         consultas=consultas)
+                         aplicacion=aplicacion,
+                         consultas=consultas,
+                         now_date=date.today())
 
 # ==================== CONSULTAS MÉDICAS ====================
 
@@ -773,13 +832,14 @@ def detalle_paciente(id):
 @login_required
 def nueva_consulta(id):
     db = Session(bind=engine)
+    
     paciente = db.query(pacientes).filter(
         pacientes.id_paciente == id,
         pacientes.id_medico == current_user.id
     ).first()
     
     if not paciente:
-        flash('Paciente no encontrado.', 'danger')
+        flash('Paciente no encontrado o no tienes acceso.', 'danger')
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
@@ -802,7 +862,6 @@ def nueva_consulta(id):
             )
             db.add(nueva_consulta)
             db.commit()
-            
             flash('Consulta registrada exitosamente.', 'success')
             return redirect(url_for('historial_consulta', id=id))
             
@@ -820,23 +879,32 @@ def nueva_consulta(id):
 def historial_consulta(id):
     db = Session(bind=engine)
     
-    # Verificar acceso
-    consulta_check = db.query(consultas_medicas).filter(
-        consultas_medicas.id_paciente == id,
-        consultas_medicas.id_medico == current_user.id
+    paciente = db.query(pacientes).options(
+        joinedload(pacientes.tipo_diabetes),
+        joinedload(pacientes.sexo)
+    ).filter(
+        pacientes.id_paciente == id,
+        pacientes.id_medico == current_user.id
     ).first()
     
-    if not consulta_check:
+    if not paciente:
         flash('No tienes acceso a este paciente.', 'danger')
+        db.close()
         return redirect(url_for('dashboard'))
     
-    paciente = db.query(pacientes).filter(pacientes.id_paciente == id).first()
+    tipo_diabetes_nombre = paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None
+    sexo_nombre = paciente.sexo.nombre if paciente.sexo else None
+    
     consultas = db.query(consultas_medicas).filter(
         consultas_medicas.id_paciente == id
     ).order_by(consultas_medicas.fecha.desc()).all()
     
+    db.close()
+    
     return render_template("historial_consulta.html",
                          paciente=paciente,
+                         tipo_diabetes_nombre=tipo_diabetes_nombre,
+                         sexo_nombre=sexo_nombre,
                          consultas=consultas)
 # ==================== REGISTROS CLÍNICOS ====================
 
@@ -844,22 +912,32 @@ def historial_consulta(id):
 @login_required
 def datos_clinicos(id):
     db = Session(bind=engine)
-    paciente = db.query(pacientes).filter(
-        pacientes.id_paciente == id,
-        pacientes.id_medico == current_user.id
-    ).first()
+    
+    # Buscar paciente sin filtrar por id_medico
+    paciente = db.query(pacientes).filter(pacientes.id_paciente == id).first()
     
     if not paciente:
         flash('Paciente no encontrado.', 'danger')
+        db.close()
+        return redirect(url_for('dashboard'))
+    
+    # Verificar acceso
+    consulta_previa = db.query(consultas_medicas).filter(
+        consultas_medicas.id_paciente == id,
+        consultas_medicas.id_medico == current_user.id
+    ).first()
+    
+    if not consulta_previa:
+        flash('No tienes acceso a este paciente.', 'danger')
+        db.close()
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
         try:
-            # Registrar glucosa
             if request.form.get('glucosa_ayunas'):
                 registro = registros_paciente(
                     id_paciente=id,
-                    id_tipo_registro=1,  # Glucosa
+                    id_tipo_registro=1,
                     fecha=date.today(),
                     hora=datetime.now().time(),
                     valor=float(request.form.get('glucosa_ayunas')),
@@ -870,7 +948,7 @@ def datos_clinicos(id):
             if request.form.get('glucosa_postprandial'):
                 registro = registros_paciente(
                     id_paciente=id,
-                    id_tipo_registro=1,  # Glucosa
+                    id_tipo_registro=1,
                     fecha=date.today(),
                     hora=datetime.now().time(),
                     valor=float(request.form.get('glucosa_postprandial')),
@@ -879,7 +957,7 @@ def datos_clinicos(id):
                 db.add(registro)
             
             db.commit()
-            flash('Datos clínicos registrados exitosamente.', 'success')
+            flash('Datos clinicos registrados exitosamente.', 'success')
             
         except Exception as e:
             db.rollback()
@@ -888,6 +966,8 @@ def datos_clinicos(id):
     historial = db.query(registros_paciente).filter(
         registros_paciente.id_paciente == id
     ).order_by(registros_paciente.fecha.desc()).all()
+    
+    db.close()
     
     return render_template("datos_clinicos.html",
                          paciente=paciente,
@@ -899,43 +979,63 @@ def datos_clinicos(id):
 @login_required
 def tratamiento(id):
     db = Session(bind=engine)
-    paciente = db.query(pacientes).filter(
-        pacientes.id_paciente == id,
-        pacientes.id_medico == current_user.id
-    ).first()
+    
+    paciente = db.query(pacientes).filter(pacientes.id_paciente == id).first()
     
     if not paciente:
         flash('Paciente no encontrado.', 'danger')
+        db.close()
         return redirect(url_for('dashboard'))
     
-    # Obtener tratamientos de las consultas
+    # Verificar acceso
+    consulta_previa = db.query(consultas_medicas).filter(
+        consultas_medicas.id_paciente == id,
+        consultas_medicas.id_medico == current_user.id
+    ).first()
+    
+    if not consulta_previa:
+        flash('No tienes acceso a este paciente.', 'danger')
+        db.close()
+        return redirect(url_for('dashboard'))
+    
     consultas_tratamientos = db.query(consultas_medicas).filter(
         consultas_medicas.id_paciente == id,
         consultas_medicas.plan_tratamiento.isnot(None)
     ).order_by(consultas_medicas.fecha.desc()).all()
     
+    db.close()
+    
     return render_template("tratamiento_paciente.html",
                          paciente=paciente,
                          tratamientos=consultas_tratamientos)
-
-# ==================== SÍNTOMAS ====================
+    
+#======SINTOMAS========
 
 @app.route("/paciente/<int:id>/sintomas", methods=['GET', 'POST'])
 @login_required
 def sintomas(id):
     db = Session(bind=engine)
-    paciente = db.query(pacientes).filter(
-        pacientes.id_paciente == id,
-        pacientes.id_medico == current_user.id
-    ).first()
+    
+    paciente = db.query(pacientes).filter(pacientes.id_paciente == id).first()
     
     if not paciente:
         flash('Paciente no encontrado.', 'danger')
+        db.close()
+        return redirect(url_for('dashboard'))
+    
+    # Verificar acceso
+    consulta_previa = db.query(consultas_medicas).filter(
+        consultas_medicas.id_paciente == id,
+        consultas_medicas.id_medico == current_user.id
+    ).first()
+    
+    if not consulta_previa:
+        flash('No tienes acceso a este paciente.', 'danger')
+        db.close()
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
         try:
-            # Obtener o crear consulta del día
             consulta = db.query(consultas_medicas).filter(
                 consultas_medicas.id_paciente == id,
                 consultas_medicas.fecha == date.today()
@@ -951,7 +1051,6 @@ def sintomas(id):
                 db.add(consulta)
                 db.flush()
             
-            # Registrar síntomas
             sintomas_ids = request.form.getlist('sintomas')
             for sintoma_id in sintomas_ids:
                 sintoma_consulta = sintomas_consulta(
@@ -963,16 +1062,86 @@ def sintomas(id):
                 db.add(sintoma_consulta)
             
             db.commit()
-            flash('Síntomas registrados exitosamente.', 'success')
+            flash('Sintomas registrados exitosamente.', 'success')
             
         except Exception as e:
             db.rollback()
-            flash(f'Error al registrar síntomas: {str(e)}', 'danger')
+            flash(f'Error al registrar sintomas: {str(e)}', 'danger')
     
     sintomas_catalogo = db.query(sintomas_diabetes).all()
+    db.close()
+    
     return render_template("sintomas_detalle.html",
                          paciente=paciente,
                          sintomas_catalogo=sintomas_catalogo)
 
+
+#========== CITAS ==========
+@app.route("/cita/nueva", methods=['GET', 'POST'])
+@login_required
+def nueva_cita():
+    # Administrador (id_rol=1) y Medico (id_rol=2) pueden agendar citas
+    if current_user.id_rol not in [1, 2]:
+        flash('No tienes permisos para agendar citas.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    db = Session(bind=engine)
+    
+    if request.method == 'POST':
+        try:
+            # Si es administrador, puede seleccionar cualquier medico
+            # Si es medico, se asigna automaticamente
+            if current_user.id_rol == 1:
+                id_medico = int(request.form.get('id_medico'))
+            else:
+                id_medico = current_user.id
+            
+            nueva_cita = citas_medicas(
+                id_rol=current_user.id_rol,
+                id_medico=id_medico,
+                id_paciente=int(request.form.get('id_paciente')),
+                id_estatus_cita=1,  # 1 = Pendiente
+                fecha=datetime.strptime(request.form.get('fecha'), '%Y-%m-%d').date(),
+                hora=datetime.strptime(request.form.get('hora'), '%H:%M').time(),
+                motivo=request.form.get('motivo'),
+                notas=request.form.get('notas'),
+                fecha_hora_solicitud=datetime.now()
+            )
+            db.add(nueva_cita)
+            db.commit()
+            flash('Cita agendada exitosamente.', 'success')
+            db.close()
+            return redirect(url_for('dashboard'))
+            
+        except Exception as e:
+            db.rollback()
+            flash(f'Error al agendar cita: {str(e)}', 'danger')
+            db.close()
+    
+    # GET: cargar medicos y pacientes segun el rol
+    if current_user.id_rol == 1:  # Administrador
+        medicos_list = db.query(medicos).options(
+            joinedload(medicos.datos_personales)
+        ).filter(
+            medicos.id_rol == 2,
+            medicos.id_estatus_usuario == 1
+        ).all()
+        pacientes_list = db.query(pacientes).filter(
+            pacientes.id_medico == current_user.id
+        ).all()
+    elif current_user.id_rol == 2:  # Medico
+        medicos_list = [current_user]
+        pacientes_list = db.query(pacientes).filter(
+            pacientes.id_medico == current_user.id
+        ).all()
+    else:
+        medicos_list = []
+        pacientes_list = []
+    
+    db.close()
+    
+    return render_template("nueva_cita.html", 
+                         medicos=medicos_list, 
+                         pacientes=pacientes_list)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -29,16 +29,20 @@
 
         <form method="POST" action="{{ url_for('registro') }}">
 
-            <table>
-                <!-- Selector de Rol -->
+             <table>
+                <!-- Selector de Rol - visible -->
                 <tr class="campo-rol">
                     <td>Rol:</td>
                     <td>
                         <select name="id_rol" required>
                             <option value="">Seleccione...</option>
-                            {% for rol in roles %}
-                            <option value="{{ rol.id_rol }}">{{ rol.nombre }}</option>
-                            {% endfor %}
+                            {% if roles %}
+                                {% for rol in roles %}
+                                <option value="{{ rol.id_rol }}">{{ rol.nombre }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="2">Medico</option>
+                            {% endif %}
                         </select>
                     </td>
                 </tr>
@@ -96,7 +100,6 @@
                     <td><input type="date" name="fecha_nacimiento" required></td>
                 </tr>
 
-                <!-- Telefono con codigo de pais -->
                 <tr>
                     <td>Telefono:</td>
                     <td>
@@ -108,37 +111,32 @@
                             <option value="+56">+56 (Chile)</option>
                             <option value="+57">+57 (Colombia)</option>
                             <option value="+51">+51 (Peru)</option>
-                            <option value="+58">+58 (Venezuela)</option>
                             <option value="+502">+502 (Guatemala)</option>
                             <option value="+503">+503 (El Salvador)</option>
                             <option value="+504">+504 (Honduras)</option>
                             <option value="+505">+505 (Nicaragua)</option>
                             <option value="+506">+506 (Costa Rica)</option>
                             <option value="+507">+507 (Panama)</option>
-                            <option value="+591">+591 (Bolivia)</option>
-                            <option value="+593">+593 (Ecuador)</option>
-                            <option value="+595">+595 (Paraguay)</option>
-                            <option value="+598">+598 (Uruguay)</option>
-                            <option value="+53">+53 (Cuba)</option>
-                            <option value="+809">+809 (Republica Dominicana)</option>
-                            <option value="+33">+33 (Francia)</option>
-                            <option value="+49">+49 (Alemania)</option>
-                            <option value="+44">+44 (Reino Unido)</option>
-                            <option value="+55">+55 (Brasil)</option>
                         </select>
                         <input type="text" name="telefono" placeholder="Ejemplo: 5512345678" style="width: 200px;" required>
                     </td>
                 </tr>
 
-                <!-- Pais de origen -->
                 <tr>
                     <td>Pais de origen:</td>
                     <td>
                         <select name="id_pais" required>
                             <option value="">Seleccione un pais...</option>
-                            {% for pais in paises %}
-                            <option value="{{ pais.id_pais }}">{{ pais.nombre }}</option>
-                            {% endfor %}
+                            {% if paises %}
+                                {% for pais in paises %}
+                                <option value="{{ pais.id_pais }}">{{ pais.nombre }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="1">Mexico</option>
+                                <option value="2">Estados Unidos</option>
+                                <option value="3">Canada</option>
+                                <option value="4">Espana</option>
+                            {% endif %}
                         </select>
                     </td>
                 </tr>
@@ -181,14 +179,18 @@
                     camposMedico.forEach(function(campo) {
                         campo.style.display = 'table-row';
                     });
-                    document.querySelector('input[name="cedula_profesional"]').required = true;
-                    document.querySelector('select[name="id_especialidad"]').required = true;
+                    var cedula = document.querySelector('input[name="cedula_profesional"]');
+                    var especialidad = document.querySelector('select[name="id_especialidad"]');
+                    if (cedula) cedula.required = true;
+                    if (especialidad) especialidad.required = true;
                 } else {
                     camposMedico.forEach(function(campo) {
                         campo.style.display = 'none';
                     });
-                    document.querySelector('input[name="cedula_profesional"]').required = false;
-                    document.querySelector('select[name="id_especialidad"]').required = false;
+                    var cedula = document.querySelector('input[name="cedula_profesional"]');
+                    var especialidad = document.querySelector('select[name="id_especialidad"]');
+                    if (cedula) cedula.required = false;
+                    if (especialidad) especialidad.required = false;
                 }
             });
         }

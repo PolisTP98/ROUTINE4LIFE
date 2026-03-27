@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registrar Paciente - Routine4Life</title>
+    <title>Agendar Cita - Routine4Life</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,9 +18,9 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         h1 {
+            text-align: center;
             color: #2c3e50;
             margin-bottom: 20px;
-            text-align: center;
         }
         label {
             display: block;
@@ -28,7 +28,7 @@
             font-weight: bold;
             color: #34495e;
         }
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 8px;
             margin-top: 5px;
@@ -67,16 +67,11 @@
             background: #f8d7da;
             color: #721c24;
         }
-        .help-text {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Registrar Nuevo Paciente</h1>
+        <h1>Agendar Nueva Cita</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -87,33 +82,41 @@
         {% endwith %}
 
         <form method="POST">
-            <label>Nombre completo:</label>
-            <input type="text" name="nombre_completo" placeholder="Ingrese nombre completo" required>
-
-            <label>Fecha de nacimiento:</label>
-            <input type="date" name="fecha_nacimiento" required>
-
-            <label>Sexo:</label>
-            <select name="id_sexo" required>
+            {% if current_user.id_rol == 1 %}
+            <label>Medico:</label>
+            <select name="id_medico" required>
                 <option value="">Seleccione...</option>
-                {% for sexo in sexos %}
-                <option value="{{ sexo.id_sexo }}">{{ sexo.nombre }}</option>
+                {% for medico in medicos %}
+                <option value="{{ medico.id_medico }}">{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}</option>
+                {% endfor %}
+            </select>
+            {% else %}
+            <input type="hidden" name="id_medico" value="{{ medicos[0].id_medico if medicos else '' }}">
+            {% endif %}
+
+            <label>Paciente:</label>
+            <select name="id_paciente" required>
+                <option value="">Seleccione...</option>
+                {% for paciente in pacientes %}
+                <option value="{{ paciente.id_paciente }}">{{ paciente.nombre_completo }}</option>
                 {% endfor %}
             </select>
 
-            <label>Tipo de diabetes:</label>
-            <select name="id_tipo_diabetes">
-                <option value="">Seleccione...</option>
-                {% for tipo in tipos_diabetes %}
-                <option value="{{ tipo.id_tipo_diabetes }}">{{ tipo.nombre }}</option>
-                {% endfor %}
-            </select>
+            <label>Fecha:</label>
+            <input type="date" name="fecha" required>
 
-            <div class="help-text">El codigo del paciente se generara automaticamente.</div>
+            <label>Hora:</label>
+            <input type="time" name="hora" required>
+
+            <label>Motivo:</label>
+            <textarea name="motivo" rows="3" placeholder="Motivo de la consulta..."></textarea>
+
+            <label>Notas adicionales:</label>
+            <textarea name="notas" rows="3" placeholder="Notas..."></textarea>
 
             <div>
-                <button type="submit" class="btn btn-guardar">Registrar Paciente</button>
-                <a href="{{ url_for('medico_dashboard') }}" class="btn btn-cancelar">Cancelar</a>
+                <button type="submit" class="btn btn-guardar">Agendar Cita</button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-cancelar">Cancelar</a>
             </div>
         </form>
     </div>

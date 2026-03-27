@@ -1,28 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrador - Routine4Life</title>
+    <title>Admin Dashboard - Routine4Life</title>
     <style>
-        /* Estilos básicos - el diseñador puede reemplazar esto después */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: Arial, sans-serif;
             background: #f5f5f5;
             padding: 20px;
         }
-
         .container {
             max-width: 1200px;
             margin: 0 auto;
         }
-
         .header {
             background: #2c3e50;
             color: white;
@@ -33,19 +23,16 @@
             justify-content: space-between;
             align-items: center;
         }
-
         .header h1 {
+            margin: 0;
             font-size: 24px;
         }
-
         .user-info {
             text-align: right;
         }
-
         .user-name {
             font-weight: bold;
         }
-
         .logout-btn {
             background: #e74c3c;
             color: white;
@@ -54,228 +41,284 @@
             border-radius: 5px;
             margin-left: 15px;
         }
-
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }
-
         .stat-card {
             background: white;
             padding: 20px;
             border-radius: 5px;
             text-align: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-
         .stat-number {
             font-size: 32px;
             font-weight: bold;
             color: #2c3e50;
             margin-top: 10px;
         }
-
         .section {
             background: white;
             padding: 20px;
             border-radius: 5px;
             margin-bottom: 30px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-
         .section h2 {
             margin-bottom: 15px;
             color: #2c3e50;
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
         }
-
         .buttons {
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
             margin-top: 15px;
         }
-
         .btn {
             padding: 10px 20px;
             background: #3498db;
             color: white;
             text-decoration: none;
             border-radius: 5px;
-            border: none;
-            cursor: pointer;
         }
-
+        .btn-success {
+            background: #27ae60;
+        }
+        .btn-warning {
+            background: #f39c12;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
         .btn:hover {
-            background: #2980b9;
+            opacity: 0.9;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
         }
-
-        th,
-        td {
+        th, td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
-
         th {
             background: #f8f9fa;
         }
-
         .status-active {
             color: green;
             font-weight: bold;
         }
-
         .status-inactive {
             color: red;
         }
-
-        .action-link {
-            color: #3498db;
-            text-decoration: none;
-            margin-right: 10px;
-        }
-
         .footer {
             text-align: center;
             padding: 20px;
             color: #666;
             font-size: 12px;
         }
-
         .flash {
             padding: 10px;
             margin-bottom: 20px;
             border-radius: 5px;
         }
-
         .flash-success {
             background: #d4edda;
             color: #155724;
         }
-
         .flash-danger {
             background: #f8d7da;
             color: #721c24;
         }
-
         .flash-info {
             background: #d1ecf1;
             color: #0c5460;
         }
+        .grid-2cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .cita-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .cita-fecha {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .cita-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .cita-status.pendiente {
+            background: #fff3e0;
+            color: #ed6c02;
+        }
+        @media (max-width: 768px) {
+            .grid-2cols {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <!-- Mensajes Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="flash flash-{{ category }}">{{ message }}</div>
-        {% endfor %}
-        {% endif %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
         {% endwith %}
 
-        <!-- Header -->
         <div class="header">
-            <h1>🏥 Routine4Life</h1>
+            <h1>Routine4Life</h1>
             <div class="user-info">
-                <div class="user-name">👨‍💼 {{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
                 <small>Administrador</small>
-                <a href="{{ url_for('logout') }}" class="logout-btn">Cerrar Sesión</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Cerrar Sesion</a>
             </div>
         </div>
 
-        <!-- Tarjetas de estadísticas -->
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>👨‍⚕️ Médicos</h3>
+                <h3>Medicos</h3>
                 <div class="stat-number">{{ total_medicos }}</div>
             </div>
             <div class="stat-card">
-                <h3>💉 Enfermeros</h3>
-                <div class="stat-number">{{ total_enfermeros }}</div>
+                <h3>Mis Pacientes</h3>
+                <div class="stat-number">{{ total_pacientes_admin }}</div>
             </div>
             <div class="stat-card">
-                <h3>📞 Recepcionistas</h3>
-                <div class="stat-number">{{ total_recepcionistas }}</div>
-            </div>
-            <div class="stat-card">
-                <h3>👥 Pacientes</h3>
+                <h3>Total Pacientes</h3>
                 <div class="stat-number">{{ total_pacientes }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Proximas Citas</h3>
+                <div class="stat-number">{{ proximas_citas|length }}</div>
             </div>
         </div>
 
-        <!-- Panel de Acciones Rápidas -->
         <div class="section">
-            <h2>⚙️ Acciones Rápidas</h2>
+            <h2>Acciones</h2>
             <div class="buttons">
-                <a href="{{ url_for('registro') }}" class="btn">Registrar Nuevo Médico</a>
-                <a href="{{ url_for('gestionar_medicos') }}" class="btn">Gestionar Medicos</a>
-                <a href="{{ url_for('gestionar_enfermeros') }}" class="btn">Gestionar Enfermeros</a>
-                <a href="{{ url_for('gestionar_recepcionistas') }}" class="btn">Gestionar Recepcionistas</a>
+                <a href="{{ url_for('registro') }}" class="btn">Registrar Nuevo Medico</a>
+                <a href="{{ url_for('gestionar_medicos') }}" class="btn btn-secondary">Gestionar Medicos</a>
+                <a href="{{ url_for('nuevo_paciente') }}" class="btn btn-success">Registrar Nuevo Paciente</a>
                 <a href="{{ url_for('reportes_generales') }}" class="btn">Reportes Generales</a>
             </div>
         </div>
 
-        <!-- Lista de Médicos -->
+        <div class="grid-2cols">
+            <div class="section">
+                <h2>Lista de Medicos</h2>
+                {% if medicos %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Especialidad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for medico in medicos %}
+                        <tr>
+                            <td>{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}</td>
+                            <td>{{ medico.email }}</td>
+                            <td>{{ medico.especialidad.nombre if medico.especialidad else '-' }}</td>
+                            <td class="{% if medico.id_estatus_usuario == 1 %}status-active{% else %}status-inactive{% endif %}">
+                                {% if medico.id_estatus_usuario == 1 %}Activo{% else %}Inactivo{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No hay medicos registrados.</p>
+                {% endif %}
+            </div>
+
+            <div class="section">
+                <h2>Mis Pacientes</h2>
+                {% if pacientes %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Edad</th>
+                            <th>Tipo Diabetes</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paciente in pacientes %}
+                        <tr>
+                            <td>{{ paciente.nombre_completo }}</td>
+                            <td>{% if paciente.fecha_nacimiento %}{{ (now_date.year - paciente.fecha_nacimiento.year) }} años{% else %}-{% endif %}</td>
+                            <td>{{ paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else 'No especificado' }}</td>
+                            <td><a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}">Ver Detalles</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No tienes pacientes registrados.</p>
+                {% endif %}
+            </div>
+        </div>
+
         <div class="section">
-            <h2>👨‍⚕️ Lista de Médicos</h2>
-            {% if medicos %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Email</th>
-                        <th>Especialidad</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for medico in medicos %}
-                    <tr>
-                        <td>{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}
-                        </td>
-                        <td>{{ medico.email }}</td>
-                        <td>{{ medico.especialidad.nombre if medico.especialidad else 'No especificada' }}</td>
-                        <td
-                            class="{% if medico.id_estatus_usuario == 1 %}status-active{% else %}status-inactive{% endif %}">
-                            {% if medico.id_estatus_usuario == 1 %}Activo{% else %}Inactivo{% endif %}
-                        </td>
-                        <td>
-                            <a href="#" class="action-link">Editar</a>
-                            {% if medico.id_estatus_usuario == 1 %}
-                            <a href="#" class="action-link" style="color:#e74c3c;">Desactivar</a>
-                            {% else %}
-                            <a href="#" class="action-link" style="color:#27ae60;">Activar</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <h2>Proximas Citas</h2>
+            {% if proximas_citas %}
+                {% for cita in proximas_citas %}
+                <div class="cita-item">
+                    <div>
+                        <div class="cita-fecha">{{ cita.fecha }} - {{ cita.hora.strftime('%H:%M') if cita.hora else '-' }}</div>
+                        <div>Paciente: {{ cita.paciente.nombre_completo }}</div>
+                        <div>Medico: Dr. {{ cita.medico.datos_personales.nombre_completo if cita.medico.datos_personales else cita.medico.email }}</div>
+                        {% if cita.motivo %}
+                            <div style="font-size: 12px; color: #666;">Motivo: {{ cita.motivo[:60] }}</div>
+                        {% endif %}
+                    </div>
+                    <span class="cita-status {% if cita.id_estatus_cita == 1 %}pendiente{% endif %}">
+                        {% if cita.id_estatus_cita == 1 %}Pendiente{% else %}Programada{% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+                <div style="margin-top: 15px;">
+                    <a href="{{ url_for('nueva_cita') }}" class="btn" style="background:#f39c12;">+ Agendar Nueva Cita</a>
+                </div>
             {% else %}
-            <p>No hay médicos registrados.</p>
+            <p>No hay citas programadas.</p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('nueva_cita') }}" class="btn" style="background:#f39c12;">+ Agendar Primera Cita</a>
+            </div>
             {% endif %}
         </div>
 
-        <!-- Footer -->
         <div class="footer">
-            <p>Routine4Life - Sistema de Gestión para Diabetes</p>
-            <p>© 2026 - Todos los derechos reservados</p>
+            <p>Routine4Life - Sistema de Gestion para Diabetes</p>
         </div>
     </div>
 </body>
-
 </html>
