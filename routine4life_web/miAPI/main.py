@@ -28,8 +28,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(medicos_router, prefix="/v1")
-app.include_router(pacientes_router, prefix="/v1")
+app.include_router(medicos_router, prefix="/v1/medicos")
+app.include_router(pacientes_router, prefix="/v1/pacientes")
 
 @app.get("/")
 def root():
