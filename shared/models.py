@@ -366,12 +366,15 @@ class pacientes(Base):
 class citas_medicas(Base):
     __tablename__ = "citas_medicas"
     __table_args__ = (
-        Index("ix_citas_medicas_id_medico", "id_medico"), 
-        Index("ix_citas_medicas_id_paciente", "id_paciente"), 
-        Index("ix_citas_medicas_fecha", "fecha"), 
-        Index("ix_citas_medicas_id_estatus_cita", "id_estatus_cita"), 
-        {"schema": "r4l"}
-    )
+            Index("ix_citas_medicas_id_medico", "id_medico"), 
+            Index("ix_citas_medicas_id_paciente", "id_paciente"), 
+            Index("ix_citas_medicas_fecha", "fecha"), 
+            Index("ix_citas_medicas_id_estatus_cita", "id_estatus_cita"), 
+            {
+                "schema": "r4l",
+                "implicit_returning": False 
+            }
+        )
 
     id_cita = Column(Integer, primary_key = True, autoincrement = True, comment = "IDENTIFICADOR ÚNICO DE LA CITA")
     id_rol = Column(Integer, ForeignKey("r4l.roles_usuarios.id_rol"), nullable = False, comment = "IDENTIFICADOR DEL ROL (FK, QUIÉN SOLICITA)")
@@ -559,11 +562,14 @@ class pacientes_aplicacion(Base):
 class registros_paciente(Base):
     __tablename__ = "registros_paciente"
     __table_args__ = (
-        Index("ix_registros_paciente_id_paciente", "id_paciente"), 
-        Index("ix_registros_paciente_id_tipo_registro", "id_tipo_registro"), 
-        Index("ix_registros_paciente_fecha", "fecha"), 
-        {"schema": "r4l"}
-    )
+            Index("ix_registros_paciente_id_paciente", "id_paciente"), 
+            Index("ix_registros_paciente_id_tipo_registro", "id_tipo_registro"), 
+            Index("ix_registros_paciente_fecha", "fecha"), 
+            {
+                "schema": "r4l",
+                "implicit_returning": False 
+            }
+        )
 
     id_registro = Column(Integer, primary_key = True, autoincrement = True, comment = "IDENTIFICADOR ÚNICO DEL REGISTRO")
     id_paciente = Column(Integer, ForeignKey("r4l.pacientes.id_paciente"), nullable = False, comment = "IDENTIFICADOR DEL PACIENTE (FK)")
@@ -585,7 +591,10 @@ class usuarios(Base):
     __table_args__ = (
         Index("ix_usuarios_id_medico", "id_medico"), 
         Index("ix_usuarios_id_paciente", "id_paciente"), 
-        {"schema": "r4l"}
+        {
+            "schema": "r4l",
+            "implicit_returning": False # 
+        }
     )
 
     id_usuario = Column(Integer, primary_key = True, autoincrement = True, comment = "IDENTIFICADOR ÚNICO DEL USUARIO")

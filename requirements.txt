@@ -4,3 +4,4 @@ sqlalchemy
 pydantic
 pyodbc
 python-dotenv
+passlib[bcrypt]

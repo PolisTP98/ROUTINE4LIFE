@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from shared import models 
 from routine4life_mobile.backend.schemas import paciente as schemas
 from datetime import date, datetime
+import bcrypt
 
 def registrar_cuenta_movil(db: Session, registro: schemas.RegistroAppCreate):
     db_registro_app = models.pacientes_aplicacion(
@@ -61,3 +62,76 @@ def crear_cita_medica(db: Session, cita: schemas.CitaCreate):
     db.refresh(nueva_cita) 
     
     return nueva_cita
+
+def obtener_historial_consultas(db: Session, id_paciente: int):
+    return db.query(models.consultas_medicas)\
+             .filter(models.consultas_medicas.id_paciente == id_paciente)\
+             .order_by(models.consultas_medicas.fecha.desc())\
+             .all()
+             
+def obtener_sintomas_paciente(db: Session, id_paciente: int):
+    return db.query(models.sintomas_consulta)\
+             .join(models.consultas_medicas, models.consultas_medicas.id_consulta == models.sintomas_consulta.id_consulta)\
+             .filter(models.consultas_medicas.id_paciente == id_paciente)\
+             .all()
+             
+def obtener_recetas_paciente(db: Session, id_paciente: int):
+    # Puente: Recetas -> Consultas -> Paciente
+    return db.query(models.recetas_medicas)\
+             .join(models.consultas_medicas, models.consultas_medicas.id_consulta == models.recetas_medicas.id_consulta)\
+             .filter(models.consultas_medicas.id_paciente == id_paciente)\
+             .order_by(models.recetas_medicas.fecha.desc())\
+             .all()
+             
+def obtener_medicamentos_paciente(db: Session, id_paciente: int):
+    return db.query(models.medicamentos_recetados)\
+             .join(models.recetas_medicas, models.recetas_medicas.id_receta == models.medicamentos_recetados.id_receta)\
+             .join(models.consultas_medicas, models.consultas_medicas.id_consulta == models.recetas_medicas.id_consulta)\
+             .filter(models.consultas_medicas.id_paciente == id_paciente)\
+             .all()
+             
+def obtener_rutinas_paciente(db: Session, id_paciente: int):
+    return db.query(models.rutinas_recetadas)\
+             .join(models.recetas_medicas, models.recetas_medicas.id_receta == models.rutinas_recetadas.id_receta)\
+             .join(models.consultas_medicas, models.consultas_medicas.id_consulta == models.recetas_medicas.id_consulta)\
+             .filter(models.consultas_medicas.id_paciente == id_paciente)\
+             .all()
+             
+def crear_registro_paciente(db: Session, registro: schemas.RegistroPacienteCreate):
+    nuevo_registro = models.registros_paciente(
+        id_paciente=registro.id_paciente,
+        id_tipo_registro=registro.id_tipo_registro,
+        fecha=registro.fecha,
+        hora=registro.hora,
+        valor=registro.valor,
+        unidad_alternativa=registro.unidad_alternativa,
+        notas=registro.notas
+    )
+    
+    db.add(nuevo_registro)
+    db.commit()
+    db.refresh(nuevo_registro) # SQL Server nos devuelve el id_registro generado
+    
+    return nuevo_registro
+
+def obtener_hash_contrasena(contrasena: str):
+    contrasena_bytes = contrasena.encode('utf-8')
+    
+    hash_bytes = bcrypt.hashpw(contrasena_bytes, bcrypt.gensalt())
+    
+    return hash_bytes.decode('utf-8')
+
+def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
+    nuevo_usuario = models.usuarios(
+        id_rol=usuario.id_rol,
+        id_medico=usuario.id_medico,
+        id_paciente=usuario.id_paciente,
+        contrasena=obtener_hash_contrasena(usuario.contrasena), # Encriptamos antes de guardar
+        fecha_registro=date.today() # Generamos la fecha del servidor
+    )
+    
+    db.add(nuevo_usuario)
+    db.commit()
+    db.refresh(nuevo_usuario)
+    
+    return nuevo_usuario

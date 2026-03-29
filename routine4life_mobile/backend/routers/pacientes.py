@@ -70,3 +70,98 @@ def agendar_cita(cita: schemas.CitaCreate, db: Session = Depends(get_db)):
             status_code=400, 
             detail=f"Error al agendar la cita. Verifica que los IDs existan. Detalle: {str(e)}"
         )
+        
+@router.get("/{id_paciente}/consultas", response_model=List[schemas.ConsultaMedicaResponse])
+def obtener_consultas_paciente(id_paciente: int, db: Session = Depends(get_db)):
+    consultas = crud.obtener_historial_consultas(db=db, id_paciente=id_paciente)
+    
+    if not consultas:
+        raise HTTPException(
+            status_code=404, 
+            detail="No se encontraron consultas médicas en el historial de este paciente."
+        )
+        
+    return consultas
+
+@router.get("/{id_paciente}/sintomas", response_model=List[schemas.SintomaConsultaResponse])
+def obtener_sintomas_diagnosticados(id_paciente: int, db: Session = Depends(get_db)):
+    sintomas = crud.obtener_sintomas_paciente(db=db, id_paciente=id_paciente)
+    
+    if not sintomas:
+        raise HTTPException(
+            status_code=404, 
+            detail="No se encontraron síntomas registrados en las consultas de este paciente."
+        )
+        
+    return sintomas
+
+@router.get("/{id_paciente}/recetas", response_model=List[schemas.RecetaMedicaResponse])
+def obtener_recetas_emitidas(id_paciente: int, db: Session = Depends(get_db)):
+    recetas = crud.obtener_recetas_paciente(db=db, id_paciente=id_paciente)
+    
+    if not recetas:
+        raise HTTPException(
+            status_code=404, 
+            detail="No se encontraron recetas médicas en el historial de este paciente."
+        )
+        
+    return recetas
+
+@router.get("/{id_paciente}/medicamentos", response_model=List[schemas.MedicamentoRecetadoResponse])
+def obtener_medicamentos_recetados(id_paciente: int, db: Session = Depends(get_db)):
+    medicamentos = crud.obtener_medicamentos_paciente(db=db, id_paciente=id_paciente)
+    
+    if not medicamentos:
+        raise HTTPException(
+            status_code=404, 
+            detail="No se encontraron medicamentos recetados en el historial de este paciente."
+        )
+        
+    return medicamentos
+
+@router.get("/{id_paciente}/rutinas", response_model=List[schemas.RutinaRecetadaResponse])
+def obtener_rutinas_recetadas(id_paciente: int, db: Session = Depends(get_db)):
+    rutinas = crud.obtener_rutinas_paciente(db=db, id_paciente=id_paciente)
+    
+    if not rutinas:
+        raise HTTPException(
+            status_code=404, 
+            detail="No se encontraron rutinas recetadas en el historial de este paciente."
+        )
+        
+    return rutinas
+
+@router.post("/registros", response_model=schemas.RegistroPacienteResponse)
+def guardar_registro_medico(registro: schemas.RegistroPacienteCreate, db: Session = Depends(get_db)):
+    try:
+        nuevo_registro = crud.crear_registro_paciente(db=db, registro=registro)
+        return nuevo_registro
+    except Exception as e:
+        db.rollback() # Protegemos la base de datos si algo sale mal
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Error al guardar el registro. Verifica que el paciente y el tipo de registro existan. Detalle: {str(e)}"
+        )
+        
+@router.post("/crear-cuenta", response_model=schemas.UsuarioResponse)
+def registrar_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
+    # 1. Validar que no manden todo vacío
+    if not usuario.id_paciente and not usuario.id_medico:
+        raise HTTPException(
+            status_code=400, 
+            detail="Debes proporcionar el id_paciente o el id_medico para vincular la cuenta."
+        )
+        
+    try:
+        nuevo_usuario = crud.crear_credenciales_usuario(db=db, usuario=usuario)
+        return nuevo_usuario
+        
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, 
+            detail="Error: Este paciente o médico ya tiene una cuenta registrada, o los IDs proporcionados no existen."
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
