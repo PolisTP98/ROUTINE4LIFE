@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Recepcionista - Routine4Life</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="editar-form">
+    <div class="container">
+        <h1>Editar Recepcionista</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <label>Nombre completo:</label>
+            <input type="text" name="nombre_completo" value="{{ recepcionista.datos_personales.nombre_completo if recepcionista.datos_personales else '' }}" required>
+
+            <label>Email:</label>
+            <input type="email" name="email" value="{{ recepcionista.email }}" required>
+
+            <label>RFC:</label>
+            <input type="text" name="rfc" value="{{ recepcionista.rfc }}" required>
+
+            <label>Código interno:</label>
+            <input type="text" name="codigo" value="{{ recepcionista.codigo }}" required>
+
+            <label>Fecha de nacimiento:</label>
+            <input type="date" name="fecha_nacimiento" value="{{ recepcionista.datos_personales.fecha_nacimiento if recepcionista.datos_personales else '' }}" required>
+
+            <label>Teléfono:</label>
+            <input type="text" name="telefono" value="{{ recepcionista.datos_personales.telefono if recepcionista.datos_personales else '' }}" required>
+
+            <label>Sexo:</label>
+            <select name="id_sexo" required>
+                <option value="">Seleccione...</option>
+                {% for sexo in sexos %}
+                <option value="{{ sexo.id_sexo }}" {% if recepcionista.datos_personales and recepcionista.datos_personales.id_sexo == sexo.id_sexo %}selected{% endif %}>
+                    {{ sexo.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <div>
+                <button type="submit" class="btn btn-guardar">Guardar cambios</button>
+                <a href="{{ url_for('gestionar_recepcionistas') }}" class="btn btn-cancelar">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

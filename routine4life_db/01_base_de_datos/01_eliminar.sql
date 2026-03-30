@@ -1,6 +1,9 @@
-go
-if exists(select 1 from sys.databases where name = 'routine4life')
-begin
-    drop database routine4life;
-end
-go
+USE master;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.databases WHERE name = 'routine4life')
+BEGIN
+    ALTER DATABASE routine4life SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE routine4life;
+END
+GO

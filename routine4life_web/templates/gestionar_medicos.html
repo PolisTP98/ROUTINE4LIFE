@@ -2,30 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestionar Medicos - Routine4Life</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
-        h1 { color: #2c3e50; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #f8f9fa; font-weight: bold; }
-        .btn { display: inline-block; padding: 8px 15px; text-decoration: none; border-radius: 5px; margin-right: 5px; }
-        .btn-volver { background: #6c757d; color: white; }
-        .btn-editar { background: #f39c12; color: white; }
-        .btn-desactivar { background: #e74c3c; color: white; }
-        .btn-activar { background: #27ae60; color: white; }
-        .status-active { color: #27ae60; font-weight: bold; }
-        .status-inactive { color: #e74c3c; font-weight: bold; }
-        .flash { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
-        .flash-success { background: #d4edda; color: #155724; }
-        .flash-danger { background: #f8d7da; color: #721c24; }
-        .flash-info { background: #d1ecf1; color: #0c5460; }
-    </style>
+    <title>Gestionar Médicos - Routine4Life</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body>
+<body class="gestionar">
     <div class="container">
-        <h1>Gestion de Medicos</h1>
+        <h1>Gestión de Médicos</h1>
         <a href="{{ url_for('admin_dashboard') }}" class="btn btn-volver">← Volver al Dashboard</a>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -39,14 +21,8 @@
         {% if medicos %}
         <table>
             <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Especialidad</th>
-                    <th>Telefono</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </thead>
+                <tr><th>Nombre</th><th>Email</th><th>Especialidad</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr>
+            </thead>
             <tbody>
                 {% for medico in medicos %}
                 <tr>
@@ -60,18 +36,16 @@
                     <td>
                         <a href="{{ url_for('editar_medico', id=medico.id_medico) }}" class="btn btn-editar">Editar</a>
                         {% if medico.id_estatus_usuario == 1 %}
-                            <a href="{{ url_for('desactivar_medico', id=medico.id_medico) }}" class="btn btn-desactivar" onclick="return confirm('¿Desactivar este medico?')">Desactivar</a>
+                            <a href="{{ url_for('desactivar_medico', id=medico.id_medico) }}" class="btn btn-desactivar" onclick="return confirm('¿Desactivar este médico?')">Desactivar</a>
                         {% else %}
-                            <a href="{{ url_for('activar_medico', id=medico.id_medico) }}" class="btn btn-activar" onclick="return confirm('¿Activar este medico?')">Activar</a>
+                            <a href="{{ url_for('activar_medico', id=medico.id_medico) }}" class="btn btn-activar" onclick="return confirm('¿Activar este médico?')">Activar</a>
                         {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        {% else %}
-        <p>No hay medicos registrados.</p>
-        {% endif %}
+        {% else %}<p>No hay médicos registrados.</p>{% endif %}
     </div>
 </body>
 </html>

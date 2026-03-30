@@ -1,4 +1,4 @@
-go
+
 
 -- ALMACENA LAS SUCURSALES HOSPITALARIAS CON SU CÓDIGO, NOMBRE Y URL DE LA UBICACIÓN
 if object_id('r4l.sucursales_hospitalarias', 'u') is null
@@ -46,7 +46,7 @@ begin
         constraint uq_nombre_diabetes unique(nombre)
     );
 end
-
+go
 -- ALMACENA LOS SÍNTOMAS COMÚNES DE LA DIABETES (ORINA RECURRENTE, SED EXCESIVA, ETC.)
 if object_id('r4l.sintomas_diabetes', 'u') is null
 begin

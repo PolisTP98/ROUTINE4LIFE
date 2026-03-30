@@ -3,107 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Dashboard Médico - Routine4Life</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header h1 {
-            margin: 0;
-        }
-        .logout-btn {
-            background: #e74c3c;
-            color: white;
-            padding: 8px 15px;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 5px;
-        }
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .section {
-            background: white;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 30px;
-        }
-        .section h2 {
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        .buttons {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        .btn {
-            padding: 10px 20px;
-            background: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background: #f8f9fa;
-        }
-        .action-link {
-            color: #3498db;
-            text-decoration: none;
-            margin-right: 10px;
-        }
-        .cita-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .flash {
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-        }
-        .flash-success { background: #d4edda; color: #155724; }
-        .flash-danger { background: #f8d7da; color: #721c24; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body>
+<body class="dashboard-medicos">
     <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -117,7 +19,7 @@
             <h1>Routine4Life</h1>
             <div>
                 <span>Dr. {{ current_user.nombre_completo or current_user.email }}</span>
-                <a href="{{ url_for('logout') }}" class="logout-btn">Cerrar Sesion</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Cerrar Sesión</a>
             </div>
         </div>
 
@@ -127,7 +29,7 @@
                 <div class="stat-number">{{ total_pacientes }}</div>
             </div>
             <div class="stat-card">
-                <h3>Proximas Citas</h3>
+                <h3>Próximas Citas</h3>
                 <div class="stat-number">{{ proximas_citas|length }}</div>
             </div>
         </div>
@@ -143,15 +45,10 @@
         <div class="section">
             <h2>Mis Pacientes</h2>
             {% if pacientes %}
-            表
+            <table>
                 <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Edad</th>
-                        <th>Tipo Diabetes</th>
-                        <th>Ultima Consulta</th>
-                        <th>Acciones</th>
-                    </thead>
+                    <tr><th>Nombre</th><th>Edad</th><th>Tipo Diabetes</th><th>Última Consulta</th><th>Acciones</th></tr>
+                </thead>
                 <tbody>
                     {% for paciente in pacientes %}
                     <tr>
@@ -173,7 +70,7 @@
         </div>
 
         <div class="section">
-            <h2>Proximas Citas</h2>
+            <h2>Próximas Citas</h2>
             {% if proximas_citas %}
                 {% for cita in proximas_citas %}
                 <div class="cita-item">
@@ -183,7 +80,7 @@
                 </div>
                 {% endfor %}
             {% else %}
-            <p>No hay citas proximas.</p>
+            <p>No hay citas próximas.</p>
             {% endif %}
         </div>
     </div>
