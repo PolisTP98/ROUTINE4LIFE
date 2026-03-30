@@ -151,8 +151,8 @@ class UsuarioCreate(BaseModel):
     id_rol: int
     id_paciente: Optional[int] = None
     id_medico: Optional[int] = None
-    contrasena: str # La recibimos cruda desde la app, la encriptaremos en el CRUD
-
+    contrasena: str
+    
 class UsuarioResponse(BaseModel):
     id_usuario: int
     id_rol: int
