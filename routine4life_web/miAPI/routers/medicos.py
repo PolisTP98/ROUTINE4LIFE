@@ -46,6 +46,8 @@ def listar_medicos(
             especialidad=m.especialidad.nombre,
             activo=(m.id_estatus_usuario == 1)
         ))
+    
+    # Mensaje de confirmación en los headers
     return result
 
 @router.get("/{medico_id}", response_model=MedicoResponse)
@@ -73,21 +75,23 @@ def obtener_medico(
         activo=(medico.id_estatus_usuario == 1)
     )
 
-@router.post("/", response_model=MedicoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
 def crear_medico(
     data: MedicoCreate,
     admin: medicos = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
+    # Validaciones
     if db.query(medicos).filter(medicos.email == data.email).first():
-        raise HTTPException(status_code=400, detail="Email ya registrado")
+        raise HTTPException(status_code=400, detail="Error: El email ya está registrado")
     
     if db.query(medicos).filter(medicos.rfc == data.rfc).first():
-        raise HTTPException(status_code=400, detail="RFC ya registrado")
+        raise HTTPException(status_code=400, detail="Error: El RFC ya está registrado")
     
     if db.query(medicos).filter(medicos.cedula_profesional == data.cedula_profesional).first():
-        raise HTTPException(status_code=400, detail="Cédula profesional ya registrada")
+        raise HTTPException(status_code=400, detail="Error: La cédula profesional ya está registrada")
     
+    # Generar código
     ultimo = db.query(medicos).order_by(medicos.id_medico.desc()).first()
     if ultimo:
         try:
@@ -98,6 +102,7 @@ def crear_medico(
         num = 1
     codigo_generado = f"MED-{num:04d}"
     
+    # Crear datos personales
     datos = datos_personales_medico(
         id_sexo=data.id_sexo,
         id_pais=1,
@@ -109,6 +114,7 @@ def crear_medico(
     db.add(datos)
     db.flush()
     
+    # Crear médico
     nuevo_medico = medicos(
         id_medico=datos.id_medico,
         id_rol=2,
@@ -122,6 +128,7 @@ def crear_medico(
     db.add(nuevo_medico)
     db.flush()
     
+    # Crear usuario
     hashed_password = generate_password_hash(data.contrasena)
     nuevo_usuario = usuarios(
         id_rol=2,
@@ -137,15 +144,18 @@ def crear_medico(
         especialidades_medicas.id_especialidad == data.id_especialidad
     ).first()
     
-    return MedicoResponse(
-        id_medico=nuevo_medico.id_medico,
-        nombre_completo=data.nombre_completo,
-        email=data.email,
-        especialidad=especialidad.nombre if especialidad else "-",
-        activo=True
-    )
+    # Mensaje de confirmación
+    return {
+        "mensaje": f"Médico registrado exitosamente",
+        "id_medico": nuevo_medico.id_medico,
+        "nombre_completo": data.nombre_completo,
+        "email": data.email,
+        "codigo": codigo_generado,
+        "especialidad": especialidad.nombre if especialidad else "-",
+        "activo": True
+    }
 
-@router.put("/{medico_id}", response_model=MedicoResponse)
+@router.put("/{medico_id}", response_model=dict)
 def actualizar_medico(
     medico_id: int,
     data: MedicoUpdate,
@@ -163,33 +173,54 @@ def actualizar_medico(
     if not medico:
         raise HTTPException(status_code=404, detail="Médico no encontrado")
     
+    # Registrar cambios para el mensaje
+    cambios = []
+    nombre_original = medico.datos_personales.nombre_completo
+    
     if data.nombre_completo:
         medico.datos_personales.nombre_completo = data.nombre_completo
+        cambios.append(f"nombre: '{nombre_original}' → '{data.nombre_completo}'")
     if data.telefono:
         medico.datos_personales.telefono = data.telefono
+        cambios.append(f"teléfono actualizado")
     if data.email:
         medico.email = data.email
+        cambios.append(f"email actualizado")
     if data.rfc:
         medico.rfc = data.rfc
+        cambios.append(f"RFC actualizado")
     if data.cedula_profesional:
         medico.cedula_profesional = data.cedula_profesional
+        cambios.append(f"cédula profesional actualizada")
     if data.id_especialidad:
         medico.id_especialidad = data.id_especialidad
+        cambios.append(f"especialidad actualizada")
     if data.id_estatus_usuario:
+        estado_anterior = "activo" if medico.id_estatus_usuario == 1 else "inactivo"
+        estado_nuevo = "activo" if data.id_estatus_usuario == 1 else "inactivo"
         medico.id_estatus_usuario = data.id_estatus_usuario
+        cambios.append(f"estado: {estado_anterior} → {estado_nuevo}")
     
     db.commit()
     db.refresh(medico)
     
-    return MedicoResponse(
-        id_medico=medico.id_medico,
-        nombre_completo=medico.datos_personales.nombre_completo,
-        email=medico.email,
-        especialidad=medico.especialidad.nombre,
-        activo=(medico.id_estatus_usuario == 1)
-    )
+    if not cambios:
+        return {
+            "mensaje": "ℹNo se realizaron cambios",
+            "id_medico": medico_id,
+            "nombre": medico.datos_personales.nombre_completo
+        }
+    
+    return {
+        "mensaje": f"Médico actualizado exitosamente",
+        "cambios_realizados": cambios,
+        "id_medico": medico.id_medico,
+        "nombre_completo": medico.datos_personales.nombre_completo,
+        "email": medico.email,
+        "activo": (medico.id_estatus_usuario == 1)
+    }
 
-@router.delete("/{medico_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{medico_id}", status_code=status.HTTP_200_OK, response_model=dict)
 def eliminar_medico(
     medico_id: int,
     admin: medicos = Depends(get_current_admin),
@@ -203,12 +234,22 @@ def eliminar_medico(
     if not medico:
         raise HTTPException(status_code=404, detail="Médico no encontrado")
     
+    nombre_medico = medico.datos_personales.nombre_completo if medico.datos_personales else "Médico"
+    
+    # Desactivar en lugar de eliminar físicamente
     medico.id_estatus_usuario = 2
     db.commit()
     
-    return None
+    return {
+        "mensaje": f"Médico desactivado exitosamente",
+        "id_medico": medico_id,
+        "nombre": nombre_medico,
+        "estado_anterior": "activo",
+        "estado_actual": "inactivo (desactivado)",
+        "nota": "El médico ha sido desactivado pero sus datos permanecen en el sistema"
+    }
 
-@router.patch("/{medico_id}/activar", response_model=MedicoResponse)
+@router.patch("/{medico_id}/activar", response_model=dict)
 def activar_medico(
     medico_id: int,
     admin: medicos = Depends(get_current_admin),
@@ -222,14 +263,23 @@ def activar_medico(
     if not medico:
         raise HTTPException(status_code=404, detail="Médico no encontrado")
     
+    if medico.id_estatus_usuario == 1:
+        return {
+            "mensaje": "ℹEl médico ya estaba activo",
+            "id_medico": medico_id,
+            "nombre": medico.datos_personales.nombre_completo,
+            "estado": "activo"
+        }
+    
     medico.id_estatus_usuario = 1
     db.commit()
     db.refresh(medico)
     
-    return MedicoResponse(
-        id_medico=medico.id_medico,
-        nombre_completo=medico.datos_personales.nombre_completo,
-        email=medico.email,
-        especialidad=medico.especialidad.nombre,
-        activo=True
-    )
+    return {
+        "mensaje": f"Médico activado exitosamente",
+        "id_medico": medico.id_medico,
+        "nombre": medico.datos_personales.nombre_completo,
+        "email": medico.email,
+        "estado_anterior": "inactivo",
+        "estado_actual": "activo"
+    }

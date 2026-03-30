@@ -20,7 +20,7 @@ from shared.models import pacientes, sexos, tipos_diabetes, medicos
 router = APIRouter(tags=["CRUD Pacientes"])
 
 # ==================== GET ALL ====================
-@router.get("/", response_model=List[PacienteResponse])
+@router.get("/", response_model=dict)
 def listar_pacientes(
     admin: medicos = Depends(get_current_admin),
     db: Session = Depends(get_db),
@@ -54,20 +54,36 @@ def listar_pacientes(
         edad = date.today().year - p.fecha_nacimiento.year
         medico_nombre = p.medico.datos_personales.nombre_completo if p.medico and p.medico.datos_personales else None
         
-        result.append(PacienteResponse(
-            id_paciente=p.id_paciente,
-            nombre_completo=p.nombre_completo,
-            fecha_nacimiento=p.fecha_nacimiento,
-            edad=edad,
-            sexo=p.sexo.nombre if p.sexo else "No especificado",
-            tipo_diabetes=p.tipo_diabetes.nombre if p.tipo_diabetes else None,
-            codigo=p.codigo,
-            medico_nombre=medico_nombre
-        ))
-    return result
+        result.append({
+            "id_paciente": p.id_paciente,
+            "nombre_completo": p.nombre_completo,
+            "fecha_nacimiento": p.fecha_nacimiento,
+            "edad": edad,
+            "sexo": p.sexo.nombre if p.sexo else "No especificado",
+            "tipo_diabetes": p.tipo_diabetes.nombre if p.tipo_diabetes else None,
+            "codigo": p.codigo,
+            "medico_nombre": medico_nombre
+        })
+    
+    # Mensaje de confirmación
+    filtros = []
+    if medico_id:
+        filtros.append(f"médico ID: {medico_id}")
+    if search:
+        filtros.append(f"búsqueda: '{search}'")
+    if activos is not None:
+        filtros.append(f"activos: {activos}")
+    
+    texto_filtros = f" con filtros ({', '.join(filtros)})" if filtros else ""
+    
+    return {
+        "mensaje": f"Se encontraron {len(result)} paciente(s){texto_filtros}",
+        "total": len(result),
+        "pacientes": result
+    }
 
 # ==================== GET BY ID ====================
-@router.get("/{paciente_id}", response_model=PacienteResponse)
+@router.get("/{paciente_id}", response_model=dict)
 def obtener_paciente(
     paciente_id: int,
     admin: medicos = Depends(get_current_admin),
@@ -88,19 +104,21 @@ def obtener_paciente(
     edad = date.today().year - paciente.fecha_nacimiento.year
     medico_nombre = paciente.medico.datos_personales.nombre_completo if paciente.medico and paciente.medico.datos_personales else None
     
-    return PacienteResponse(
-        id_paciente=paciente.id_paciente,
-        nombre_completo=paciente.nombre_completo,
-        fecha_nacimiento=paciente.fecha_nacimiento,
-        edad=edad,
-        sexo=paciente.sexo.nombre if paciente.sexo else "No especificado",
-        tipo_diabetes=paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None,
-        codigo=paciente.codigo,
-        medico_nombre=medico_nombre
-    )
+    return {
+        "mensaje": "Paciente encontrado",
+        "id_paciente": paciente.id_paciente,
+        "nombre_completo": paciente.nombre_completo,
+        "fecha_nacimiento": paciente.fecha_nacimiento,
+        "edad": edad,
+        "sexo": paciente.sexo.nombre if paciente.sexo else "No especificado",
+        "tipo_diabetes": paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None,
+        "codigo": paciente.codigo,
+        "medico_nombre": medico_nombre,
+        "activo": (paciente.id_estatus_usuario == 1)
+    }
 
 # ==================== CREATE ====================
-@router.post("/", response_model=PacienteResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=dict)
 def crear_paciente(
     data: PacienteCreate,
     admin: medicos = Depends(get_current_admin),
@@ -139,20 +157,23 @@ def crear_paciente(
     db.refresh(nuevo_paciente)
     
     edad = date.today().year - nuevo_paciente.fecha_nacimiento.year
+    medico_nombre = medico.datos_personales.nombre_completo if medico.datos_personales else medico.email
     
-    return PacienteResponse(
-        id_paciente=nuevo_paciente.id_paciente,
-        nombre_completo=nuevo_paciente.nombre_completo,
-        fecha_nacimiento=nuevo_paciente.fecha_nacimiento,
-        edad=edad,
-        sexo=nuevo_paciente.sexo.nombre if nuevo_paciente.sexo else "No especificado",
-        tipo_diabetes=nuevo_paciente.tipo_diabetes.nombre if nuevo_paciente.tipo_diabetes else None,
-        codigo=nuevo_paciente.codigo,
-        medico_nombre=medico.datos_personales.nombre_completo if medico.datos_personales else medico.email
-    )
+    return {
+        "mensaje": f"Paciente registrado exitosamente",
+        "id_paciente": nuevo_paciente.id_paciente,
+        "nombre_completo": nuevo_paciente.nombre_completo,
+        "codigo": codigo_generado,
+        "fecha_nacimiento": nuevo_paciente.fecha_nacimiento,
+        "edad": edad,
+        "sexo": nuevo_paciente.sexo.nombre if nuevo_paciente.sexo else "No especificado",
+        "tipo_diabetes": nuevo_paciente.tipo_diabetes.nombre if nuevo_paciente.tipo_diabetes else None,
+        "medico_asignado": medico_nombre,
+        "activo": True
+    }
 
 # ==================== UPDATE ====================
-@router.put("/{paciente_id}", response_model=PacienteResponse)
+@router.put("/{paciente_id}", response_model=dict)
 def actualizar_paciente(
     paciente_id: int,
     data: PacienteUpdate,
@@ -171,36 +192,62 @@ def actualizar_paciente(
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
     
+    # Registrar cambios para el mensaje
+    cambios = []
+    nombre_original = paciente.nombre_completo
+    
     if data.nombre_completo:
         paciente.nombre_completo = data.nombre_completo
+        cambios.append(f"nombre: '{nombre_original}' -> '{data.nombre_completo}'")
     if data.fecha_nacimiento:
+        fecha_original = paciente.fecha_nacimiento
         paciente.fecha_nacimiento = data.fecha_nacimiento
+        cambios.append(f"fecha de nacimiento: {fecha_original} -> {data.fecha_nacimiento}")
     if data.id_sexo:
+        sexo_original = paciente.sexo.nombre if paciente.sexo else "No especificado"
         paciente.id_sexo = data.id_sexo
+        nuevo_sexo = db.query(sexos).filter(sexos.id_sexo == data.id_sexo).first()
+        cambios.append(f"sexo: {sexo_original} -> {nuevo_sexo.nombre if nuevo_sexo else 'No especificado'}")
     if data.id_tipo_diabetes is not None:
+        diabetes_original = paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else "No especificado"
         paciente.id_tipo_diabetes = data.id_tipo_diabetes
+        nueva_diabetes = db.query(tipos_diabetes).filter(tipos_diabetes.id_tipo_diabetes == data.id_tipo_diabetes).first()
+        cambios.append(f"tipo de diabetes: {diabetes_original} -> {nueva_diabetes.nombre if nueva_diabetes else 'No especificado'}")
     if data.id_estatus_usuario:
+        estado_original = "activo" if paciente.id_estatus_usuario == 1 else "inactivo"
+        estado_nuevo = "activo" if data.id_estatus_usuario == 1 else "inactivo"
         paciente.id_estatus_usuario = data.id_estatus_usuario
+        cambios.append(f"estado: {estado_original} -> {estado_nuevo}")
     
     db.commit()
     db.refresh(paciente)
     
+    if not cambios:
+        return {
+            "mensaje": "No se realizaron cambios",
+            "id_paciente": paciente_id,
+            "nombre": paciente.nombre_completo
+        }
+    
     edad = date.today().year - paciente.fecha_nacimiento.year
     medico_nombre = paciente.medico.datos_personales.nombre_completo if paciente.medico and paciente.medico.datos_personales else None
     
-    return PacienteResponse(
-        id_paciente=paciente.id_paciente,
-        nombre_completo=paciente.nombre_completo,
-        fecha_nacimiento=paciente.fecha_nacimiento,
-        edad=edad,
-        sexo=paciente.sexo.nombre if paciente.sexo else "No especificado",
-        tipo_diabetes=paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None,
-        codigo=paciente.codigo,
-        medico_nombre=medico_nombre
-    )
+    return {
+        "mensaje": "Paciente actualizado exitosamente",
+        "cambios_realizados": cambios,
+        "id_paciente": paciente.id_paciente,
+        "nombre_completo": paciente.nombre_completo,
+        "codigo": paciente.codigo,
+        "fecha_nacimiento": paciente.fecha_nacimiento,
+        "edad": edad,
+        "sexo": paciente.sexo.nombre if paciente.sexo else "No especificado",
+        "tipo_diabetes": paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None,
+        "medico_asignado": medico_nombre,
+        "activo": (paciente.id_estatus_usuario == 1)
+    }
 
 # ==================== DELETE (soft delete) ====================
-@router.delete("/{paciente_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{paciente_id}", status_code=status.HTTP_200_OK, response_model=dict)
 def eliminar_paciente(
     paciente_id: int,
     admin: medicos = Depends(get_current_admin),
@@ -213,14 +260,25 @@ def eliminar_paciente(
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
     
+    nombre_paciente = paciente.nombre_completo
+    estado_anterior = "activo" if paciente.id_estatus_usuario == 1 else "inactivo"
+    
     # Soft delete: desactivar en lugar de eliminar
     paciente.id_estatus_usuario = 2
     db.commit()
     
-    return None
+    return {
+        "mensaje": f"Paciente desactivado exitosamente",
+        "id_paciente": paciente_id,
+        "nombre": nombre_paciente,
+        "codigo": paciente.codigo,
+        "estado_anterior": estado_anterior,
+        "estado_actual": "inactivo (desactivado)",
+        "nota": "El paciente ha sido desactivado pero sus datos permanecen en el sistema"
+    }
 
 # ==================== ACTIVAR ====================
-@router.patch("/{paciente_id}/activar", response_model=PacienteResponse)
+@router.patch("/{paciente_id}/activar", response_model=dict)
 def activar_paciente(
     paciente_id: int,
     admin: medicos = Depends(get_current_admin),
@@ -238,6 +296,15 @@ def activar_paciente(
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
     
+    if paciente.id_estatus_usuario == 1:
+        return {
+            "mensaje": "El paciente ya estaba activo",
+            "id_paciente": paciente_id,
+            "nombre": paciente.nombre_completo,
+            "codigo": paciente.codigo,
+            "estado": "activo"
+        }
+    
     paciente.id_estatus_usuario = 1
     db.commit()
     db.refresh(paciente)
@@ -245,13 +312,16 @@ def activar_paciente(
     edad = date.today().year - paciente.fecha_nacimiento.year
     medico_nombre = paciente.medico.datos_personales.nombre_completo if paciente.medico and paciente.medico.datos_personales else None
     
-    return PacienteResponse(
-        id_paciente=paciente.id_paciente,
-        nombre_completo=paciente.nombre_completo,
-        fecha_nacimiento=paciente.fecha_nacimiento,
-        edad=edad,
-        sexo=paciente.sexo.nombre if paciente.sexo else "No especificado",
-        tipo_diabetes=paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None,
-        codigo=paciente.codigo,
-        medico_nombre=medico_nombre
-    )
+    return {
+        "mensaje": f"Paciente activado exitosamente",
+        "id_paciente": paciente.id_paciente,
+        "nombre": paciente.nombre_completo,
+        "codigo": paciente.codigo,
+        "fecha_nacimiento": paciente.fecha_nacimiento,
+        "edad": edad,
+        "sexo": paciente.sexo.nombre if paciente.sexo else "No especificado",
+        "tipo_diabetes": paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None,
+        "medico_asignado": medico_nombre,
+        "estado_anterior": "inactivo",
+        "estado_actual": "activo"
+    }
