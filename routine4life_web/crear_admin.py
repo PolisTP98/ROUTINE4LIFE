@@ -13,9 +13,9 @@ def crear_admin():
     try:
         # Verificar si ya existe el admin
         existe = db.execute(text("""
-            SELECT COUNT(*) FROM r4l.usuarios 
+            SELECT COUNT(*) FROM r4l.usuarios
             WHERE id_medico IN (
-                SELECT id_medico FROM r4l.medicos 
+                SELECT id_medico FROM r4l.medicos
                 WHERE email = 'admin@routine4life.com'
             )
         """)).scalar()
@@ -31,33 +31,33 @@ def crear_admin():
 
         # 1. Insertar datos personales
         db.execute(text("""
-            INSERT INTO r4l.datos_personales_medico 
+            INSERT INTO r4l.datos_personales_medico
             (id_sexo, id_pais, nombre_completo, fecha_nacimiento, telefono, fecha_hora_registro)
-            VALUES (1, 1, 'Administrador Sistema', '1990-01-01', '5599999999', GETDATE())
+            VALUES (1, 1, 'Administrador Sistema', '1990-01-01', '555554', GETDATE())
         """))
         db.commit()
 
         # 2. Obtener el id generado
         id_medico = db.execute(text("""
             SELECT id_medico FROM r4l.datos_personales_medico 
-            WHERE telefono = '5599999999'
+            WHERE telefono = '555554'
         """)).scalar()
 
         print(f"ID médico generado: {id_medico}")
 
         # 3. Insertar médico
         db.execute(text(f"""
-            INSERT INTO r4l.medicos 
-            (id_medico, id_rol, id_especialidad, id_estatus_usuario, 
+            INSERT INTO r4l.medicos
+            (id_medico, id_rol, id_especialidad, id_estatus_usuario,
             codigo, cedula_profesional, email, rfc)
-            VALUES ({id_medico}, 1, 1, 1, 
+            VALUES ({id_medico}, 1, 1, 1,
             'ADMIN-001', 'ADMIN001', 'admin@routine4life.com', 'ADMIN001')
         """))
         db.commit()
 
         # 4. Insertar usuario
         db.execute(text(f"""
-            INSERT INTO r4l.usuarios 
+            INSERT INTO r4l.usuarios
             (id_rol, id_medico, id_paciente, contrasena, fecha_registro)
             VALUES (1, {id_medico}, NULL, 'admin123', GETDATE())
         """))
@@ -69,7 +69,7 @@ def crear_admin():
         db.commit()
 
         print("Administrador creado exitosamente.")
-        print("Email:      admin@routine4life.com")
+        print("Email: admin@routine4life.com")
         print("Contraseña: admin123")
 
     except Exception as e:
