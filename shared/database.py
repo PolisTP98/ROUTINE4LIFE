@@ -9,7 +9,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # 🔹 URL de conexión (SQL Server con usuario y contraseña)
-DATABASE_URL = "mssql+pyodbc://appuser:123456@DESKTOP-AUEI0C4\\SQLEXPRESS/routine4life?driver=ODBC+Driver+17+for+SQL+Server"
+DATABASE_URL = "mssql+pyodbc://@DESKTOP-6RRSB8S\\SQLEXPRESS01/routine4life?driver=ODBC+Driver+17+for+SQL+Server"
+
 
 # 🔹 Engine
 engine = create_engine(
