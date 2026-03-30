@@ -33,7 +33,7 @@ encoded_password = urllib.parse.quote_plus(DB_PASSWORD)
 DATABASE_URL = (
     f"mssql+pyodbc://{DB_USER}:{encoded_password}@{DB_SERVER}/{DB_NAME}"
     f"?driver={DB_DRIVER.replace(' ', '+')}"
-    f"&trusted_connection=yes"
+    f"&TrustServerCertificate=yes" 
 )
 
 print(f"Conectando a: {DB_SERVER}/{DB_NAME}")

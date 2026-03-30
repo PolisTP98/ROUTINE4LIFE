@@ -16,12 +16,13 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Copiamos el requirements que está en la carpeta padre (routine4life_web)
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Exponemos el puerto 8080 para que no choque con el 8000 de la app móvil
+EXPOSE 8080
 
-EXPOSE 5000
-
-CMD ["python", "app.py"]
+# Comando para ejecutar FastAPI. Asume que en main.py hay una variable llamada 'app'
+CMD ["uvicorn", "miAPI.main:app", "--host", "0.0.0.0", "--port", "8080"]

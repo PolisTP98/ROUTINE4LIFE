@@ -11,10 +11,33 @@ services:
     container_name: api_r4life
     ports:
       - "5050:5000" 
+    env_file:               
+      - .env                 
     networks:
       - app_network
     volumes:
       - "./routine4life_web:/app" 
+      - "./shared:/app/shared"
+
+      # ----------------------------
+  # | API DE LA WEB (miAPI)    |
+  # ----------------------------
+  web_api:
+    build:
+      context: "./routine4life_web" 
+      dockerfile: miAPI/Dockerfile 
+    container_name: miAPI_r4life
+    ports:
+      - "8080:8080" 
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app_network
+    volumes:
+      - "./routine4life_web/miAPI:/app/miAPI"
+      - "./shared:/app/shared" 
 
   # ----------------------------
   # | BACKEND MÓVIL (FASTAPI)  |
