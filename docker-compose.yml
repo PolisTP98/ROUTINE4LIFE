@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_r4life
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Password123!
+    ports:
+      - "1433:1433"
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: api_r4life
+    command: uvicorn miAPI.main:app --host 0.0.0.0 --port 5000
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env.example
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: flask_r4life
+    command: python -m routine4life_web.app
+    ports:
+      - "8000:5000"
+    depends_on:
+      - api
+    restart: unless-stopped
