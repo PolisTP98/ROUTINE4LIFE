@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nueva Consulta - Routine4Life</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        h2 {
+            color: #3498db;
+            margin: 20px 0 15px 0;
+            font-size: 18px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 20px;
+            margin-right: 10px;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-guardar {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-cancelar {
+            background: #e74c3c;
+            color: white;
+        }
+        .flash {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .flash-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .flash-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .sintomas-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .sintoma-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sintoma-item input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+        .sintoma-item label {
+            margin: 0;
+            font-weight: normal;
+        }
+        hr {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Nueva Consulta Médica</h1>
+        <p><strong>Paciente:</strong> {{ paciente.nombre_completo }}</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <h2>Signos Vitales</h2>
+            <div class="form-row">
+                <div>
+                    <label>Peso (kg):</label>
+                    <input type="number" step="0.1" name="peso" placeholder="Ej: 70.5">
+                </div>
+                <div>
+                    <label>Altura (cm):</label>
+                    <input type="number" name="altura" placeholder="Ej: 170">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label>Presión sistólica (mmHg):</label>
+                    <input type="number" name="presion_sistolica" placeholder="Ej: 120">
+                </div>
+                <div>
+                    <label>Presión diastólica (mmHg):</label>
+                    <input type="number" name="presion_diastolica" placeholder="Ej: 80">
+                </div>
+            </div>
+
+            <h2>Niveles de Glucosa</h2>
+            <div class="form-row">
+                <div>
+                    <label>Glucosa en ayunas (mg/dL):</label>
+                    <input type="number" step="0.1" name="glucosa_ayunas" placeholder="Ej: 95">
+                </div>
+                <div>
+                    <label>Glucosa postprandial (mg/dL):</label>
+                    <input type="number" step="0.1" name="glucosa_postprandial" placeholder="Ej: 140">
+                </div>
+            </div>
+
+            <div>
+                <label>Hemoglobina glicosilada (%):</label>
+                <input type="number" step="0.1" name="hemoglobina_glicosilada" placeholder="Ej: 5.7">
+            </div>
+
+            <h2>Síntomas</h2>
+            <div class="sintomas-grid">
+                {% for sintoma in sintomas %}
+                <div class="sintoma-item">
+                    <input type="checkbox" name="sintomas" value="{{ sintoma.id_sintoma_diabetes }}" id="sintoma_{{ sintoma.id_sintoma_diabetes }}">
+                    <label for="sintoma_{{ sintoma.id_sintoma_diabetes }}">{{ sintoma.nombre }}</label>
+                    <input type="number" name="intensidad_{{ sintoma.id_sintoma_diabetes }}" placeholder="Intensidad (1-10)" style="width: 80px;">
+                </div>
+                {% endfor %}
+            </div>
+
+            <div>
+                <label>Notas adicionales:</label>
+                <textarea name="notas" rows="3" placeholder="Observaciones de la consulta..."></textarea>
+            </div>
+
+            <div>
+                <label>Plan de tratamiento:</label>
+                <textarea name="plan_tratamiento" rows="3" placeholder="Indicaciones, medicamentos, etc..."></textarea>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-guardar">Guardar Consulta</button>
+                <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="btn btn-cancelar">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
