@@ -1,67 +1,65 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <title>Login - Sistema Médico</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <title>Login - ROUTINE4LIFE: SISTEMA DE CONTROL CLINICO PARA DIABETES</title>
+    <!-- CSS unificado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Fuente moderna -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    
 </head>
-
-<body>
-
-    <center>
-
-        <h1>Sistema Médico</h1>
-
-        <h2>Iniciar Sesión</h2>
-
-        <!-- Mostrar mensajes flash (errores, éxito) -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}" style="padding: 10px; margin: 10px; border-radius: 5px; 
-                        {% if category == 'success' %}background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;
-                        {% elif category == 'danger' %}background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
-                        {% elif category == 'warning' %}background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
-                        {% else %}background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;
-                        {% endif %}">
-                        {{ message }}
+<body class="login-page">
+    <div class="login-card">
+        <div class="login-logo-area">
+            <div class="logo-icon">
+                <!-- SVG representando un corazón / cruz médica estilizada -->
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+            </div>
+            <h1 class="system-title">
+                <span class="colored-title">Routine4Life</span>
+            </h1>
+            <div class="system-subtitle">
+                Sistema de Control Clínico para Diabetes
+            </div>
+        </div>
+        <div class="login-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                {% endif %}
+            {% endwith %}
 
-        <!-- FORMULARIO DE LOGIN - CON METHOD POST -->
-        <form method="POST" action="{{ url_for('login') }}">
-            <table>
-                <tr>
-                    <td>Usuario o correo:</td>
-                    <td><input type="email" name="email" placeholder="Ingrese su correo electrónico" required></td>
-                </tr>
+            <form method="POST" action="{{ url_for('login') }}" class="login-form">
+                <div class="input-group">
+                    <label>Correo electrónico</label>
+                    <input type="email" name="email" placeholder="tu@correo.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-login">Iniciar Sesión</button>
+            </form>
 
-                <tr>
-                    <td>Contraseña:</td>
-                    <td><input type="password" name="password" placeholder="Ingrese su contraseña" required></td>
-                </tr>
+            <div class="login-links">
+                <a href="{{ url_for('recuperar_contrasena') }}">¿Olvidaste tu contraseña?</a>
+            </div>
 
-            </table>
-
-            <br>
-
-            <button type="submit">Iniciar Sesión</button>
-
-        </form>
-
-        <br>
-
-        <a href="{{ url_for('recuperar_contrasena') }}">¿Olvidaste tu contraseña?</a>
-
-        <br><br>
-
-        <p>¿No tienes cuenta?Contacta al administrador para que te registre.</p>
-
-    </center>
-
+            <div class="register-link">
+                ¿No tienes cuenta? <a href="#">Contacta al administrador</a>
+            </div>
+        </div>
+    </div>
 </body>
-
 </html>

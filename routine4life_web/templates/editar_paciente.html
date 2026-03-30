@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Paciente - Routine4Life</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="editar-form">
+    <div class="container">
+        <h1>Editar Paciente</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <label>Nombre completo:</label>
+            <input type="text" name="nombre_completo" value="{{ paciente.nombre_completo }}" required>
+
+            <label>Fecha de nacimiento:</label>
+            <input type="date" name="fecha_nacimiento" value="{{ paciente.fecha_nacimiento }}" required>
+
+            <label>Sexo:</label>
+            <select name="id_sexo" required>
+                <option value="">Seleccione...</option>
+                {% for sexo in sexos %}
+                <option value="{{ sexo.id_sexo }}" {% if paciente.id_sexo == sexo.id_sexo %}selected{% endif %}>
+                    {{ sexo.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <label>Tipo de diabetes:</label>
+            <select name="id_tipo_diabetes">
+                <option value="">Seleccione...</option>
+                {% for tipo in tipos_diabetes %}
+                <option value="{{ tipo.id_tipo_diabetes }}" {% if paciente.id_tipo_diabetes == tipo.id_tipo_diabetes %}selected{% endif %}>
+                    {{ tipo.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <div>
+                <button type="submit" class="btn btn-guardar">Guardar cambios</button>
+                <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="btn btn-cancelar">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

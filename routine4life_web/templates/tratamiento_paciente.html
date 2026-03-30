@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Diagnóstico y Tratamiento</title>
-    <link rel="stylesheet" href="/static/tratamiento_paciente.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body>
-
+<body class="tratamiento-paciente">
     <header>
         <h2>ROUTINE4LIFE</h2>
         <nav>
@@ -21,14 +20,11 @@
     <h1>DIAGNÓSTICO Y TRATAMIENTO</h1>
 
     <form>
-
         <h3>Información del Paciente</h3>
-
         <label for="nombre">Nombre del paciente:</label><br>
         <input type="text" id="nombre" name="nombre"><br><br>
 
         <h3>DIAGNÓSTICO</h3>
-
         <label for="diagnosticoActual">Diagnóstico actual:</label><br>
         <input type="text" id="diagnosticoActual" name="diagnosticoActual"><br><br>
 
@@ -47,7 +43,6 @@
         <textarea id="recomendaciones" name="recomendaciones" rows="3" cols="40"></textarea><br><br>
 
         <h3>TRATAMIENTO</h3>
-
         <label for="cambiosMedicacion">Cambios en medicación:</label><br>
         <input type="text" id="cambiosMedicacion" name="cambiosMedicacion"><br><br>
 
@@ -71,8 +66,6 @@
         <button type="submit">Aceptar</button>
         <button type="reset">Cancelar</button>
         <button type="button">Siguiente</button>
-
     </form>
-
 </body>
 </html>

@@ -3,29 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Reportes Generales - Routine4Life</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
-        h1 { color: #2c3e50; margin-bottom: 20px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 20px 0; }
-        .card { background: #f8f9fa; padding: 20px; text-align: center; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .card h3 { color: #2c3e50; margin-bottom: 10px; }
-        .number { font-size: 36px; font-weight: bold; color: #3498db; }
-        .btn { display: inline-block; padding: 8px 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; margin-bottom: 20px; }
-        .consultas-list { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; }
-        .consultas-list h3 { margin-bottom: 10px; }
-        .consultas-list ul { list-style: none; padding: 0; }
-        .consultas-list li { padding: 8px 0; border-bottom: 1px solid #ddd; }
-        .flash { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
-        .flash-success { background: #d4edda; color: #155724; }
-        .flash-danger { background: #f8d7da; color: #721c24; }
-        .flash-info { background: #d1ecf1; color: #0c5460; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body>
+<body class="reportes">
     <div class="container">
         <h1>Reportes Generales</h1>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn">← Volver al Dashboard</a>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-volver">← Volver al Dashboard</a>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -36,25 +19,13 @@
         {% endwith %}
 
         <div class="stats-grid">
-            <div class="card">
-                <h3>Medicos</h3>
-                <div class="number">{{ total_medicos }}</div>
-            </div>
-            <div class="card">
-                <h3>Enfermeros</h3>
-                <div class="number">{{ total_enfermeros }}</div>
-            </div>
-            <div class="card">
-                <h3>Recepcionistas</h3>
-                <div class="number">{{ total_recepcionistas }}</div>
-            </div>
-            <div class="card">
-                <h3>Pacientes</h3>
-                <div class="number">{{ total_pacientes }}</div>
-            </div>
+            <div class="card"><h3>Médicos</h3><div class="number">{{ total_medicos }}</div></div>
+            <div class="card"><h3>Enfermeros</h3><div class="number">{{ total_enfermeros }}</div></div>
+            <div class="card"><h3>Recepcionistas</h3><div class="number">{{ total_recepcionistas }}</div></div>
+            <div class="card"><h3>Pacientes</h3><div class="number">{{ total_pacientes }}</div></div>
         </div>
 
-        <div class="card" style="margin-top: 20px;">
+        <div class="card" style="margin-top:20px;">
             <h3>Total de Consultas</h3>
             <div class="number">{{ total_consultas }}</div>
         </div>
@@ -71,4 +42,4 @@
         {% endif %}
     </div>
 </body>
-</html>
+</html> 

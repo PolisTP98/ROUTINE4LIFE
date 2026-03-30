@@ -4,21 +4,21 @@ go
 if object_id('r4l.datos_personales_medico', 'u') is null
 begin
     create table r4l.datos_personales_medico(
-        id_medico int identity(1, 1) primary key, 
-        id_sexo int not null, 
-        id_pais int not null, 
-        nombre_completo nvarchar(255) not null, 
-        fecha_nacimiento date not null, 
-        telefono varchar(20) not null, 
-        fecha_hora_registro datetime2(0) not null, 
-        fecha_hora_eliminacion datetime2(0), 
-        constraint fk_sexo_medico foreign key(id_sexo) 
-            references r4l.sexos(id_sexo), 
-        constraint fk_pais_medico foreign key(id_pais) 
-            references r4l.paises(id_pais), 
+        id_medico int identity(1, 1) primary key,
+        id_sexo int not null,
+        id_pais int not null,
+        nombre_completo nvarchar(255) not null,
+        fecha_nacimiento date not null,
+        telefono varchar(20) not null,
+        fecha_hora_registro datetime2(0) not null,
+        fecha_hora_eliminacion datetime2(0),
+        constraint fk_sexo_medico foreign key(id_sexo)
+            references r4l.sexos(id_sexo),
+        constraint fk_pais_medico foreign key(id_pais)
+            references r4l.paises(id_pais),
         constraint uq_telefono_medico unique(telefono)
         /*
-        constraint ck_fecha_nacimiento_medico check(fecha_nacimiento <= getdate()), 
+        constraint ck_fecha_nacimiento_medico check(fecha_nacimiento <= getdate()),
         constraint ck_telefono_medico check(telefono like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]%')
         */
     );
@@ -30,30 +30,30 @@ end
 if object_id('r4l.medicos', 'u') is null
 begin
     create table r4l.medicos(
-        id_medico int primary key, 
-        id_rol int not null, 
-        id_especialidad int not null, 
-        id_estatus_usuario int not null, 
-        codigo nvarchar(20) not null, 
-        cedula_profesional nvarchar(30) not null, 
-        email varchar(255) not null, 
-        rfc varchar(13) not null, 
-        constraint fk_datos_personales_medico foreign key(id_medico) 
-            references r4l.datos_personales_medico(id_medico) 
-            on delete cascade 
-            on update cascade, 
-        constraint fk_rol_medico foreign key(id_rol) 
-            references r4l.roles_usuarios(id_rol), 
-        constraint fk_especialidad_medico foreign key(id_especialidad) 
-            references r4l.especialidades_medicas(id_especialidad), 
-        constraint fk_estatus_medico foreign key(id_estatus_usuario) 
-            references r4l.estatus_usuarios(id_estatus_usuario), 
-        constraint uq_codigo_medico unique(codigo), 
-        constraint uq_cedula_medico unique(cedula_profesional), 
-        constraint uq_email_medico unique(email), 
+        id_medico int primary key,
+        id_rol int not null,
+        id_especialidad int not null,
+        id_estatus_usuario int not null,
+        codigo nvarchar(20) not null,
+        cedula_profesional nvarchar(30) not null,
+        email varchar(255) not null,
+        rfc varchar(13) not null,
+        constraint fk_datos_personales_medico foreign key(id_medico)
+            references r4l.datos_personales_medico(id_medico)
+            on delete cascade
+            on update cascade,
+        constraint fk_rol_medico foreign key(id_rol)
+            references r4l.roles_usuarios(id_rol),
+        constraint fk_especialidad_medico foreign key(id_especialidad)
+            references r4l.especialidades_medicas(id_especialidad),
+        constraint fk_estatus_medico foreign key(id_estatus_usuario)
+            references r4l.estatus_usuarios(id_estatus_usuario),
+        constraint uq_codigo_medico unique(codigo),
+        constraint uq_cedula_medico unique(cedula_profesional),
+        constraint uq_email_medico unique(email),
         constraint uq_rfc_medico unique(rfc)
         /*
-        constraint ck_email_medico check(email like '%_@__%.__%'), 
+        constraint ck_email_medico check(email like '%_@__%.__%'),
         constraint ck_rfc_medico check(rfc like '[A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3}')
         */
     );
@@ -66,16 +66,16 @@ end
 if object_id('r4l.horarios_medicos', 'u') is null
 begin
     create table r4l.horarios_medicos(
-        id_horario int identity(1, 1) primary key, 
-        id_medico int not null, 
-        dia_semana tinyint not null, 
-        hora_inicio time(0) not null, 
-        hora_fin time(0) not null, 
-        activo bit not null, 
-        constraint fk_medico_horario foreign key(id_medico) 
+        id_horario int identity(1, 1) primary key,
+        id_medico int not null,
+        dia_semana tinyint not null,
+        hora_inicio time(0) not null,
+        hora_fin time(0) not null,
+        activo bit not null,
+        constraint fk_medico_horario foreign key(id_medico)
             references r4l.medicos(id_medico)
         /*
-        constraint ck_dia_semana check(dia_semana between 1 and 7), 
+        constraint ck_dia_semana check(dia_semana between 1 and 7),
         constraint ck_horario check(hora_fin > hora_inicio
         */
     );
@@ -88,13 +88,13 @@ end
 if object_id('r4l.excepciones_horarios', 'u') is null
 begin
     create table r4l.excepciones_horarios(
-        id_excepcion int identity(1, 1) primary key, 
-        id_medico int not null, 
-        fecha_excepcion date not null, 
-        activo bit not null, 
-        motivo nvarchar(255), 
-        constraint fk_excepciones_medico foreign key(id_medico) 
-            references r4l.medicos(id_medico), 
+        id_excepcion int identity(1, 1) primary key,
+        id_medico int not null,
+        fecha_excepcion date not null,
+        activo bit not null,
+        motivo nvarchar(255),
+        constraint fk_excepciones_medico foreign key(id_medico)
+            references r4l.medicos(id_medico),
         constraint uq_excepcion_medico_fecha unique(id_medico, fecha_excepcion)
     );
     create index ix_excepciones_horarios_id_medico on r4l.excepciones_horarios(id_medico);
@@ -112,7 +112,7 @@ begin
         id_tipo_diabetes int, 
         codigo nvarchar(20) not null, 
         nombre_completo nvarchar(255) not null, 
-        fecha_nacimiento date not null, 
+        fecha_nacimiento date not null,
         fecha_hora_registro datetime2(0) not null, 
         fecha_hora_eliminacion datetime2(0), 
         constraint fk_sexo_paciente foreign key(id_sexo) 
