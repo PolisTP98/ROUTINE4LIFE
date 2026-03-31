@@ -1,5 +1,6 @@
 // App.js
 import React from 'react';
+import 'react-native-gesture-handler';
 import AppNavigator from './src/navigation/AppNavigator';
 
 // Si no estás usando Expo, asegúrate de que la navegación
