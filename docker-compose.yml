@@ -19,7 +19,7 @@ services:
       - "./routine4life_web:/app" 
       - "./shared:/app/shared"
 
-      # ----------------------------
+  # ----------------------------
   # | API DE LA WEB (miAPI)    |
   # ----------------------------
   web_api:
@@ -35,9 +35,10 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - app_network
+    # --- CAMBIO AQUÍ ---
     volumes:
-      - "./routine4life_web/miAPI:/app/miAPI"
-      - "./shared:/app/shared" 
+      - "./routine4life_web:/app" 
+      - "./shared:/app/shared"
 
   # ----------------------------
   # | BACKEND MÓVIL (FASTAPI)  |

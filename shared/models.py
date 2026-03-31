@@ -585,9 +585,7 @@ class registros_paciente(Base):
     unidad_alternativa = Column(String(20), nullable = True, comment = "UNIDAD DE MEDIDA ALTERNATIVA (SI CORRESPONDE)")
     notas = Column(String(255), nullable = True, comment = "NOTAS ADICIONALES")
 
-    # RELACIÓN: registros_paciente -> pacientes (N:1)
     paciente = relationship("pacientes", back_populates = "registros")
-    # RELACIÓN: registros_paciente -> tipos_registros (N:1)
     tipo_registro = relationship("tipos_registros", back_populates = "registros_paciente")
 
 # r4l.usuarios
@@ -598,7 +596,7 @@ class usuarios(Base):
         Index("ix_usuarios_id_paciente", "id_paciente"), 
         {
             "schema": "r4l",
-            "implicit_returning": False # 
+            "implicit_returning": False
         }
     )
 
