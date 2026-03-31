@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
 
-const RecoverPasswordStep2Screen = ({ navigation }) => {
+const RecoverPasswordStep2Screen = ({ route, navigation }) => {
+  // Recuperamos el email pasado desde la Step 1
+  const { email } = route.params || {};
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [secureTextEntry1, setSecureTextEntry1] = useState(true);
   const [secureTextEntry2, setSecureTextEntry2] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const reqLength = password.length >= 8;
   const reqUpper = /[A-Z]/.test(password);
@@ -19,8 +23,50 @@ const RecoverPasswordStep2Screen = ({ navigation }) => {
 
   const handleReset = () => {
     if (isButtonEnabled) {
-      // CORRECCIÓN: Redirigimos al Login pasando el parámetro de éxito para que salte el Toast
-      navigation.navigate('Login', { recovered: true });
+      setIsLoading(true);
+
+      // Simulamos un pequeño tiempo de carga de 1 segundo para que se vea el ActivityIndicator
+      setTimeout(() => {
+        setIsLoading(false);
+        
+        // Mostramos el mensaje y, AL PRESIONAR "Aceptar", redirigimos al Login
+        Alert.alert(
+          "Éxito", 
+          "Contraseña actualizada correctamente.",
+          [
+            { 
+              text: "Aceptar", 
+              onPress: () => navigation.navigate('Login', { recovered: true }) 
+            }
+          ]
+        );
+
+      }, 1000);
+
+      /* // === CÓDIGO REAL PARA EL BACKEND (Comentado para la simulación) ===
+      // Asegúrate de definir const API_URL = 'http://TU_IP:8000'; arriba cuando lo uses
+      
+      try {
+        const response = await fetch(`${API_URL}/auth-movil/restablecer-contrasena`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, nueva_contrasena: password }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+          Alert.alert("Éxito", data.mensaje || "Contraseña actualizada correctamente.", [
+            { text: "Aceptar", onPress: () => navigation.navigate('Login', { recovered: true }) }
+          ]);
+        } else {
+          Alert.alert("Error", data.detail || "No se pudo actualizar la contraseña.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        Alert.alert("Error", "No se pudo conectar con el servidor.");
+      } finally {
+        setIsLoading(false);
+      }
+      */
     }
   };
 
@@ -83,11 +129,15 @@ const RecoverPasswordStep2Screen = ({ navigation }) => {
 
         <View style={styles.footer}>
           <TouchableOpacity
-            style={[styles.btn, isButtonEnabled ? styles.btnActive : styles.btnDisabled]}
-            disabled={!isButtonEnabled}
+            style={[styles.btn, isButtonEnabled && !isLoading ? styles.btnActive : styles.btnDisabled]}
+            disabled={!isButtonEnabled || isLoading}
             onPress={handleReset}
           >
-            <Text style={styles.btnText}>Restablecer</Text>
+            {isLoading ? (
+              <ActivityIndicator color={COLORS.buttonLight} size="small" />
+            ) : (
+              <Text style={styles.btnText}>Restablecer</Text>
+            )}
           </TouchableOpacity>
 
           <Text style={styles.loginLink}>
