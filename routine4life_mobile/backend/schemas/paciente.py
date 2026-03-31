@@ -4,7 +4,6 @@ from datetime import date, time, datetime
 from typing import List, Optional
 from decimal import Decimal
 
-
 class RegistroAppCreate(BaseModel):
     id_paciente: int  
     id_sexo: int
@@ -163,8 +162,6 @@ class UsuarioResponse(BaseModel):
     class Config:
         from_attributes = True
         
-# ... (Tu código anterior)
-
 class LoginRequest(BaseModel):
     email: str
     contrasena: str
@@ -177,3 +174,11 @@ class LoginResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# NUEVOS ESQUEMAS PARA RESTABLECER CONTRASEÑA
+class RestablecerContrasenaRequest(BaseModel):
+    email: str
+    nueva_contrasena: str
+
+class RestablecerContrasenaResponse(BaseModel):
+    mensaje: str

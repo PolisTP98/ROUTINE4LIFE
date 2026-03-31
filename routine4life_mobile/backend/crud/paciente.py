@@ -116,9 +116,7 @@ def crear_registro_paciente(db: Session, registro: schemas.RegistroPacienteCreat
 
 def obtener_hash_contrasena(contrasena: str):
     contrasena_bytes = contrasena.encode('utf-8')
-    
     hash_bytes = bcrypt.hashpw(contrasena_bytes, bcrypt.gensalt())
-    
     return hash_bytes.decode('utf-8')
 
 def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
@@ -155,3 +153,19 @@ def autenticar_paciente(db: Session, credenciales: schemas.LoginRequest):
         return None
         
     return usuario
+
+# NUEVA FUNCIÓN PARA ACTUALIZAR CONTRASEÑA
+def actualizar_contrasena_paciente(db: Session, datos: schemas.RestablecerContrasenaRequest):
+    usuario = db.query(models.usuarios)\
+                .join(models.pacientes_aplicacion, models.pacientes_aplicacion.id_paciente == models.usuarios.id_paciente)\
+                .filter(models.pacientes_aplicacion.email == datos.email)\
+                .first()
+    
+    if not usuario:
+        return False
+        
+    usuario.contrasena = obtener_hash_contrasena(datos.nueva_contrasena)
+    db.commit()
+    db.refresh(usuario)
+    
+    return True
