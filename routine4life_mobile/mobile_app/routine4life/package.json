@@ -9,10 +9,21 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "expo": "55.0.10-canary-20260328-bdc6273",
-    "expo-status-bar": "55.0.5-canary-20260328-bdc6273",
+    "@react-navigation/drawer": "^7.9.8",
+    "@react-navigation/native": "^7.2.2",
+    "expo": "~55.0.0",
+    "expo-status-bar": "~55.0.0",
     "react": "19.2.0",
-    "react-native": "0.83.4"
+    "react-dom": "19.2.0",
+    "react-native": "0.83.4",
+    "react-native-gesture-handler": "~2.30.0",
+    "react-native-reanimated": "4.2.1",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0",
+    "react-native-web": "^0.21.0"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "babel-preset-expo": "^55.0.13"
+  }
 }
