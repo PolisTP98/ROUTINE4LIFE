@@ -110,7 +110,7 @@ def crear_registro_paciente(db: Session, registro: schemas.RegistroPacienteCreat
     
     db.add(nuevo_registro)
     db.commit()
-    db.refresh(nuevo_registro) # SQL Server nos devuelve el id_registro generado
+    db.refresh(nuevo_registro) 
     
     return nuevo_registro
 
@@ -126,8 +126,8 @@ def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
         id_rol=usuario.id_rol,
         id_medico=usuario.id_medico,
         id_paciente=usuario.id_paciente,
-        contrasena=obtener_hash_contrasena(usuario.contrasena), # Encriptamos antes de guardar
-        fecha_registro=date.today() # Generamos la fecha del servidor
+        contrasena=obtener_hash_contrasena(usuario.contrasena),
+        fecha_registro=date.today() 
     )
     
     db.add(nuevo_usuario)
@@ -135,3 +135,23 @@ def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
     db.refresh(nuevo_usuario)
     
     return nuevo_usuario
+
+def verificar_contrasena(contrasena_plana: str, contrasena_hash: str):
+    return bcrypt.checkpw(
+        contrasena_plana.encode('utf-8'), 
+        contrasena_hash.encode('utf-8')
+    )
+
+def autenticar_paciente(db: Session, credenciales: schemas.LoginRequest):
+    usuario = db.query(models.usuarios)\
+                .join(models.pacientes_aplicacion, models.pacientes_aplicacion.id_paciente == models.usuarios.id_paciente)\
+                .filter(models.pacientes_aplicacion.email == credenciales.email)\
+                .first()
+    
+    if not usuario:
+        return None
+        
+    if not verificar_contrasena(credenciales.contrasena, usuario.contrasena):
+        return None
+        
+    return usuario

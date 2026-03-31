@@ -162,3 +162,18 @@ class UsuarioResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+# ... (Tu código anterior)
+
+class LoginRequest(BaseModel):
+    email: str
+    contrasena: str
+
+class LoginResponse(BaseModel):
+    mensaje: str
+    id_usuario: int
+    id_paciente: Optional[int] = None
+    id_rol: int
+
+    class Config:
+        from_attributes = True

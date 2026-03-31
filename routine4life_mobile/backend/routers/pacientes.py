@@ -165,3 +165,20 @@ def registrar_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    
+@router.post("/login", response_model=schemas.LoginResponse)
+def login_paciente(credenciales: schemas.LoginRequest, db: Session = Depends(get_db)):
+    usuario_autenticado = crud.autenticar_paciente(db=db, credenciales=credenciales)
+    
+    if not usuario_autenticado:
+        raise HTTPException(
+            status_code=401, 
+            detail="Credenciales inválidas. Verifica tu correo electrónico y contraseña."
+        )
+        
+    return {
+        "mensaje": "Inicio de sesión exitoso",
+        "id_usuario": usuario_autenticado.id_usuario,
+        "id_paciente": usuario_autenticado.id_paciente,
+        "id_rol": usuario_autenticado.id_rol
+    }
