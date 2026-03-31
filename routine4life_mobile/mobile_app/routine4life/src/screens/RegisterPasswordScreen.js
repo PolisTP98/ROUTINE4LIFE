@@ -3,13 +3,16 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
 
-const RegisterPasswordScreen = ({ navigation }) => {
+// CORRECCIÓN: Agregamos "route" para recibir los parámetros de la pantalla anterior
+const RegisterPasswordScreen = ({ navigation, route }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [secureTextEntry1, setSecureTextEntry1] = useState(true);
   const [secureTextEntry2, setSecureTextEntry2] = useState(true);
 
-  // Validaciones visuales
+  // Extraemos los datos que venían de la pantalla 1
+  const formData = route.params?.formData || {};
+
   const reqLength = password.length >= 8;
   const reqUpper = /[A-Z]/.test(password);
   const reqSpecial = /[0-9!@#$/()={}=.,;:_]/.test(password);
@@ -20,7 +23,9 @@ const RegisterPasswordScreen = ({ navigation }) => {
 
   const handleFinalRegister = () => {
     if (isButtonEnabled) {
-      // Navegamos al Login pasando el parámetro de éxito
+      // Aquí es donde uniremos formData + password para enviarlo a FastAPI. 
+      // Por ahora, navegamos al Login mostrando el éxito.
+      console.log("Datos listos para enviar:", { ...formData, password });
       navigation.navigate('Login', { registered: true });
     }
   };
@@ -39,7 +44,7 @@ const RegisterPasswordScreen = ({ navigation }) => {
           <Ionicons name="chevron-back" size={35} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Registrarse</Text>
         <View style={styles.form}>
           <View style={styles.inputWrapper}>
@@ -64,7 +69,7 @@ const RegisterPasswordScreen = ({ navigation }) => {
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
-              placeholder="Contraseña"
+              placeholder="Confirmar contraseña"
               placeholderTextColor={COLORS.inputText + '80'}
               value={confirmPassword}
               onChangeText={setConfirmPassword}

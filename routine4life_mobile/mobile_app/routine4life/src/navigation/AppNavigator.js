@@ -1,44 +1,57 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { createStackNavigator } from '@react-navigation/stack';
 
 // Importación de pantallas y componentes
 import HomeScreen from '../screens/HomeScreen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import RegisterPasswordScreen from '../screens/RegisterPasswordScreen';
+import RecoverPasswordStep1Screen from '../screens/RecoverPasswordStep1Screen';
+import RecoverPasswordStep2Screen from '../screens/RecoverPasswordStep2Screen';
 import CustomDrawer from '../components/CustomDrawer';
-import { COLORS } from '../styles/theme';
 
 const Drawer = createDrawerNavigator();
+const Stack = createStackNavigator();
 
+// 1. Creamos el Drawer que contendrá el Home y las herramientas internas
+const AppDrawer = () => {
+  return (
+    <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawer {...props} />}
+      screenOptions={{
+        headerShown: false,
+        drawerType: 'front',
+        drawerStyle: {
+          backgroundColor: '#F5F0E8',
+          width: '80%',
+          borderTopRightRadius: 60,
+          borderBottomRightRadius: 60,
+        },
+        overlayColor: 'rgba(0,0,0,0.5)',
+      }}
+    >
+      <Drawer.Screen name="Home" component={HomeScreen} options={{ title: 'Mis registros' }} />
+    </Drawer.Navigator>
+  );
+};
+
+// 2. Creamos el Stack Principal que maneja las pantallas "sueltas" y envuelve al Drawer
 const AppNavigator = () => {
   return (
     <NavigationContainer>
-      <Drawer.Navigator
-        // Usamos el componente personalizado para el diseño del menú lateral
-        drawerContent={(props) => <CustomDrawer {...props} />}
-        screenOptions={{
-          headerShown: false, // Ocultamos el header por defecto de la librería para usar el tuyo personalizado
-          drawerType: 'front', // El menú aparece por encima de la pantalla
-          drawerStyle: {
-            backgroundColor: '#F5F0E8', // Fondo beige
-            width: '80%', // Ancho del menú
-            borderTopRightRadius: 60, // Curva superior derecha
-            borderBottomRightRadius: 60, // Curva inferior derecha
-          },
-          overlayColor: 'rgba(0,0,0,0.5)', // Color de fondo al estar abierto
-        }}
-      >
-        {/* Definición de rutas */}
-        <Drawer.Screen 
-          name="Home" 
-          component={HomeScreen} 
-          options={{ title: 'Mis registros' }} 
-        />
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
+        {/* Flujo de Autenticación */}
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="RegisterPassword" component={RegisterPasswordScreen} />
+        <Stack.Screen name="RecoverPasswordStep1" component={RecoverPasswordStep1Screen} />
+        <Stack.Screen name="RecoverPasswordStep2" component={RecoverPasswordStep2Screen} />
         
-        {/* Aquí puedes añadir más pantallas conforme las crees:
-        <Drawer.Screen name="CitasMedicas" component={CitasScreen} />
-        <Drawer.Screen name="Notificaciones" component={NotificacionesScreen} /> 
-        */}
-      </Drawer.Navigator>
+        {/* Flujo Interno de la App (Protegido) */}
+        <Stack.Screen name="AppDrawer" component={AppDrawer} />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 };
