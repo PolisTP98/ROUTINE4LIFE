@@ -2,44 +2,206 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reportes Generales - Routine4Life</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes Generales | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body class="reportes">
-    <div class="container">
-        <h1>Reportes Generales</h1>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-volver">← Volver al Dashboard</a>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
+<body class="dashboard-body">
+    <!-- Header Moderno con boton de salir -->
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas fa-chart-line"></i> Reportes</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <div class="form-container extra-wide" style="max-width: 1200px; margin: 0 auto;">
+            <!-- Header -->
+            <div class="table-header" style="margin-bottom: 1.5rem;">
+                <h1><i class="fas fa-chart-line"></i> Reportes Generales</h1>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 10px; text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </a>
+            </div>
+            
+            <!-- Mensajes Flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% elif category == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Tarjetas de Estadisticas Principales -->
+            <div class="stats-row">
+                <div class="stat-box primary">
+                    <div class="stat-header">
+                        <span>Medicos Activos</span>
+                        <div class="stat-icon primary"><i class="fas fa-user-md"></i></div>
+                    </div>
+                    <div class="stat-value">{{ total_medicos }}</div>
+                    <div class="stat-label">en el sistema</div>
+                </div>
+                <div class="stat-box success">
+                    <div class="stat-header">
+                        <span>Pacientes Registrados</span>
+                        <div class="stat-icon success"><i class="fas fa-tint"></i></div>
+                    </div>
+                    <div class="stat-value">{{ total_pacientes }}</div>
+                    <div class="stat-label">en el sistema</div>
+                </div>
+                <div class="stat-box warning">
+                    <div class="stat-header">
+                        <span>Total de Consultas</span>
+                        <div class="stat-icon warning"><i class="fas fa-notes-medical"></i></div>
+                    </div>
+                    <div class="stat-value">{{ total_consultas }}</div>
+                    <div class="stat-label">realizadas</div>
+                </div>
+                <div class="stat-box info">
+                    <div class="stat-header">
+                        <span>Proximas Citas</span>
+                        <div class="stat-icon info"><i class="fas fa-calendar-check"></i></div>
+                    </div>
+                    <div class="stat-value">{{ total_citas|default(0) }}</div>
+                    <div class="stat-label">programadas</div>
+                </div>
+            </div>
+            
+            <!-- Grafico de Consultas por Mes -->
+            {% if consultas_por_mes %}
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-chart-bar"></i> Consultas por Mes</h3>
+                    <span class="view-all-link">Ultimos 6 meses</span>
+                </div>
+                <div class="table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Mes</th>
+                                <th>Total de Consultas</th>
+                                <th>Promedio Diario</th>
+                                <th>Tendencia</th>
+                            </thead>
+                        <tbody>
+                            {% for mes in consultas_por_mes %}
+                            <tr>
+                                <td data-label="Mes"><strong>{{ mes.mes }}</strong></td>
+                                <td data-label="Total Consultas">
+                                    <span class="badge-active" style="background: #eff6ff; color: #3b82f6;">
+                                        {{ mes.total }} consultas
+                                    </span>
+                                </td>
+                                <td data-label="Promedio">~{{ (mes.total / 30)|round(1) }} por dia</td>
+                                <td data-label="Tendencia">
+                                    {% if loop.index == 1 %}
+                                        <span style="color: #10b981;"><i class="fas fa-arrow-up"></i> Actual</span>
+                                    {% elif loop.index == 2 %}
+                                        <span style="color: #f59e0b;"><i class="fas fa-minus"></i> Estable</span>
+                                    {% else %}
+                                        <span style="color: #64748b;"><i class="fas fa-chart-line"></i> Historico</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             {% endif %}
-        {% endwith %}
-
-        <div class="stats-grid">
-            <div class="card"><h3>Médicos</h3><div class="number">{{ total_medicos }}</div></div>
-            <div class="card"><h3>Enfermeros</h3><div class="number">{{ total_enfermeros }}</div></div>
-            <div class="card"><h3>Recepcionistas</h3><div class="number">{{ total_recepcionistas }}</div></div>
-            <div class="card"><h3>Pacientes</h3><div class="number">{{ total_pacientes }}</div></div>
         </div>
-
-        <div class="card" style="margin-top:20px;">
-            <h3>Total de Consultas</h3>
-            <div class="number">{{ total_consultas }}</div>
-        </div>
-
-        {% if consultas_por_mes %}
-        <div class="consultas-list">
-            <h3>Consultas por Mes</h3>
-            <ul>
-                {% for mes in consultas_por_mes %}
-                <li>{{ mes.mes }}: {{ mes.total }} consultas</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
     </div>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <style>
+        /* Estilos adicionales para reportes */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Animacion para los numeros */
+        .stat-value {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Badge para tendencia */
+        .badge-active {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+    </style>
+    
+    <script>
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { 
+                            if(flash && flash.parentElement) flash.remove(); 
+                        }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
-</html> 
+</html>

@@ -22,6 +22,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, date
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import text
 
 
 app = Flask(__name__)
@@ -63,33 +64,88 @@ def index():
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        flash('Ya tienes una sesión activa. Redirigiendo al dashboard...', 'info')
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        
+        # Validar campos vacíos
+        if not email or not password:
+            flash('Por favor, completa todos los campos para continuar. Ambos, correo y contraseña, son obligatorios.', 'warning')
+            return render_template("login.html")
+        
+        # Validar formato de email
+        if '@' not in email or '.' not in email:
+            flash('El formato del correo electrónico no es válido. Por favor, usa un formato como: usuario@dominio.com', 'warning')
+            return render_template("login.html")
         
         db = Session(bind=engine)
-        medico_data = db.query(medicos).filter(medicos.email == email).first()
         
-        if medico_data:
+        try:
+            # Buscar médico por email
+            medico_data = db.query(medicos).filter(medicos.email == email).first()
+            
+            if not medico_data:
+                # Mensaje genérico por seguridad
+                flash('Credenciales incorrectas. Verifica tu correo electrónico y contraseña.', 'error')
+                db.close()
+                return render_template("login.html")
+            
+            # Buscar usuario asociado
             usuario = db.query(usuarios).filter(
                 usuarios.id_medico == medico_data.id_medico,
                 usuarios.id_rol == medico_data.id_rol
             ).first()
             
-            if usuario and check_password_hash(usuario.contrasena, password):
-                if medico_data.id_estatus_usuario == 1: 
+            if not usuario:
+                flash('Error de autenticación. Por favor, contacta al administrador del sistema.', 'error')
+                db.close()
+                return render_template("login.html")
+            
+            # Verificar contraseña
+            if check_password_hash(usuario.contrasena, password):
+                # Verificar estatus de usuario
+                if medico_data.id_estatus_usuario == 1:
+                    # Login exitoso
                     user = UserMedico(medico_data)
                     login_user(user)
-                    flash(f'¡Bienvenido Dr. {medico_data.datos_personales.nombre_completo}!', 'success')
+                    
+                    # Mensaje personalizado según el rol
+                    nombre_medico = medico_data.datos_personales.nombre_completo if medico_data.datos_personales else "Usuario"
+                    
+                    if medico_data.id_rol == 1:
+                        flash(f'¡Bienvenido al sistema, Administrador {nombre_medico}! Tienes acceso completo a la gestión del sistema.', 'success')
+                    elif medico_data.id_rol == 2:
+                        flash(f'¡Bienvenido Dr/a. {nombre_medico}! Has iniciado sesión correctamente. Revisa tus pacientes y citas pendientes.', 'success')
+                    elif medico_data.id_rol == 4:
+                        flash(f'¡Bienvenido/a {nombre_medico}! Tu rol de Enfermero/a te permite registrar signos vitales y datos clínicos.', 'success')
+                    elif medico_data.id_rol == 5:
+                        flash(f'¡Bienvenido/a {nombre_medico}! Como Recepcionista, puedes gestionar citas y atención a pacientes.', 'success')
+                    else:
+                        flash(f'¡Bienvenido/a {nombre_medico}! Has iniciado sesión correctamente en Routine4Life.', 'success')
+                    
+                    db.close()
                     return redirect(url_for('dashboard'))
                 else:
-                    flash('Tu cuenta está desactivada. Contacta al administrador.', 'danger')
+                    # Cuenta desactivada
+                    flash('Tu cuenta se encuentra desactivada. Por favor, contacta al administrador del sistema para reactivarla.', 'warning')
             else:
-                flash('Email o contraseña incorrectos.', 'danger')
-        else:
-            flash('Email o contraseña incorrectos.', 'danger')
+                # Contraseña incorrecta
+                flash('Contraseña incorrecta. Por favor, verifica tu contraseña e intenta nuevamente.', 'error')
+                
+                # Registrar intento fallido (opcional)
+                # Log de intento fallido
+                print(f"[LOG] Intento fallido de login para: {email}")
+                
+        except Exception as e:
+            # Error del servidor
+            flash('Ocurrió un error en el servidor. Por favor, intenta nuevamente más tarde o contacta al administrador.', 'error')
+            print(f"Error en login: {str(e)}")
+        
+        finally:
+            db.close()
     
     return render_template("login.html")
 
@@ -97,28 +153,41 @@ def login():
 @login_required
 def registro():
     if current_user.id_rol != 1:
-        flash('No tienes permisos para registrar nuevo personal.', 'danger')
+        flash('No tienes permisos para registrar nuevo personal. Solo el administrador puede realizar esta acción.', 'warning')
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
         db = Session(bind=engine)
         
         try:
-            if db.query(medicos).filter(medicos.email == request.form.get('email')).first():
-                flash('El email ya esta registrado.', 'danger')
+            # Validar email duplicado
+            email = request.form.get('email')
+            if db.query(medicos).filter(medicos.email == email).first():
+                flash(f'El correo electrónico "{email}" ya está registrado en el sistema. Por favor utiliza otro correo.', 'danger')
                 db.close()
                 return redirect(url_for('registro'))
             
+            # Validar contraseñas
             contrasena = request.form.get('contrasena')
             confirmar = request.form.get('confirmar_contrasena')
             
             if contrasena != confirmar:
-                flash('Las contrasenas no coinciden.', 'danger')
+                flash('Las contraseñas no coinciden. Por favor verifica e intenta nuevamente.', 'danger')
+                db.close()
+                return redirect(url_for('registro'))
+            
+            if len(contrasena) < 6:
+                flash('La contraseña debe tener al menos 6 caracteres para garantizar la seguridad de la cuenta.', 'warning')
                 db.close()
                 return redirect(url_for('registro'))
             
             rol_seleccionado = int(request.form.get('id_rol'))
             
+            # Obtener nombre del rol
+            rol_nombre = db.query(roles_usuarios).filter(roles_usuarios.id_rol == rol_seleccionado).first()
+            rol_texto = rol_nombre.nombre if rol_nombre else "Personal"
+            
+            # Procesar teléfono
             codigo_pais = request.form.get('codigo_pais')
             telefono = request.form.get('telefono')
             telefono_completo = codigo_pais + telefono if codigo_pais else telefono
@@ -134,17 +203,26 @@ def registro():
                 num = 1
             codigo_generado = f"MED-{num:04d}"
             
+            # Obtener datos del formulario
+            nombre_completo = request.form.get('nombre_completo')
+            fecha_nacimiento = datetime.strptime(request.form.get('fecha_nacimiento'), '%Y-%m-%d').date()
+            id_sexo = int(request.form.get('id_sexo'))
+            id_pais = int(request.form.get('id_pais'))
+            rfc = request.form.get('rfc')
+            
+            # Crear datos personales
             datos_personales = datos_personales_medico(
-                id_sexo=int(request.form.get('id_sexo')),
-                id_pais=int(request.form.get('id_pais')),
-                nombre_completo=request.form.get('nombre_completo'),
-                fecha_nacimiento=datetime.strptime(request.form.get('fecha_nacimiento'), '%Y-%m-%d').date(),
+                id_sexo=id_sexo,
+                id_pais=id_pais,
+                nombre_completo=nombre_completo,
+                fecha_nacimiento=fecha_nacimiento,
                 telefono=telefono_completo,
                 fecha_hora_registro=datetime.now()
             )
             db.add(datos_personales)
             db.flush()
             
+            # Crear personal médico
             nuevo_personal = medicos(
                 id_medico=datos_personales.id_medico,
                 id_rol=rol_seleccionado,
@@ -152,12 +230,13 @@ def registro():
                 id_estatus_usuario=1,
                 codigo=codigo_generado,
                 cedula_profesional=request.form.get('cedula_profesional') if rol_seleccionado == 2 else None,
-                email=request.form.get('email'),
-                rfc=request.form.get('rfc')
+                email=email,
+                rfc=rfc
             )
             db.add(nuevo_personal)
             db.flush()
             
+            # Crear usuario
             hashed_password = generate_password_hash(contrasena)
             nuevo_usuario = usuarios(
                 id_rol=rol_seleccionado,
@@ -170,23 +249,70 @@ def registro():
             
             db.commit()
             
+            # Obtener información adicional para el mensaje
+            especialidad_texto = ""
             if rol_seleccionado == 2:
-                flash('Medico registrado exitosamente.', 'success')
+                especialidad = db.query(especialidades_medicas).filter(
+                    especialidades_medicas.id_especialidad == int(request.form.get('id_especialidad'))
+                ).first()
+                especialidad_texto = f" • Especialidad: {especialidad.nombre}\n" if especialidad else ""
+            
+            # Mensaje flash personalizado según el rol
+            if rol_seleccionado == 2:
+                flash(
+                    f"MÉDICO REGISTRADO CORRECTAMENTE\n\n"
+                    f"Datos del nuevo médico:\n"
+                    f"• Nombre: {nombre_completo}\n"
+                    f"• Email: {email}\n"
+                    f"• RFC: {rfc}\n"
+                    f"• Cédula profesional: {request.form.get('cedula_profesional')}\n"
+                    f"• Código: {codigo_generado}\n"
+                    f"{especialidad_texto}"
+                    f"• Teléfono: {telefono_completo}\n\n"
+                    f"El médico ya puede iniciar sesión en el sistema.",
+                    "success"
+                )
             elif rol_seleccionado == 4:
-                flash('Enfermero registrado exitosamente.', 'success')
+                flash(
+                    f"ENFERMERO REGISTRADO CORRECTAMENTE\n\n"
+                    f"Datos del nuevo enfermero:\n"
+                    f"• Nombre: {nombre_completo}\n"
+                    f"• Email: {email}\n"
+                    f"• RFC: {rfc}\n"
+                    f"• Código: {codigo_generado}\n"
+                    f"• Teléfono: {telefono_completo}\n\n"
+                    f"El enfermero ya puede iniciar sesión en el sistema.",
+                    "success"
+                )
             elif rol_seleccionado == 5:
-                flash('Recepcionista registrado exitosamente.', 'success')
+                flash(
+                    f"RECEPCIONISTA REGISTRADO CORRECTAMENTE\n\n"
+                    f"Datos del nuevo recepcionista:\n"
+                    f"• Nombre: {nombre_completo}\n"
+                    f"• Email: {email}\n"
+                    f"• RFC: {rfc}\n"
+                    f"• Código: {codigo_generado}\n"
+                    f"• Teléfono: {telefono_completo}\n\n"
+                    f"El recepcionista ya puede iniciar sesión en el sistema.",
+                    "success"
+                )
             
             db.close()
             return redirect(url_for('admin_dashboard'))
             
         except Exception as e:
             db.rollback()
-            flash(f'Error al registrar: {str(e)}', 'danger')
+            flash(
+                f"ERROR AL REGISTRAR PERSONAL\n\n"
+                f"No se pudo completar el registro. Detalle del error:\n"
+                f"{str(e)}\n\n"
+                f"Por favor verifica los datos e intenta nuevamente.",
+                "danger"
+            )
             db.close()
             return redirect(url_for('registro'))
     
-    # GET: cargar catalogos
+    # GET: cargar catálogos
     db = Session(bind=engine)
     especialidades = db.query(especialidades_medicas).all()
     sexos_list = db.query(sexos).all()
@@ -306,7 +432,7 @@ def gestionar_medicos():
 @login_required
 def editar_medico(id):
     if current_user.id_rol != 1:
-        flash('No tienes acceso.', 'danger')
+        flash('No tienes permisos para editar médicos', 'warning')
         return redirect(url_for('dashboard'))
     
     db = Session(bind=engine)
@@ -316,12 +442,15 @@ def editar_medico(id):
     ).filter(medicos.id_medico == id).first()
     
     if not medico:
-        flash('Medico no encontrado.', 'danger')
+        flash('Médico no encontrado', 'danger')
         db.close()
         return redirect(url_for('gestionar_medicos'))
     
     if request.method == 'POST':
         try:
+            nombre_original = medico.datos_personales.nombre_completo
+            
+            # Actualizar datos
             medico.datos_personales.nombre_completo = request.form.get('nombre_completo')
             medico.datos_personales.telefono = request.form.get('telefono')
             medico.datos_personales.fecha_nacimiento = datetime.strptime(request.form.get('fecha_nacimiento'), '%Y-%m-%d').date()
@@ -333,7 +462,8 @@ def editar_medico(id):
             medico.id_especialidad = int(request.form.get('id_especialidad'))
             
             db.commit()
-            flash('Medico actualizado exitosamente.', 'success')
+            
+            flash(f'Médico actualizado: {nombre_original} → {medico.datos_personales.nombre_completo}', 'success')
             db.close()
             return redirect(url_for('gestionar_medicos'))
             
@@ -661,8 +791,8 @@ def medico_dashboard():
     citas_data = []
     for cita in proximas_citas:
         cita_data = {
-            'fecha': cita.fecha,
-            'hora': cita.hora,
+            'fecha': cita.fecha if cita.fecha else None,
+            'hora': cita.hora if cita.hora else None,
             'paciente_nombre': cita.paciente.nombre_completo if cita.paciente else 'No especificado',
             'motivo': cita.motivo
         }
@@ -729,6 +859,16 @@ def nuevo_paciente():
         try:
             fecha_nac = datetime.strptime(request.form.get('fecha_nacimiento'), '%Y-%m-%d').date()
             
+            # ELIMINA ESTA VALIDACIÓN DE EDAD
+            # Validar edad - COMENTAR O ELIMINAR ESTAS LÍNEAS
+            # hoy = date.today()
+            # edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+            # if edad < 18:
+            #     flash('El paciente debe ser mayor de 18 años', 'warning')
+            #     db.close()
+            #     return redirect(url_for('nuevo_paciente'))
+            
+            # Generar código automático
             ultimo_paciente = db.query(pacientes).order_by(pacientes.id_paciente.desc()).first()
             if ultimo_paciente:
                 try:
@@ -739,13 +879,17 @@ def nuevo_paciente():
                 num = 1
             codigo_generado = f"PAC-{num:04d}"
             
+            nombre_paciente = request.form.get('nombre_completo')
+            id_sexo = int(request.form.get('id_sexo'))
+            id_tipo_diabetes = request.form.get('id_tipo_diabetes')
+            
             nuevo_pac = pacientes(
                 id_medico=current_user.id,
-                id_sexo=int(request.form.get('id_sexo')),
+                id_sexo=id_sexo,
                 id_estatus_usuario=1,
-                id_tipo_diabetes=int(request.form.get('id_tipo_diabetes')) if request.form.get('id_tipo_diabetes') else None,
+                id_tipo_diabetes=int(id_tipo_diabetes) if id_tipo_diabetes else None,
                 codigo=codigo_generado,
-                nombre_completo=request.form.get('nombre_completo'),
+                nombre_completo=nombre_paciente,
                 fecha_nacimiento=fecha_nac,
                 fecha_hora_registro=datetime.now()
             )
@@ -754,16 +898,17 @@ def nuevo_paciente():
             
             paciente_id = nuevo_pac.id_paciente
             
-            flash('Paciente registrado exitosamente.', 'success')
+            flash(f'Paciente registrado: {nombre_paciente} (Código: {codigo_generado})', 'success')
             db.close()
             return redirect(url_for('detalle_paciente', id=paciente_id))
             
         except Exception as e:
             db.rollback()
-            flash(f'Error al registrar paciente: {str(e)}', 'danger')
+            flash(f'Error al registrar: {str(e)}', 'danger')
             db.close()
-            return redirect(url_for('medico_dashboard'))
+            return redirect(url_for('nuevo_paciente'))
     
+    # GET: cargar catálogos
     db = Session(bind=engine)
     sexos_list = db.query(sexos).all()
     tipos_diabetes_list = db.query(tipos_diabetes).all()
@@ -772,7 +917,7 @@ def nuevo_paciente():
     return render_template("nuevo_paciente.html",
                          sexos=sexos_list,
                          tipos_diabetes=tipos_diabetes_list)
-
+    
 @app.route("/paciente/<int:id>")
 @login_required
 def detalle_paciente(id):
@@ -797,9 +942,19 @@ def detalle_paciente(id):
     
     aplicacion = paciente.aplicacion
     
+    # Obtener consultas
     consultas = db.query(consultas_medicas).filter(
         consultas_medicas.id_paciente == id
     ).order_by(consultas_medicas.fecha.desc()).all()
+    
+    # Obtener citas PENDIENTES (estado 1 = Programada) que NO tienen consulta asociada
+    citas_pendientes = db.query(citas_medicas).options(
+        joinedload(citas_medicas.consulta)
+    ).filter(
+        citas_medicas.id_paciente == id,
+        citas_medicas.id_estatus_cita == 1,  # Programada
+        citas_medicas.fecha >= date.today()  # Solo futuras o hoy
+    ).order_by(citas_medicas.fecha.asc(), citas_medicas.hora.asc()).all()
     
     db.close()
     
@@ -807,6 +962,7 @@ def detalle_paciente(id):
                          paciente=paciente,
                          aplicacion=aplicacion,
                          consultas=consultas,
+                         citas_pendientes=citas_pendientes,
                          now_date=date.today())
 
 # ==================== CONSULTAS MÉDICAS ====================
@@ -814,21 +970,41 @@ def detalle_paciente(id):
 @app.route("/paciente/<int:id>/consulta/nueva", methods=['GET', 'POST'])
 @login_required
 def nueva_consulta(id):
+    cita_id = request.args.get('cita_id', type=int)
+    
+    if not cita_id:
+        flash('Debe seleccionar una cita primero.', 'warning')
+        return redirect(url_for('detalle_paciente', id=id))
+    
     db = Session(bind=engine)
     
-    paciente = db.query(pacientes).filter(
-        pacientes.id_paciente == id,
-        pacientes.id_medico == current_user.id
+    # Verificar que la cita existe y pertenece al paciente
+    cita = db.query(citas_medicas).filter(
+        citas_medicas.id_cita == cita_id,
+        citas_medicas.id_paciente == id
     ).first()
     
-    if not paciente:
-        flash('Paciente no encontrado o no tienes acceso.', 'danger')
-        return redirect(url_for('dashboard'))
+    if not cita:
+        flash('Cita no encontrada.', 'danger')
+        db.close()
+        return redirect(url_for('detalle_paciente', id=id))
+    
+    # Verificar que no tenga consulta ya
+    consulta_existente = db.query(consultas_medicas).filter(
+        consultas_medicas.id_cita == cita_id
+    ).first()
+    
+    if consulta_existente:
+        flash('Esta cita ya tiene una consulta registrada.', 'warning')
+        db.close()
+        return redirect(url_for('detalle_paciente', id=id))
+    
+    paciente = db.query(pacientes).filter(pacientes.id_paciente == id).first()
     
     if request.method == 'POST':
         try:
-            nueva_cons = consultas_medicas(
-                id_cita=None,
+            nueva_consulta = consultas_medicas(
+                id_cita=cita_id,
                 id_medico=current_user.id,
                 id_paciente=id,
                 fecha=date.today(),
@@ -837,25 +1013,39 @@ def nueva_consulta(id):
                 altura=int(request.form.get('altura')) if request.form.get('altura') else None,
                 presion_sistolica=int(request.form.get('presion_sistolica')) if request.form.get('presion_sistolica') else None,
                 presion_diastolica=int(request.form.get('presion_diastolica')) if request.form.get('presion_diastolica') else None,
+                frecuencia_cardiaca=int(request.form.get('frecuencia_cardiaca')) if request.form.get('frecuencia_cardiaca') else None,
                 glucosa_ayunas=float(request.form.get('glucosa_ayunas')) if request.form.get('glucosa_ayunas') else None,
                 glucosa_postprandial=float(request.form.get('glucosa_postprandial')) if request.form.get('glucosa_postprandial') else None,
                 hemoglobina_glicosilada=float(request.form.get('hemoglobina_glicosilada')) if request.form.get('hemoglobina_glicosilada') else None,
+                colesterol_total=float(request.form.get('colesterol_total')) if request.form.get('colesterol_total') else None,
+                trigliceridos=float(request.form.get('trigliceridos')) if request.form.get('trigliceridos') else None,
+                nivel_insulina=float(request.form.get('nivel_insulina')) if request.form.get('nivel_insulina') else None,
                 notas=request.form.get('notas'),
                 plan_tratamiento=request.form.get('plan_tratamiento')
             )
-            db.add(nueva_cons)
+            db.add(nueva_consulta)
+            
+            # Actualizar el estado de la cita a "Completada" (id_estatus_cita = 3)
+            cita.id_estatus_cita = 3  # Completada
+            
             db.commit()
             flash('Consulta registrada exitosamente.', 'success')
-            return redirect(url_for('historial_consulta', id=id))
+            db.close()
+            return redirect(url_for('detalle_paciente', id=id))
             
         except Exception as e:
             db.rollback()
             flash(f'Error al registrar consulta: {str(e)}', 'danger')
+            db.close()
+            return redirect(url_for('nueva_consulta', id=id, cita_id=cita_id))
     
     sintomas_catalogo = db.query(sintomas_diabetes).all()
-    return render_template("nueva_consulta.html",
+    db.close()
+    
+    return render_template("nueva_consulta.html", 
                          paciente=paciente,
-                         sintomas=sintomas_catalogo)
+                         sintomas=sintomas_catalogo,
+                         cita=cita)
 
 @app.route("/paciente/<int:id>/historial_consultas")
 @login_required
@@ -1057,11 +1247,13 @@ def sintomas(id):
 
 # ==================== CITAS ====================
 
+from sqlalchemy import text
+
 @app.route("/cita/nueva", methods=['GET', 'POST'])
 @login_required
 def nueva_cita():
     if current_user.id_rol not in [1, 2]:
-        flash('No tienes permisos para agendar citas.', 'danger')
+        flash('No tienes permisos para agendar citas.', 'warning')
         return redirect(url_for('dashboard'))
     
     db = Session(bind=engine)
@@ -1073,52 +1265,357 @@ def nueva_cita():
             else:
                 id_medico = current_user.id
             
-            nueva_cita_obj = citas_medicas(
-                id_rol=current_user.id_rol,
-                id_medico=id_medico,
-                id_paciente=int(request.form.get('id_paciente')),
-                id_estatus_cita=1,
-                fecha=datetime.strptime(request.form.get('fecha'), '%Y-%m-%d').date(),
-                hora=datetime.strptime(request.form.get('hora'), '%H:%M').time(),
-                motivo=request.form.get('motivo'),
-                notas=request.form.get('notas'),
-                fecha_hora_solicitud=datetime.now()
-            )
-            db.add(nueva_cita_obj)
-            db.commit()
-            flash('Cita agendada exitosamente.', 'success')
+            id_paciente = int(request.form.get('id_paciente'))
+            fecha = datetime.strptime(request.form.get('fecha'), '%Y-%m-%d').date()
+            hora = datetime.strptime(request.form.get('hora'), '%H:%M').time()
+            motivo = request.form.get('motivo')
+            notas = request.form.get('notas')
+            
+            # Validar que la fecha no sea pasada
+            if fecha < date.today():
+                flash('No se pueden agendar citas en fechas pasadas', 'warning')
+                db.close()
+                return redirect(url_for('nueva_cita'))
+            
+            # Validar horario (8:00 a 20:00)
+            if hora.hour < 8 or hora.hour > 20 or (hora.hour == 20 and hora.minute > 0):
+                flash('Horario disponible: 8:00 a 20:00', 'warning')
+                db.close()
+                return redirect(url_for('nueva_cita'))
+            
+            # Obtener datos para el mensaje
+            medico = db.query(medicos).filter(medicos.id_medico == id_medico).first()
+            paciente = db.query(pacientes).filter(pacientes.id_paciente == id_paciente).first()
+            
+            if not paciente:
+                flash('Paciente no encontrado', 'danger')
+                db.close()
+                return redirect(url_for('nueva_cita'))
+            
+            with engine.connect() as conn:
+                stmt = text("""
+                    INSERT INTO r4l.citas_medicas 
+                    (id_rol, id_medico, id_paciente, id_estatus_cita, fecha, hora, motivo, notas, fecha_hora_solicitud)
+                    VALUES (:id_rol, :id_medico, :id_paciente, :id_estatus_cita, :fecha, :hora, :motivo, :notas, :fecha_hora_solicitud)
+                """)
+                
+                conn.execute(stmt, {
+                    'id_rol': current_user.id_rol,
+                    'id_medico': id_medico,
+                    'id_paciente': id_paciente,
+                    'id_estatus_cita': 1,
+                    'fecha': fecha,
+                    'hora': hora,
+                    'motivo': motivo,
+                    'notas': notas,
+                    'fecha_hora_solicitud': datetime.now()
+                })
+                conn.commit()
+            
+            nombre_medico = medico.datos_personales.nombre_completo if medico and medico.datos_personales else "Médico"
             db.close()
+            
+            flash(f'Cita agendada: {paciente.nombre_completo} con {nombre_medico} para el {fecha} a las {hora.strftime("%H:%M")}', 'success')
             return redirect(url_for('dashboard'))
             
         except Exception as e:
             db.rollback()
             flash(f'Error al agendar cita: {str(e)}', 'danger')
             db.close()
+            return redirect(url_for('nueva_cita'))
     
-    if current_user.id_rol == 1:
+    # GET: cargar datos según el rol
+    if current_user.id_rol == 1:  # Administrador
         medicos_list = db.query(medicos).options(
-            joinedload(medicos.datos_personales)
+            joinedload(medicos.datos_personales),
+            joinedload(medicos.especialidad)
         ).filter(
             medicos.id_rol == 2,
             medicos.id_estatus_usuario == 1
         ).all()
-        pacientes_list = db.query(pacientes).filter(
-            pacientes.id_medico == current_user.id
-        ).all()
-    elif current_user.id_rol == 2:
+        
+        # Cargar pacientes agrupados por médico
+        pacientes_por_medico = {}
+        for medico in medicos_list:
+            pacientes_del_medico = db.query(pacientes).filter(
+                pacientes.id_medico == medico.id_medico,
+                pacientes.id_estatus_usuario == 1
+            ).all()
+            pacientes_por_medico[medico.id_medico] = [
+                {'id': p.id_paciente, 'nombre': p.nombre_completo}
+                for p in pacientes_del_medico
+            ]
+        
+        db.close()
+        return render_template("nueva_cita.html",
+                             medicos=medicos_list,
+                             pacientes_por_medico=pacientes_por_medico)
+    
+    else:  # Médico (rol 2)
         medicos_list = [current_user]
         pacientes_list = db.query(pacientes).filter(
-            pacientes.id_medico == current_user.id
+            pacientes.id_medico == current_user.id,
+            pacientes.id_estatus_usuario == 1
         ).all()
-    else:
-        medicos_list = []
-        pacientes_list = []
+        
+        db.close()
+        return render_template("nueva_cita.html",
+                             medicos=medicos_list,
+                             pacientes=pacientes_list)
+        
+# ==================== ADMIN - GESTION DE CITAS ====================
+
+@app.route("/admin/gestionar_citas")
+@login_required
+def admin_gestionar_citas():
+    if current_user.id_rol != 1:
+        flash('No tienes acceso a esta sección.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    db = Session(bind=engine)
+    
+    # Obtener todas las citas (futuras y pasadas)
+    citas = db.query(citas_medicas).options(
+        joinedload(citas_medicas.paciente),
+        joinedload(citas_medicas.medico).joinedload(medicos.datos_personales),
+        joinedload(citas_medicas.estatus)
+    ).order_by(citas_medicas.fecha.desc(), citas_medicas.hora.desc()).all()
+    
+    # Obtener médicos para el filtro
+    medicos_list = db.query(medicos).options(
+        joinedload(medicos.datos_personales)
+    ).filter(medicos.id_rol == 2).all()
     
     db.close()
     
-    return render_template("nueva_cita.html",
+    return render_template("admin_gestionar_citas.html", 
+                         citas=citas, 
                          medicos=medicos_list,
-                         pacientes=pacientes_list)
+                         now_date=date.today())
+
+
+@app.route("/admin/editar_cita/<int:id>", methods=['GET', 'POST'])
+@login_required
+def admin_editar_cita(id):
+    if current_user.id_rol != 1:
+        flash('No tienes acceso a esta sección.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    db = Session(bind=engine)
+    
+    cita = db.query(citas_medicas).options(
+        joinedload(citas_medicas.paciente),
+        joinedload(citas_medicas.medico).joinedload(medicos.datos_personales)  # ← Cargar datos_personales del médico
+    ).filter(citas_medicas.id_cita == id).first()
+    
+    if not cita:
+        flash('Cita no encontrada.', 'danger')
+        db.close()
+        return redirect(url_for('admin_gestionar_citas'))
+    
+    paciente_nombre = cita.paciente.nombre_completo if cita.paciente else '-'
+    medico_nombre = cita.medico.datos_personales.nombre_completo if cita.medico and cita.medico.datos_personales else '-'
+    
+    if request.method == 'POST':
+        try:
+            nueva_fecha = datetime.strptime(request.form.get('fecha'), '%Y-%m-%d').date()
+            nueva_hora = datetime.strptime(request.form.get('hora'), '%H:%M').time()
+            motivo = request.form.get('motivo')
+            notas = request.form.get('notas')
+            id_estatus_cita = int(request.form.get('id_estatus_cita'))
+            
+            # Validar que la fecha no sea pasada (excepto si es para cancelar)
+            if id_estatus_cita == 1 and nueva_fecha < date.today():
+                flash('No se pueden reprogramar citas en fechas pasadas.', 'warning')
+                db.close()
+                return redirect(url_for('admin_editar_cita', id=id))
+            
+            # Actualizar cita
+            cita.fecha = nueva_fecha
+            cita.hora = nueva_hora
+            cita.motivo = motivo
+            cita.notas = notas
+            cita.id_estatus_cita = id_estatus_cita
+            
+            db.commit()
+            
+            # Mensaje según la acción
+            if id_estatus_cita == 1:
+                flash(f'Cita reprogramada para el {nueva_fecha.strftime("%d/%m/%Y")} a las {nueva_hora.strftime("%H:%M")}', 'success')
+            elif id_estatus_cita == 2:
+                flash('Cita cancelada correctamente.', 'success')
+            elif id_estatus_cita == 3:
+                flash('Cita completada y marcada como finalizada.', 'success')
+            
+            db.close()
+            return redirect(url_for('admin_gestionar_citas'))
+            
+        except Exception as e:
+            db.rollback()
+            flash(f'Error al actualizar la cita: {str(e)}', 'danger')
+            db.close()
+            return redirect(url_for('admin_editar_cita', id=id))
+    
+    estatus_citas = [
+        {'id': 1, 'nombre': 'Programada'},
+        {'id': 2, 'nombre': 'Cancelada'},
+        {'id': 3, 'nombre': 'Completada'}
+    ]
+    
+    cita_data = {
+        'id_cita': cita.id_cita,
+        'fecha': cita.fecha,
+        'hora': cita.hora,
+        'motivo': cita.motivo,
+        'notas': cita.notas,
+        'id_estatus_cita': cita.id_estatus_cita,
+        'paciente_nombre': paciente_nombre,
+        'medico_nombre': medico_nombre
+    }
+    
+    db.close()
+    
+    return render_template("admin_editar_cita.html", 
+                         cita=cita_data,  # ← Pasar el diccionario en lugar del objeto
+                         estatus_citas=estatus_citas,
+                         now_date=date.today())
+
+
+@app.route("/admin/cancelar_cita/<int:id>")
+@login_required
+def admin_cancelar_cita(id):
+    if current_user.id_rol != 1:
+        flash('No tienes acceso a esta sección.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    db = Session(bind=engine)
+    
+    cita = db.query(citas_medicas).filter(citas_medicas.id_cita == id).first()
+    
+    if cita:
+        cita.id_estatus_cita = 2  # Cancelada
+        db.commit()
+        flash(f'Cita cancelada correctamente.', 'success')
+    else:
+        flash('Cita no encontrada.', 'danger')
+    
+    db.close()
+    return redirect(url_for('admin_gestionar_citas'))
+
+# ==================== ADMIN - GESTION DE CONSULTAS ====================
+
+@app.route("/admin/gestionar_consultas")
+@login_required
+def admin_gestionar_consultas():
+    if current_user.id_rol != 1:
+        flash('No tienes acceso a esta seccion.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    db = Session(bind=engine)
+    
+    # Obtener todas las consultas con sus relaciones
+    consultas = db.query(consultas_medicas).options(
+        joinedload(consultas_medicas.paciente),
+        joinedload(consultas_medicas.medico).joinedload(medicos.datos_personales)
+    ).order_by(consultas_medicas.fecha.desc(), consultas_medicas.hora.desc()).all()
+    
+    # Obtener medicos para el filtro
+    medicos_list = db.query(medicos).options(
+        joinedload(medicos.datos_personales)
+    ).filter(medicos.id_rol == 2).all()
+    
+    db.close()
+    
+    return render_template("admin_gestionar_consultas.html", 
+                         consultas=consultas,
+                         medicos=medicos_list)
+
+
+@app.route("/admin/ver_consulta/<int:id>")
+@login_required
+def admin_ver_consulta(id):
+    if current_user.id_rol != 1:
+        flash('No tienes acceso a esta seccion.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    db = Session(bind=engine)
+    
+    consulta = db.query(consultas_medicas).options(
+        joinedload(consultas_medicas.paciente),
+        joinedload(consultas_medicas.medico).joinedload(medicos.datos_personales),
+        joinedload(consultas_medicas.sintomas).joinedload(sintomas_consulta.sintoma_diabetes)
+    ).filter(consultas_medicas.id_consulta == id).first()
+    
+    if not consulta:
+        flash('Consulta no encontrada.', 'danger')
+        db.close()
+        return redirect(url_for('admin_gestionar_consultas'))
+    
+    sintomas = consulta.sintomas if consulta.sintomas else []
+    
+    db.close()
+    
+    return render_template("admin_ver_consulta.html",
+                         consulta=consulta,
+                         sintomas=sintomas)
+    
+# ==================== ELIMINAR CONSULTA ====================
+
+@app.route("/consulta/eliminar/<int:id>")
+@login_required
+def eliminar_consulta(id):
+    db = Session(bind=engine)
+    
+    consulta = db.query(consultas_medicas).options(
+        joinedload(consultas_medicas.paciente)
+    ).filter(consultas_medicas.id_consulta == id).first()
+    
+    if not consulta:
+        flash('Consulta no encontrada.', 'danger')
+        db.close()
+        return redirect(url_for('dashboard'))
+    
+    # Verificar permisos
+    if current_user.id_rol == 1:
+        # Administrador puede eliminar cualquier consulta
+        pass
+    elif current_user.id_rol == 2:
+        # Medico solo puede eliminar sus propias consultas
+        if consulta.id_medico != current_user.id:
+            flash('No tienes permiso para eliminar esta consulta.', 'danger')
+            db.close()
+            return redirect(url_for('dashboard'))
+    else:
+        # Otros roles no pueden eliminar
+        flash('No tienes permiso para eliminar consultas.', 'danger')
+        db.close()
+        return redirect(url_for('dashboard'))
+    
+    paciente_id = consulta.id_paciente
+    
+    try:
+        # Eliminar síntomas asociados primero
+        sintomas = db.query(sintomas_consulta).filter(sintomas_consulta.id_consulta == id).all()
+        for s in sintomas:
+            db.delete(s)
+        
+        # Eliminar la consulta
+        db.delete(consulta)
+        db.commit()
+        
+        flash('Consulta eliminada correctamente.', 'success')
+        
+    except Exception as e:
+        db.rollback()
+        flash(f'Error al eliminar la consulta: {str(e)}', 'danger')
+    
+    db.close()
+    
+    # Redirigir según el rol
+    if current_user.id_rol == 1:
+        return redirect(url_for('admin_gestionar_consultas'))
+    else:
+        return redirect(url_for('detalle_paciente', id=paciente_id))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -2,50 +2,250 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestionar Médicos - Routine4Life</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar Medicos | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body class="gestionar">
-    <div class="container">
-        <h1>Gestión de Médicos</h1>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-volver">← Volver al Dashboard</a>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
+<body class="dashboard-body">
+    <!-- Header Moderno con boton de salir -->
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas fa-shield-alt"></i> Administrador</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <div class="form-container" style="max-width: 1400px;">
+            <div class="table-header" style="margin-bottom: 1.5rem;">
+                <h1><i class="fas fa-user-md"></i> Gestion de Medicos</h1>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 10px; text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </a>
+            </div>
+            
+            <!-- Mensajes Flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% elif category == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            {% if medicos %}
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-list"></i> Lista de Medicos Registrados</h3>
+                </div>
+                <div class="table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Especialidad</th>
+                                <th>Telefono</th>
+                                <th>Cedula</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </thead>
+                        <tbody>
+                            {% for medico in medicos %}
+                              <tr>
+                                <td data-label="Nombre">
+                                    <strong>{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}</strong><br>
+                                    <span class="patient-code" style="font-size: 0.7rem; color: #64748b;">{{ medico.codigo }}</span>
+                                 </td>
+                                <td data-label="Email">{{ medico.email }}</td>
+                                <td data-label="Especialidad">
+                                    {% if medico.especialidad %}
+                                        <span class="diabetes-badge diabetes-type1">{{ medico.especialidad.nombre }}</span>
+                                    {% else %}
+                                        <span class="diabetes-badge diabetes-default">Sin especialidad</span>
+                                    {% endif %}
+                                 </td>
+                                <td data-label="Telefono">{{ medico.datos_personales.telefono if medico.datos_personales else '-' }}</td>
+                                <td data-label="Cedula">{{ medico.cedula_profesional or '-' }}</td>
+                                <td data-label="Estado">
+                                    {% if medico.id_estatus_usuario == 1 %}
+                                        <span class="badge-active"><i class="fas fa-circle"></i> Activo</span>
+                                    {% else %}
+                                        <span class="badge-inactive"><i class="fas fa-circle"></i> Inactivo</span>
+                                    {% endif %}
+                                 </td>
+                                <td data-label="Acciones">
+                                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                        <a href="{{ url_for('editar_medico', id=medico.id_medico) }}" class="btn-sm btn-primary-sm" style="background: #3b82f6; color: white;">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        {% if medico.id_estatus_usuario == 1 %}
+                                            <a href="{{ url_for('desactivar_medico', id=medico.id_medico) }}" class="btn-sm btn-danger-sm" style="background: #ef4444; color: white;" onclick="return confirm('¿Desactivar este medico? El medico no podra iniciar sesion.')">
+                                                <i class="fas fa-ban"></i> Desactivar
+                                            </a>
+                                        {% else %}
+                                            <a href="{{ url_for('activar_medico', id=medico.id_medico) }}" class="btn-sm btn-success-sm" style="background: #10b981; color: white;" onclick="return confirm('¿Activar este medico? El medico podra iniciar sesion nuevamente.')">
+                                                <i class="fas fa-check"></i> Activar
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                 </td>
+                              </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state-modern">
+                <i class="fas fa-user-md"></i>
+                <p>No hay medicos registrados en el sistema.</p>
+            </div>
             {% endif %}
-        {% endwith %}
-
-        {% if medicos %}
-        <table>
-            <thead>
-                <tr><th>Nombre</th><th>Email</th><th>Especialidad</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr>
-            </thead>
-            <tbody>
-                {% for medico in medicos %}
-                <tr>
-                    <td>{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}</td>
-                    <td>{{ medico.email }}</td>
-                    <td>{{ medico.especialidad.nombre if medico.especialidad else '-' }}</td>
-                    <td>{{ medico.datos_personales.telefono if medico.datos_personales else '-' }}</td>
-                    <td class="{% if medico.id_estatus_usuario == 1 %}status-active{% else %}status-inactive{% endif %}">
-                        {% if medico.id_estatus_usuario == 1 %}Activo{% else %}Inactivo{% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('editar_medico', id=medico.id_medico) }}" class="btn btn-editar">Editar</a>
-                        {% if medico.id_estatus_usuario == 1 %}
-                            <a href="{{ url_for('desactivar_medico', id=medico.id_medico) }}" class="btn btn-desactivar" onclick="return confirm('¿Desactivar este médico?')">Desactivar</a>
-                        {% else %}
-                            <a href="{{ url_for('activar_medico', id=medico.id_medico) }}" class="btn btn-activar" onclick="return confirm('¿Activar este médico?')">Activar</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}<p>No hay médicos registrados.</p>{% endif %}
+        </div>
     </div>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <style>
+        /* Estilos adicionales para badges de especialidad */
+        .diabetes-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
+        .diabetes-type1 {
+            background: rgba(59,130,246,0.15);
+            color: #3b82f6;
+        }
+        
+        .diabetes-default {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        
+        .badge-active {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            background: #ecfdf5;
+            color: #059669;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
+        .badge-inactive {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            background: #fef2f2;
+            color: #dc2626;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
+        .btn-sm {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-sm:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+        
+        .btn-primary-sm {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-danger-sm {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-success-sm {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+        
+        .patient-code {
+            font-family: monospace;
+        }
+        
+        @media (max-width: 768px) {
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .btn-sm {
+                font-size: 0.65rem;
+                padding: 0.2rem 0.5rem;
+            }
+            
+            .modern-table td {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+    
+    <script>
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { 
+                            if(flash && flash.parentElement) flash.remove(); 
+                        }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

@@ -2,44 +2,75 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registros de Síntomas y Signos</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Síntomas | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body class="sintomas-detalle">
-    <header>
-        <h2>ROUTINE4LIFE</h2>
-        <nav>
-            <a href="#">Inicio</a> |
-            <a href="#">Médicos</a> |
-            <a href="#">Pacientes</a>
-        </nav>
+    <header class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clínico para Diabetes</p>
+            </div>
+        </div>
+        <div class="user-info">
+            <div>
+                <span><i class="fas fa-user-md"></i> {{ current_user.nombre_completo or current_user.email }}</span>
+                <div class="user-role">Médico Especialista</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+        </div>
     </header>
-
-    <hr>
-
-    <h1>REGISTROS DE SÍNTOMAS Y SIGNOS</h1>
-
-    <form>
-        <h3>Información del Paciente</h3>
-
-        <label for="nombre">Nombre del paciente:</label><br>
-        <input type="text" id="nombre" name="nombre"><br><br>
-
-        <label for="nivelesGlucosa">Niveles de glucosa diarios:</label><br>
-        <input type="text" id="nivelesGlucosa" name="nivelesGlucosa"><br><br>
-
-        <label for="presionArterial">Presión arterial:</label><br>
-        <input type="text" id="presionArterial" name="presionArterial"><br><br>
-
-        <label for="sintomas">Síntomas reportados:</label><br>
-        <textarea id="sintomas" name="sintomas" rows="4" cols="40"></textarea><br><br>
-
-        <label for="eventos">Eventos importantes:</label><br>
-        <input type="text" id="eventos" name="eventos"><br><br>
-
-        <button type="submit">Aceptar</button>
-        <button type="reset">Cancelar</button>
-        <button type="button">Siguiente</button>
-    </form>
+    
+    <div class="container">
+        <div class="form-container">
+            <h1><i class="fas fa-head-side-medical"></i> REGISTROS DE SÍNTOMAS Y SIGNOS</h1>
+            <p class="form-subtitle">Monitoreo de síntomas y signos vitales del paciente</p>
+            
+            <form>
+                <h2 style="font-size: 20px; margin: 24px 0 16px;"><i class="fas fa-user"></i> Información del Paciente</h2>
+                
+                <div class="form-group">
+                    <label>Nombre del paciente:</label>
+                    <input type="text" id="nombre" name="nombre" placeholder="Ejemplo: María González López">
+                </div>
+                
+                <div class="form-group">
+                    <label>Niveles de glucosa diarios (mg/dL):</label>
+                    <input type="text" id="nivelesGlucosa" name="nivelesGlucosa" placeholder="Ej: Ayunas: 95, Postprandial: 140">
+                </div>
+                
+                <div class="form-group">
+                    <label>Presión arterial (mmHg):</label>
+                    <input type="text" id="presionArterial" name="presionArterial" placeholder="Ej: 120/80">
+                </div>
+                
+                <div class="form-group">
+                    <label>Síntomas reportados:</label>
+                    <textarea id="sintomas" name="sintomas" rows="4" placeholder="Ej: Poliuria, polidipsia, fatiga, visión borrosa..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Eventos importantes:</label>
+                    <input type="text" id="eventos" name="eventos" placeholder="Ej: Hipoglucemia, hospitalización, cambios en medicación">
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Registro</button>
+                    <button type="reset" class="btn btn-secondary"><i class="fas fa-undo"></i> Limpiar</button>
+                    <a href="{{ url_for('medico_dashboard') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>Routine4Life - Sistema de Control Clínico para Diabetes</p>
+        <p>© 2026 - Todos los derechos reservados</p>
+    </footer>
 </body>
 </html>

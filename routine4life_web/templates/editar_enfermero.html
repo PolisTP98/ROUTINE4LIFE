@@ -2,53 +2,111 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Editar Enfermero - Routine4Life</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Enfermero | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body class="editar-form">
-    <div class="container">
-        <h1>Editar Enfermero</h1>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <form method="POST">
-            <label>Nombre completo:</label>
-            <input type="text" name="nombre_completo" value="{{ enfermero.datos_personales.nombre_completo if enfermero.datos_personales else '' }}" required>
-
-            <label>Email:</label>
-            <input type="email" name="email" value="{{ enfermero.email }}" required>
-
-            <label>RFC:</label>
-            <input type="text" name="rfc" value="{{ enfermero.rfc }}" required>
-
-            <label>Código interno:</label>
-            <input type="text" name="codigo" value="{{ enfermero.codigo }}" required>
-
-            <label>Fecha de nacimiento:</label>
-            <input type="date" name="fecha_nacimiento" value="{{ enfermero.datos_personales.fecha_nacimiento if enfermero.datos_personales else '' }}" required>
-
-            <label>Teléfono:</label>
-            <input type="text" name="telefono" value="{{ enfermero.datos_personales.telefono if enfermero.datos_personales else '' }}" required>
-
-            <label>Sexo:</label>
-            <select name="id_sexo" required>
-                <option value="">Seleccione...</option>
-                {% for sexo in sexos %}
-                <option value="{{ sexo.id_sexo }}" {% if enfermero.datos_personales and enfermero.datos_personales.id_sexo == sexo.id_sexo %}selected{% endif %}>
-                    {{ sexo.nombre }}
-                </option>
-                {% endfor %}
-            </select>
-
+    <header class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
             <div>
-                <button type="submit" class="btn btn-guardar">Guardar cambios</button>
-                <a href="{{ url_for('gestionar_enfermeros') }}" class="btn btn-cancelar">Cancelar</a>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clínico para Diabetes</p>
             </div>
-        </form>
+        </div>
+        <div class="user-info">
+            <div>
+                <span><i class="fas fa-user-cog"></i> {{ current_user.nombre_completo or current_user.email }}</span>
+                <div class="user-role">Administrador del Sistema</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="form-container">
+            <h1><i class="fas fa-user-nurse"></i> Editar Enfermero</h1>
+            <p class="form-subtitle">Actualice la información del enfermero</p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label>Nombre completo <span class="required-star">*</span></label>
+                    <input type="text" name="nombre_completo" value="{{ enfermero.datos_personales.nombre_completo if enfermero.datos_personales else '' }}" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email <span class="required-star">*</span></label>
+                        <input type="email" name="email" value="{{ enfermero.email }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>RFC <span class="required-star">*</span></label>
+                        <input type="text" name="rfc" value="{{ enfermero.rfc }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Código interno <span class="required-star">*</span></label>
+                        <input type="text" name="codigo" value="{{ enfermero.codigo }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de nacimiento <span class="required-star">*</span></label>
+                        <input type="date" name="fecha_nacimiento" value="{{ enfermero.datos_personales.fecha_nacimiento if enfermero.datos_personales else '' }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Teléfono <span class="required-star">*</span></label>
+                        <input type="text" name="telefono" value="{{ enfermero.datos_personales.telefono if enfermero.datos_personales else '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sexo <span class="required-star">*</span></label>
+                        <select name="id_sexo" required>
+                            <option value="">Seleccione...</option>
+                            {% for sexo in sexos %}
+                            <option value="{{ sexo.id_sexo }}" {% if enfermero.datos_personales and enfermero.datos_personales.id_sexo == sexo.id_sexo %}selected{% endif %}>{{ sexo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar cambios</button>
+                    <a href="{{ url_for('gestionar_enfermeros') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
+                </div>
+            </form>
+        </div>
     </div>
+    
+    <footer class="footer">
+        <p>Routine4Life - Sistema de Control Clínico para Diabetes</p>
+        <p>© 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <script>
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    flash.style.transition = 'opacity 0.3s';
+                    flash.style.opacity = '0';
+                    setTimeout(function() { if(flash && flash.parentElement) flash.remove(); }, 300);
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

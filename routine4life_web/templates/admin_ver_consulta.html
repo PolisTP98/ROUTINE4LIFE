@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ver Consulta | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="dashboard-body">
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas fa-shield-alt"></i> Administrador</div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <div class="form-container" style="max-width: 800px;">
+            <h1><i class="fas fa-notes-medical"></i> Detalle de Consulta</h1>
+            <p class="form-subtitle">Vista de solo lectura</p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                <i class="fas fa-info-circle"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <div class="info-card" style="background: #f8fafc; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <div class="patient-detail-profile" style="padding: 0; margin-bottom: 1rem;">
+                    <div class="patient-detail-avatar" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                        {{ consulta.paciente.nombre_completo[0]|upper if consulta.paciente else '?' }}
+                    </div>
+                    <div class="patient-detail-info">
+                        <div class="patient-detail-name">{{ consulta.paciente.nombre_completo if consulta.paciente else '-' }}</div>
+                        <div class="patient-detail-code">Codigo: {{ consulta.paciente.codigo if consulta.paciente else '-' }}</div>
+                    </div>
+                </div>
+                <p><strong><i class="fas fa-user-md"></i> Medico:</strong> Dr. {{ consulta.medico.datos_personales.nombre_completo if consulta.medico and consulta.medico.datos_personales else '-' }}</p>
+                <p><strong><i class="fas fa-calendar-alt"></i> Fecha y hora:</strong> {{ consulta.fecha.strftime('%d/%m/%Y') if consulta.fecha else '-' }} - {{ consulta.hora.strftime('%H:%M') if consulta.hora else '-' }}</p>
+            </div>
+            
+            <h3 class="section-title" style="font-size: 18px; margin-bottom: 20px;"><i class="fas fa-heartbeat"></i> Signos Vitales</h3>
+            <div class="patient-detail-grid">
+                <div class="detail-field">
+                    <label>Peso</label>
+                    <div class="detail-value">{{ consulta.peso or '-' }} kg</div>
+                </div>
+                <div class="detail-field">
+                    <label>Altura</label>
+                    <div class="detail-value">{{ consulta.altura or '-' }} cm</div>
+                </div>
+                <div class="detail-field">
+                    <label>Presion arterial</label>
+                    <div class="detail-value">{% if consulta.presion_sistolica and consulta.presion_diastolica %}{{ consulta.presion_sistolica }}/{{ consulta.presion_diastolica }} mmHg{% else %}-{% endif %}</div>
+                </div>
+                <div class="detail-field">
+                    <label>Frecuencia cardiaca</label>
+                    <div class="detail-value">{{ consulta.frecuencia_cardiaca or '-' }} lpm</div>
+                </div>
+            </div>
+            
+            <h3 class="section-title" style="font-size: 18px; margin: 24px 0 20px;"><i class="fas fa-tint"></i> Niveles de Glucosa</h3>
+            <div class="patient-detail-grid">
+                <div class="detail-field">
+                    <label>Glucosa en ayunas</label>
+                    <div class="detail-value">{{ consulta.glucosa_ayunas or '-' }} mg/dL</div>
+                </div>
+                <div class="detail-field">
+                    <label>Glucosa postprandial</label>
+                    <div class="detail-value">{{ consulta.glucosa_postprandial or '-' }} mg/dL</div>
+                </div>
+                <div class="detail-field">
+                    <label>Hemoglobina glicosilada</label>
+                    <div class="detail-value">{{ consulta.hemoglobina_glicosilada or '-' }}%</div>
+                </div>
+            </div>
+            
+            <h3 class="section-title" style="font-size: 18px; margin: 24px 0 20px;"><i class="fas fa-flask"></i> Estudios de Laboratorio</h3>
+            <div class="patient-detail-grid">
+                <div class="detail-field">
+                    <label>Colesterol total</label>
+                    <div class="detail-value">{{ consulta.colesterol_total or '-' }} mg/dL</div>
+                </div>
+                <div class="detail-field">
+                    <label>Trigliceridos</label>
+                    <div class="detail-value">{{ consulta.trigliceridos or '-' }} mg/dL</div>
+                </div>
+                <div class="detail-field">
+                    <label>Nivel de insulina</label>
+                    <div class="detail-value">{{ consulta.nivel_insulina or '-' }} µU/mL</div>
+                </div>
+            </div>
+            
+            {% if sintomas %}
+            <h3 class="section-title" style="font-size: 18px; margin: 24px 0 20px;"><i class="fas fa-head-side-medical"></i> Sintomas</h3>
+            <div class="patient-detail-grid">
+                {% for sintoma in sintomas %}
+                <div class="detail-field">
+                    <label>{{ sintoma.sintoma_diabetes.nombre }}</label>
+                    <div class="detail-value">Intensidad: {{ sintoma.intensidad or '-' }}/10</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label>Notas adicionales</label>
+                <div class="detail-value" style="background: #f8fafc; padding: 0.8rem; border-radius: 8px; margin-top: 0.25rem;">
+                    {{ consulta.notas or 'Sin notas' }}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Plan de tratamiento</label>
+                <div class="detail-value" style="background: #f8fafc; padding: 0.8rem; border-radius: 8px; margin-top: 0.25rem;">
+                    {{ consulta.plan_tratamiento or 'Sin plan de tratamiento' }}
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <a href="{{ url_for('admin_gestionar_consultas') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a Consultas</a>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary"><i class="fas fa-home"></i> Dashboard</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2025 - Todos los derechos reservados</p>
+    </footer>
+</body>
+</html>

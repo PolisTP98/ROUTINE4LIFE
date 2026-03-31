@@ -2,87 +2,289 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Médico - Routine4Life</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Medico | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body class="dashboard-medicos">
-    <div class="container">
+<body class="dashboard-body">
+    <!-- Header Moderno con boton de salir -->
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">Dr. {{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas fa-stethoscope"></i> Medico Especialista</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <!-- Mensajes Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">
+                            <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% elif category == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
-
-        <div class="header">
-            <h1>Routine4Life</h1>
-            <div>
-                <span>Dr. {{ current_user.nombre_completo or current_user.email }}</span>
-                <a href="{{ url_for('logout') }}" class="logout-btn">Cerrar Sesión</a>
+        
+        <!-- Tarjetas de Estadisticas -->
+        <div class="stats-row">
+            <div class="stat-box primary">
+                <div class="stat-header">
+                    <span>Pacientes Activos</span>
+                    <div class="stat-icon primary"><i class="fas fa-users"></i></div>
+                </div>
+                <div class="stat-value">{{ total_pacientes }}</div>
+                <div class="stat-label">registrados</div>
+            </div>
+            <div class="stat-box warning">
+                <div class="stat-header">
+                    <span>Citas Pendientes</span>
+                    <div class="stat-icon warning"><i class="fas fa-calendar-alt"></i></div>
+                </div>
+                <div class="stat-value">{{ proximas_citas|length }}</div>
+                <div class="stat-label">en los proximos dias</div>
             </div>
         </div>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Total Pacientes</h3>
-                <div class="stat-number">{{ total_pacientes }}</div>
+        
+        <!-- Acciones Clinicas -->
+        <div class="actions-section">
+            <div class="section-header">
+                <h2><i class="fas fa-heartbeat"></i> Acciones Clinicas</h2>
             </div>
-            <div class="stat-card">
-                <h3>Próximas Citas</h3>
-                <div class="stat-number">{{ proximas_citas|length }}</div>
+            <div class="actions-grid">
+                <a href="{{ url_for('nuevo_paciente') }}" class="action-item">
+                    <div class="action-icon"><i class="fas fa-user-plus"></i></div>
+                    <div class="action-info">
+                        <h4>Nuevo Paciente</h4>
+                        <p>Registrar nuevo paciente</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('nueva_cita') }}" class="action-item">
+                    <div class="action-icon"><i class="fas fa-calendar-plus"></i></div>
+                    <div class="action-info">
+                        <h4>Agendar Cita</h4>
+                        <p>Programar consulta</p>
+                    </div>
+                </a>
             </div>
         </div>
-
-        <div class="section">
-            <h2>Acciones</h2>
-            <div class="buttons">
-                <a href="{{ url_for('nuevo_paciente') }}" class="btn">Registrar Nuevo Paciente</a>
-                <a href="{{ url_for('nueva_cita') }}" class="btn">Agendar Cita</a>
+        
+        <!-- Mis Pacientes -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-tint"></i> Mis Pacientes</h3>
+            </div>
+            <div class="table-wrapper">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Edad</th>
+                            <th>Tipo de Diabetes</th>
+                            <th>Ultimo Control</th>
+                            <th>Acciones</th>
+                        </thead>
+                    <tbody>
+                        {% for paciente in pacientes %}
+                        <tr>
+                            <td data-label="Paciente">
+                                <strong>{{ paciente.nombre_completo }}</strong><br>
+                                <span class="patient-code" style="font-size: 0.7rem; color: #64748b;">Codigo: {{ paciente.codigo }}</span>
+                            </td>
+                            <td data-label="Edad">{% if paciente.fecha_nacimiento %}{{ (now_date.year - paciente.fecha_nacimiento.year) }} años{% else %}-{% endif %}</td>
+                            <td data-label="Tipo de Diabetes">
+                                {% if paciente.tipo_diabetes_nombre %}
+                                    {% if 'Tipo 1' in paciente.tipo_diabetes_nombre %}
+                                        <span class="diabetes-badge diabetes-type1"><i class="fas fa-syringe"></i> {{ paciente.tipo_diabetes_nombre }}</span>
+                                    {% elif 'Tipo 2' in paciente.tipo_diabetes_nombre %}
+                                        <span class="diabetes-badge diabetes-type2"><i class="fas fa-pills"></i> {{ paciente.tipo_diabetes_nombre }}</span>
+                                    {% elif 'LADA' in paciente.tipo_diabetes_nombre %}
+                                        <span class="diabetes-badge diabetes-lada"><i class="fas fa-flask"></i> {{ paciente.tipo_diabetes_nombre }}</span>
+                                    {% else %}
+                                        <span class="diabetes-badge diabetes-default">{{ paciente.tipo_diabetes_nombre }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="diabetes-badge diabetes-default">En diagnostico</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Ultimo Control">
+                                {% if paciente.ultima_consulta %}
+                                    {{ paciente.ultima_consulta.strftime('%d/%m/%Y') if paciente.ultima_consulta is not string else paciente.ultima_consulta }}
+                                {% else %}
+                                    <span class="badge-default">Sin consultas</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Acciones">
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <a href="{{ url_for('detalle_paciente', id=paciente.id) }}" class="btn-sm btn-primary-sm">
+                                        <i class="fas fa-chart-line"></i> Detalles
+                                    </a>
+                                    <a href="{{ url_for('nueva_consulta', id=paciente.id) }}" class="btn-sm btn-secondary-sm">
+                                        <i class="fas fa-notes-medical"></i> Consulta
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center;">No tienes pacientes registrados</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        <div class="section">
-            <h2>Mis Pacientes</h2>
-            {% if pacientes %}
-            <table>
-                <thead>
-                    <tr><th>Nombre</th><th>Edad</th><th>Tipo Diabetes</th><th>Última Consulta</th><th>Acciones</th></tr>
-                </thead>
-                <tbody>
-                    {% for paciente in pacientes %}
-                    <tr>
-                        <td>{{ paciente.nombre_completo }}</td>
-                        <td>{% if paciente.fecha_nacimiento %}{{ (now_date.year - paciente.fecha_nacimiento.year) }} años{% else %}-{% endif %}</td>
-                        <td>{{ paciente.tipo_diabetes_nombre if paciente.tipo_diabetes_nombre else 'No especificado' }}</td>
-                        <td>{{ paciente.ultima_consulta if paciente.ultima_consulta else 'Sin consultas' }}</td>
-                        <td>
-                            <a href="{{ url_for('detalle_paciente', id=paciente.id) }}" class="action-link">Ver Detalles</a>
-                            <a href="{{ url_for('nueva_consulta', id=paciente.id) }}" class="action-link">Nueva Consulta</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p>No tienes pacientes registrados.</p>
-            {% endif %}
-        </div>
-
-        <div class="section">
-            <h2>Próximas Citas</h2>
+        
+        <!-- Proximas Citas -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-calendar-alt"></i> Proximas Citas</h3>
+                <a href="{{ url_for('nueva_cita') }}" class="view-all-link"><i class="fas fa-plus"></i> Agendar cita</a>
+            </div>
             {% if proximas_citas %}
-                {% for cita in proximas_citas %}
-                <div class="cita-item">
-                    <strong>{{ cita.fecha }} - {{ cita.hora.strftime('%H:%M') if cita.hora else '-' }}</strong>
-                    <div>Paciente: {{ cita.paciente_nombre }}</div>
-                    <div>Motivo: {{ cita.motivo if cita.motivo else 'No especificado' }}</div>
+            <div class="appointments-grid">
+                {% for cita in proximas_citas[:6] %}
+                <div class="appointment-card">
+                    <div class="appointment-date">
+                        <span class="date-badge"><i class="fas fa-calendar-day"></i> {{ cita.fecha.strftime('%d/%m/%Y') if cita.fecha else '-' }}</span>
+                        <span class="time-badge"><i class="fas fa-clock"></i> {{ cita.hora.strftime('%H:%M') if cita.hora else '--:--' }}</span>
+                    </div>
+                    <div class="appointment-patient">
+                        <i class="fas fa-user-circle"></i> {{ cita.paciente_nombre }}
+                    </div>
+                    <div class="appointment-reason">
+                        <i class="fas fa-stethoscope"></i> {{ cita.motivo or 'Consulta de control' }}
+                    </div>
                 </div>
                 {% endfor %}
+            </div>
             {% else %}
-            <p>No hay citas próximas.</p>
+            <div class="empty-state-modern">
+                <i class="fas fa-calendar-times"></i>
+                <p>No hay citas programadas para los proximos dias</p>
+                <a href="{{ url_for('nueva_cita') }}" class="btn btn-primary" style="margin-top: 1rem;">Agendar primera cita</a>
+            </div>
             {% endif %}
         </div>
     </div>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <style>
+        /* Estilos especificos para badges de diabetes */
+        .diabetes-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
+        .diabetes-type1 {
+            background: rgba(59,130,246,0.15);
+            color: #3b82f6;
+        }
+        
+        .diabetes-type2 {
+            background: rgba(16,185,129,0.15);
+            color: #10b981;
+        }
+        
+        .diabetes-lada {
+            background: rgba(245,158,11,0.15);
+            color: #f59e0b;
+        }
+        
+        .diabetes-default {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        
+        .badge-default {
+            background: #f1f5f9;
+            color: #64748b;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        
+        .btn-sm {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        .btn-primary-sm {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary-sm:hover {
+            background: #2563eb;
+        }
+        
+        .btn-secondary-sm {
+            background: #64748b;
+            color: white;
+        }
+        
+        .btn-secondary-sm:hover {
+            background: #475569;
+        }
+        
+        .patient-code {
+            font-family: monospace;
+        }
+        
+        @media (max-width: 768px) {
+            .btn-sm {
+                font-size: 0.65rem;
+                padding: 0.2rem 0.5rem;
+            }
+        }
+    </style>
+    
+    <script>
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { 
+                            if(flash && flash.parentElement) flash.remove(); 
+                        }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

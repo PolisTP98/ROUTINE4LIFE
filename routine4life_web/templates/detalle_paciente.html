@@ -2,129 +2,207 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Detalle del Paciente - Routine4Life</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle del Paciente | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body class="detalle-paciente">
-
-<div class="detalle_paciente_container">
-
-    <h1 class="detalle_paciente_titulo">
-        DATOS PERSONALES DEL PACIENTE
-    </h1>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash flash-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <section class="detalle_paciente_formulario">
-
-        <div class="detalle_paciente_perfil">
-            <div class="detalle_paciente_avatar"><span>👤</span></div>
-            <div class="detalle_paciente_nombre">
-                <label>Nombre del paciente:</label>
-                <input type="text" value="{{ paciente.nombre_completo }}" readonly>
+<body class="dashboard-body">
+    <!-- Header sin boton de salir -->
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
             </div>
         </div>
-
-        <div class="detalle_paciente_fila">
-            <div class="detalle_paciente_campo">
-                <label>Fecha de nacimiento:</label>
-                <input type="date" value="{{ paciente.fecha_nacimiento }}" readonly>
-            </div>
-            <div class="detalle_paciente_campo">
-                <label>Edad:</label>
-                <input type="text" value="{{ (now_date.year - paciente.fecha_nacimiento.year) }} años" readonly>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas {{ 'fa-shield-alt' if current_user.id_rol == 1 else 'fa-stethoscope' }}"></i> {{ 'Administrador' if current_user.id_rol == 1 else 'Medico Especialista' }}</div>
             </div>
         </div>
-
-        <div class="detalle_paciente_fila">
-            <div class="detalle_paciente_campo">
-                <label>Género:</label>
-                <input type="text" value="{{ paciente.sexo.nombre if paciente.sexo else 'No especificado' }}" readonly>
-            </div>
-            <div class="detalle_paciente_campo">
-                <label>Código:</label>
-                <input type="text" value="{{ paciente.codigo }}" readonly>
-            </div>
-        </div>
-
-        <div class="detalle_paciente_fila">
-            <div class="detalle_paciente_campo">
-                <label>Tipo de diabetes:</label>
-                <input type="text" value="{{ paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else 'No especificado' }}" readonly>
-            </div>
-        </div>
-
-        <div class="seccion-app">
-            <h4>Datos de la aplicación móvil</h4>
-            <div class="detalle_paciente_fila">
-                <div class="detalle_paciente_campo">
-                    <label>Correo electrónico:</label>
-                    <input type="email" value="{{ aplicacion.email if aplicacion and aplicacion.email else 'No registrado en app' }}" readonly>
+    </header>
+    
+    <div class="dashboard-container">
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">
+                            <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% elif category == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
                 </div>
-                <div class="detalle_paciente_campo">
-                    <label>Teléfono:</label>
-                    <input type="text" value="{{ aplicacion.telefono if aplicacion and aplicacion.telefono else 'No registrado en app' }}" readonly>
-                </div>
-            </div>
-            <div class="detalle_paciente_fila">
-                <div class="detalle_paciente_campo">
-                    <label>Fecha de registro en app:</label>
-                    <input type="text" value="{{ aplicacion.fecha_registro if aplicacion and aplicacion.fecha_registro else 'No registrado' }}" readonly>
-                </div>
-            </div>
-        </div>
-
-        <div class="detalle_paciente_botones">
-            <a href="{{ url_for('nueva_consulta', id=paciente.id_paciente) }}" class="btn btn-nueva-consulta">Nueva Consulta</a>
-            {% if current_user.id_rol == 1 %}
-                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-cancelar">Cancelar</a>
-            {% else %}
-                <a href="{{ url_for('medico_dashboard') }}" class="btn btn-cancelar">Cancelar</a>
             {% endif %}
-            <a href="{{ url_for('historial_consulta', id=paciente.id_paciente) }}" class="btn btn-historial">Historial</a>
+        {% endwith %}
+        
+        <!-- Datos Personales del Paciente -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-id-card"></i> Datos Personales del Paciente</h3>
+            </div>
+            
+            <div class="patient-detail-profile">
+                <div class="patient-detail-avatar">
+                    {{ paciente.nombre_completo[0]|upper }}
+                </div>
+                <div class="patient-detail-info">
+                    <div class="patient-detail-name">{{ paciente.nombre_completo }}</div>
+                    <div class="patient-detail-code">Codigo: {{ paciente.codigo }}</div>
+                </div>
+            </div>
+            
+            <div class="patient-detail-grid">
+                <div class="detail-field">
+                    <label><i class="fas fa-calendar-alt"></i> Fecha de nacimiento</label>
+                    <div class="detail-value">{{ paciente.fecha_nacimiento }}</div>
+                </div>
+                <div class="detail-field">
+                    <label><i class="fas fa-birthday-cake"></i> Edad</label>
+                    <div class="detail-value">{{ (now_date.year - paciente.fecha_nacimiento.year) }} años</div>
+                </div>
+                <div class="detail-field">
+                    <label><i class="fas fa-venus-mars"></i> Genero</label>
+                    <div class="detail-value">{{ paciente.sexo.nombre if paciente.sexo else 'No especificado' }}</div>
+                </div>
+                <div class="detail-field">
+                    <label><i class="fas fa-tint"></i> Tipo de diabetes</label>
+                    <div class="detail-value">{{ paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else 'En diagnostico' }}</div>
+                </div>
+            </div>
+            
+            <!-- Datos de la aplicación móvil -->
+            <div class="app-section">
+                <h4><i class="fas fa-mobile-alt"></i> Datos de la aplicacion movil</h4>
+                <div class="patient-detail-grid">
+                    <div class="detail-field">
+                        <label>Correo electronico</label>
+                        <div class="detail-value">{{ aplicacion.email if aplicacion and aplicacion.email else 'No registrado en app' }}</div>
+                    </div>
+                    <div class="detail-field">
+                        <label>Telefono</label>
+                        <div class="detail-value">{{ aplicacion.telefono if aplicacion and aplicacion.telefono else 'No registrado en app' }}</div>
+                    </div>
+                    <div class="detail-field">
+                        <label>Fecha de registro en app</label>
+                        <div class="detail-value">{{ aplicacion.fecha_registro if aplicacion and aplicacion.fecha_registro else 'No registrado' }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group" style="padding: 0 1.5rem 1.5rem 1.5rem; margin: 0;">
+                <a href="{{ url_for('historial_consulta', id=paciente.id_paciente) }}" class="btn btn-secondary"><i class="fas fa-history"></i> Historial de Consultas</a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+            </div>
         </div>
-
-    </section>
-
-    <div class="consultas-section">
-        <h3>Últimas Consultas</h3>
-        {% if consultas %}
-        <table class="tabla-consultas">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Glucosa Ayunas</th>
-                    <th>Glucosa Postprandial</th>
-                    <th>Presión</th>
-                    <th>Peso</th>
-                    <th>Notas</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for consulta in consultas[:5] %}
-                <tr>
-                    <td>{{ consulta.fecha }}</td>
-                    <td>{{ consulta.glucosa_ayunas or '-' }}</td>
-                    <td>{{ consulta.glucosa_postprandial or '-' }}</td>
-                    <td>{% if consulta.presion_sistolica and consulta.presion_diastolica %}{{ consulta.presion_sistolica }}/{{ consulta.presion_diastolica }}{% else %}-{% endif %}</td>
-                    <td>{{ consulta.peso or '-' }}</td>
-                    <td>{{ consulta.notas[:50] if consulta.notas else '-' }}</td>
-                </tr>
+        
+        <!-- Citas Programadas -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-calendar-alt"></i> Citas Programadas</h3>
+                <a href="{{ url_for('nueva_cita') }}" class="view-all-link"><i class="fas fa-plus"></i> Agendar cita</a>
+            </div>
+            {% if citas_pendientes %}
+            <div class="appointments-grid">
+                {% for cita in citas_pendientes %}
+                <div class="appointment-card">
+                    <div class="appointment-date">
+                        <span class="date-badge"><i class="fas fa-calendar-day"></i> {{ cita.fecha.strftime('%d/%m/%Y') if cita.fecha else '-' }}</span>
+                        <span class="time-badge"><i class="fas fa-clock"></i> {{ cita.hora.strftime('%H:%M') if cita.hora else '--:--' }}</span>
+                    </div>
+                    <div class="appointment-reason">
+                        <i class="fas fa-stethoscope"></i> {{ cita.motivo or 'Consulta de control' }}
+                    </div>
+                    {% if cita.consulta %}
+                    <span class="badge-success">
+                        <i class="fas fa-check-circle"></i> Consulta realizada
+                    </span>
+                    {% else %}
+                    <a href="{{ url_for('nueva_consulta', id=paciente.id_paciente, cita_id=cita.id_cita) }}" class="btn-sm" style="margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.3rem; background: #3b82f6; color: white; border-radius: 8px; text-decoration: none;">
+                        <i class="fas fa-notes-medical"></i> Atender consulta
+                    </a>
+                    {% endif %}
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="no-consultas">No hay consultas registradas para este paciente.</p>
-        {% endif %}
+            </div>
+            {% else %}
+            <div class="empty-state-modern">
+                <i class="fas fa-calendar-times"></i>
+                <p>No hay citas programadas para este paciente</p>
+                <a href="{{ url_for('nueva_cita') }}" class="btn btn-primary" style="margin-top: 1rem;">Agendar cita</a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Ultimas Consultas -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-history"></i> Ultimas Consultas</h3>
+                <a href="{{ url_for('historial_consulta', id=paciente.id_paciente) }}" class="view-all-link">Ver historial completo <i class="fas fa-arrow-right"></i></a>
+            </div>
+            
+            {% if consultas %}
+            <div class="table-wrapper">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Glucosa Ayunas</th>
+                            <th>Glucosa Postprandial</th>
+                            <th>Presion</th>
+                            <th>Peso</th>
+                            <th>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for consulta in consultas[:5] %}
+                        <tr>
+                            <td>{{ consulta.fecha }}</td>
+                            <td data-label="Glucosa Ayunas">{{ consulta.glucosa_ayunas or '-' }}</td>
+                            <td data-label="Glucosa Postprandial">{{ consulta.glucosa_postprandial or '-' }}</td>
+                            <td data-label="Presion">{% if consulta.presion_sistolica and consulta.presion_diastolica %}{{ consulta.presion_sistolica }}/{{ consulta.presion_diastolica }}{% else %}-{% endif %}</td>
+                            <td data-label="Peso">{{ consulta.peso or '-' }} kg</td>
+                            <td data-label="Notas">{{ consulta.notas[:50] + '...' if consulta.notas and consulta.notas|length > 50 else consulta.notas or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state-modern">
+                <i class="fas fa-notes-medical"></i>
+                <p>No hay consultas registradas para este paciente.</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
-
-</div>
-
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <script>
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { 
+                            if(flash && flash.parentElement) flash.remove(); 
+                        }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>
