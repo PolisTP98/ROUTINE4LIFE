@@ -9,18 +9,15 @@ const LoginScreen = ({ navigation, route }) => {
   const [password, setPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   
-  // Estados para el Toast
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
-    // Caso 1: Registro Exitoso
     if (route.params?.registered) {
       setToastMessage("Has completado el registro de tu cuenta exitosamente");
       setShowToast(true);
       navigation.setParams({ registered: undefined });
     }
-    // Caso 2: Restablecimiento Exitoso
     else if (route.params?.recovered) {
       setToastMessage("Tu contraseña fue reestablecida exitosamente");
       setShowToast(true);
@@ -39,7 +36,7 @@ const LoginScreen = ({ navigation, route }) => {
       />
 
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <Text style={styles.title}>Iniciar sesión</Text>
           <View style={styles.formContainer}>
             <TextInput
@@ -49,6 +46,7 @@ const LoginScreen = ({ navigation, route }) => {
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
+              keyboardType="email-address"
             />
             <View style={styles.passwordInputContainer}>
               <TextInput
@@ -76,7 +74,8 @@ const LoginScreen = ({ navigation, route }) => {
             </Text>
             <TouchableOpacity
               style={[styles.loginButton, isButtonEnabled ? styles.loginButtonEnabled : styles.loginButtonDisabled]}
-              onPress={() => navigation.navigate('Home')}
+              // CORRECCIÓN: Usamos replace para destruir la pila de login y que el botón físico "Atrás" no los regrese aquí
+              onPress={() => navigation.replace('AppDrawer')}
               disabled={!isButtonEnabled}
             >
               <Text style={styles.loginButtonText}>Iniciar sesión</Text>
