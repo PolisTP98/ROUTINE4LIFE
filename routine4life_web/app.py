@@ -74,7 +74,7 @@ def login():
         # Validar campos vacíos
         if not email or not password:
             flash('Por favor, completa todos los campos para continuar. Ambos, correo y contraseña, son obligatorios.', 'warning')
-            return render_template("login.html")
+            return redirect(url_for('login'))
         
         # Validar formato de email
         if '@' not in email or '.' not in email:
@@ -439,8 +439,9 @@ def admin_dashboard():
                              
     except Exception as e:
         db.close()
-        flash(f'Error al cargar el dashboard: {str(e)}', 'danger')
-        return redirect(url_for('dashboard'))
+        print(f"ERROR CRÍTICO: {str(e)}")
+        flash(f'Error de sistema: {str(e)}', 'danger')
+        return redirect(url_for('logout'))
 
 # ==================== ADMIN - GESTION DE MEDICOS ====================
 
