@@ -11,12 +11,16 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
 import FilterModal from '../components/FilterModal';
-import CustomDrawer from '../componentes/CustomDrawer';
+
+// NOTA: Ya no necesitas importar CustomDrawer aquí, 
+// el DrawerNavigator se encarga de renderizarlo.
 
 const HomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
+  
   const handleNotImplemented = (feature) => alert(`${feature} próximamente disponible`);
+  
   const handleFilterApply = (data) => {
     console.log("Filtros aplicados:", data);
   };
@@ -26,8 +30,11 @@ const HomeScreen = ({ navigation }) => {
       {/* --- HEADER --- */}
       <View style={styles.safeHeader}>
         <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          {/* BOTÓN DEL MENÚ CORREGIDO */}
+          <TouchableOpacity 
+            onPress={() => navigation.openDrawer()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons name="menu" size={35} color={COLORS.primary} />
           </TouchableOpacity>
 
@@ -36,7 +43,8 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.logoTextSub}>4LIFE</Text>
           </View>
 
-          <TouchableOpacity onPress={() => handleNotImplemented('Perfil')}>
+          {/* Puedes hacer que este también abra el menú o vaya a Profile */}
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
             <Ionicons name="person-circle-outline" size={40} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
