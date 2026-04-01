@@ -2,161 +2,249 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard - Routine4Life</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom unified CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body class="dashboard">
-    <div class="container my-4">
+<body class="dashboard-body">
+    <!-- Header Moderno con boton de salir -->
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas fa-shield-alt"></i> Administrador</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <!-- Mensajes Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} flash flash-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">
+                            <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% elif category == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
-
-        <div class="header p-3 rounded-3 mb-4 d-flex justify-content-between align-items-center">
-            <h1 class="h3 mb-0">Routine4Life</h1>
-            <div>
-                <span class="me-3">{{ current_user.nombre_completo or current_user.email }}</span>
-                <small class="me-3">Administrador</small>
-                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger">Cerrar Sesión</a>
+        
+        <!-- Tarjetas de Estadisticas -->
+        <div class="stats-row">
+            <div class="stat-box primary">
+                <div class="stat-header">
+                    <span>Medicos Activos</span>
+                    <div class="stat-icon primary"><i class="fas fa-user-md"></i></div>
+                </div>
+                <div class="stat-value">{{ total_medicos }}</div>
+                <div class="stat-label">en el sistema</div>
+            </div>
+            <div class="stat-box success">
+                <div class="stat-header">
+                    <span>Pacientes</span>
+                    <div class="stat-icon success"><i class="fas fa-users"></i></div>
+                </div>
+                <div class="stat-value">{{ total_pacientes }}</div>
+                <div class="stat-label">registrados</div>
+            </div>
+            <div class="stat-box warning">
+                <div class="stat-header">
+                    <span>Proximas Citas</span>
+                    <div class="stat-icon warning"><i class="fas fa-calendar-alt"></i></div>
+                </div>
+                <div class="stat-value">{{ proximas_citas|length }}</div>
+                <div class="stat-label">en los proximos dias</div>
+            </div>
+            <div class="stat-box info">
+                <div class="stat-header">
+                    <span>Consultas</span>
+                    <div class="stat-icon info"><i class="fas fa-chart-line"></i></div>
+                </div>
+                <div class="stat-value">{{ consultas_mes|default(0) }}</div>
+                <div class="stat-label">este mes</div>
             </div>
         </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="stat-card p-3">
-                    <h5>Médicos</h5>
-                    <div class="stat-number">{{ total_medicos }}</div>
-                </div>
+        
+        <!-- Acciones Rapidas -->
+        <div class="actions-section">
+            <div class="section-header">
+                <h2><i class="fas fa-bolt"></i> Acciones Rapidas</h2>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card p-3">
-                    <h5>Mis Pacientes</h5>
-                    <div class="stat-number">{{ total_pacientes_admin }}</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card p-3">
-                    <h5>Total Pacientes</h5>
-                    <div class="stat-number">{{ total_pacientes }}</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card p-3">
-                    <h5>Próximas Citas</h5>
-                    <div class="stat-number">{{ proximas_citas|length }}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Acciones</h2>
-            <div class="d-flex flex-wrap gap-2">
-                <a href="{{ url_for('registro') }}" class="btn btn-primary">Registrar Nuevo Médico</a>
-                <a href="{{ url_for('gestionar_medicos') }}" class="btn btn-secondary">Gestionar Médicos</a>
-                <a href="{{ url_for('nuevo_paciente') }}" class="btn btn-success">Registrar Nuevo Paciente</a>
-                <a href="{{ url_for('reportes_generales') }}" class="btn btn-primary">Reportes Generales</a>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="section">
-                    <h2>Lista de Médicos</h2>
-                    {% if medicos %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr><th>Nombre</th><th>Email</th><th>Especialidad</th><th>Estado</th></thead>
-                            <tbody>
-                                {% for medico in medicos %}
-                                <tr>
-                                    <td>{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}</td>
-                                    <td>{{ medico.email }}</td>
-                                    <td>{{ medico.especialidad.nombre if medico.especialidad else '-' }}</td>
-                                    <td class="{% if medico.id_estatus_usuario == 1 %}status-active{% else %}status-inactive{% endif %}">
-                                        {% if medico.id_estatus_usuario == 1 %}Activo{% else %}Inactivo{% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+            <div class="actions-grid">
+                <a href="{{ url_for('registro') }}" class="action-item">
+                    <div class="action-icon"><i class="fas fa-user-plus"></i></div>
+                    <div class="action-info">
+                        <h4>Registrar Medico</h4>
+                        <p>Dar de alta nuevo personal</p>
                     </div>
-                    {% else %}
-                    <p>No hay médicos registrados.</p>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="section">
-                    <h2>Mis Pacientes</h2>
-                    {% if pacientes %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr><th>Nombre</th><th>Edad</th><th>Tipo Diabetes</th><th>Acciones</th></thead>
-                            <tbody>
-                                {% for paciente in pacientes %}
-                                <tr>
-                                    <td>{{ paciente.nombre_completo }}</td>
-                                    <td>{% if paciente.fecha_nacimiento %}{{ (now_date.year - paciente.fecha_nacimiento.year) }} años{% else %}-{% endif %}</td>
-                                    <td>{{ paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else 'No especificado' }}</td>
-                                    <td><a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="btn btn-sm btn-outline-primary">Ver Detalles</a></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                </a>
+                <a href="{{ url_for('gestionar_medicos') }}" class="action-item">
+                    <div class="action-icon"><i class="fas fa-user-md"></i></div>
+                    <div class="action-info">
+                        <h4>Gestionar Medicos</h4>
+                        <p>Editar o desactivar medicos</p>
                     </div>
-                    {% else %}
-                    <p>No tienes pacientes registrados.</p>
-                    {% endif %}
-                </div>
+                </a>
+                <a href="{{ url_for('nuevo_paciente') }}" class="action-item">
+                    <div class="action-icon"><i class="fas fa-tint"></i></div>
+                    <div class="action-info">
+                        <h4>Registrar Paciente</h4>
+                        <p>Agregar nuevo paciente</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('admin_gestionar_citas') }}" class="action-item">
+                    <div class="action-icon"><i class="fas fa-calendar-edit"></i></div>
+                    <div class="action-info">
+                        <h4>Gestionar Citas</h4>
+                        <p>Editar, reprogramar o cancelar citas</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('admin_gestionar_consultas') }}" class="action-item">
+                    <div class="action-icon"><i class="fas fa-notes-medical"></i></div>
+                    <div class="action-info">
+                        <h4>Gestionar Consultas</h4>
+                        <p>Ver consultas realizadas (solo lectura)</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('reportes_generales') }}" class="action-item">
+                    <div class="action-icon"><i class="fas fa-chart-bar"></i></div>
+                    <div class="action-info">
+                        <h4>Reportes Clinicos</h4>
+                        <p>Estadisticas y analisis</p>
+                    </div>
+                </a>
             </div>
         </div>
-
-        <div class="section">
-            <h2>Próximas Citas</h2>
-            {% if proximas_citas %}
-                {% for cita in proximas_citas %}
-                <div class="cita-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="cita-fecha">{{ cita.fecha }} - {{ cita.hora.strftime('%H:%M') if cita.hora else '-' }}</div>
-                        <div>Paciente: {{ cita.paciente.nombre_completo }}</div>
-                        <div>Médico: Dr. {{ cita.medico.datos_personales.nombre_completo if cita.medico.datos_personales else cita.medico.email }}</div>
-                        {% if cita.motivo %}
-                            <div class="small text-secondary">Motivo: {{ cita.motivo[:60] }}</div>
-                        {% endif %}
+        
+        <!-- Lista de Medicos (Solo informacion) -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-user-md"></i> Medicos Registrados</h3>
+                <a href="{{ url_for('gestionar_medicos') }}" class="view-all-link">Ver todos <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="table-wrapper">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Especialidad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for medico in medicos[:5] %}
+                        <tr>
+                            <td><strong>{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}</strong></td>
+                            <td>{{ medico.email }}</td>
+                            <td>{{ medico.especialidad.nombre if medico.especialidad else 'Sin especialidad' }}</td>
+                            <td>{% if medico.id_estatus_usuario == 1 %}<span class="badge-active"><i class="fas fa-circle"></i> Activo</span>{% else %}<span class="badge-inactive"><i class="fas fa-circle"></i> Inactivo</span>{% endif %}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center;">No hay medicos registrados</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pacientes Recientes -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-tint"></i> Pacientes Recientes</h3>
+            </div>
+            <div class="patients-grid">
+                {% for paciente in pacientes[:6] %}
+                <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="patient-card">
+                    <div class="patient-avatar">
+                        <i class="fas fa-user"></i>
                     </div>
-                    <span class="cita-status {% if cita.id_estatus_cita == 1 %}pendiente{% endif %}">
-                        {% if cita.id_estatus_cita == 1 %}Pendiente{% else %}Programada{% endif %}
-                    </span>
+                    <div class="patient-info">
+                        <h4>{{ paciente.nombre_completo }}</h4>
+                        <div class="patient-code">{{ paciente.codigo }}</div>
+                        <div class="patient-diabetes">{{ paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else 'En diagnostico' }}</div>
+                    </div>
+                </a>
+                {% else %}
+                <div class="empty-state-modern" style="grid-column: span 3;">
+                    <i class="fas fa-user-slash"></i>
+                    <p>No hay pacientes registrados</p>
                 </div>
                 {% endfor %}
-                <div class="mt-3">
-                    <a href="{{ url_for('nueva_cita') }}" class="btn btn-warning">+ Agendar Nueva Cita</a>
+            </div>
+        </div>
+        
+        <!-- Proximas Citas -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-calendar-alt"></i> Proximas Citas</h3>
+                <a href="{{ url_for('admin_gestionar_citas') }}" class="view-all-link"><i class="fas fa-calendar-edit"></i> Gestionar todas</a>
+            </div>
+            {% if proximas_citas %}
+            <div class="appointments-grid">
+                {% for cita in proximas_citas[:6] %}
+                <div class="appointment-card">
+                    <div class="appointment-date">
+                        <span class="date-badge"><i class="fas fa-calendar-day"></i> {{ cita.fecha.strftime('%d/%m/%Y') if cita.fecha else '-' }}</span>
+                        <span class="time-badge"><i class="fas fa-clock"></i> {{ cita.hora.strftime('%H:%M') if cita.hora else '--:--' }}</span>
+                    </div>
+                    <div class="appointment-patient">
+                        <i class="fas fa-user-circle"></i> {{ cita.paciente.nombre_completo if cita.paciente else 'Paciente no asignado' }}
+                    </div>
+                    <div class="appointment-reason">
+                        <i class="fas fa-stethoscope"></i> {{ cita.motivo or 'Consulta de control' }}
+                    </div>
+                    <div class="appointment-doctor">
+                        <i class="fas fa-user-md"></i> Dr. {{ cita.medico.datos_personales.nombre_completo if cita.medico and cita.medico.datos_personales else 'No asignado' }}
+                    </div>
                 </div>
+                {% endfor %}
+            </div>
             {% else %}
-            <p>No hay citas programadas.</p>
-            <div class="mt-3">
-                <a href="{{ url_for('nueva_cita') }}" class="btn btn-warning">+ Agendar Primera Cita</a>
+            <div class="empty-state-modern">
+                <i class="fas fa-calendar-times"></i>
+                <p>No hay citas programadas</p>
             </div>
             {% endif %}
         </div>
-
-        <div class="text-center text-secondary small mt-4">
-            <p>Routine4Life - Sistema de Gestión para Diabetes</p>
-        </div>
     </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <script>
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { 
+                            if(flash && flash.parentElement) flash.remove(); 
+                        }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

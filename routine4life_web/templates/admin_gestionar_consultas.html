@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar Consultas | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="dashboard-body">
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas fa-shield-alt"></i> Administrador</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <div class="form-container extra-wide" style="max-width: 1200px; margin: 0 auto;">
+            <div class="table-header" style="margin-bottom: 1.5rem;">
+                <h1><i class="fas fa-notes-medical"></i> Gestion de Consultas Medicas</h1>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 10px; text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </a>
+            </div>
+            
+            <!-- Mensajes Flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% elif category == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Filtros -->
+            <div class="filter-bar" style="background: #f8fafc; border-radius: 16px; padding: 1.2rem; margin-bottom: 1.5rem;">
+                <div class="filter-group">
+                    <label><i class="fas fa-search"></i> Buscar paciente</label>
+                    <input type="text" id="filterPaciente" placeholder="Nombre del paciente..." style="background: white;">
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-user-md"></i> Filtrar por medico</label>
+                    <select id="filterMedico" style="background: white;">
+                        <option value="all">Todos los medicos</option>
+                        {% for medico in medicos %}
+                        <option value="{{ medico.id_medico }}">{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-alt"></i> Rango de fechas</label>
+                    <select id="filterFecha" style="background: white;">
+                        <option value="all">Todas las fechas</option>
+                        <option value="today">Hoy</option>
+                        <option value="week">Ultima semana</option>
+                        <option value="month">Ultimo mes</option>
+                    </select>
+                </div>
+                <button class="btn-filter" onclick="aplicarFiltros()" style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 10px; cursor: pointer;">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+            </div>
+            
+            <!-- Lista de Consultas -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-list"></i> Consultas Realizadas</h3>
+                    <span class="view-all-link">Total: {{ consultas|length }} consultas</span>
+                </div>
+                <div id="consultasContainer">
+                    {% if consultas %}
+                        {% for consulta in consultas %}
+                        <div class="consulta-card" 
+                             data-paciente="{{ consulta.paciente.nombre_completo.lower() if consulta.paciente else '' }}"
+                             data-medico="{{ consulta.id_medico }}"
+                             data-fecha="{{ consulta.fecha.strftime('%Y-%m-%d') if consulta.fecha else '' }}">
+                            <div class="consulta-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0;">
+                                <div class="consulta-fecha" style="display: flex; gap: 0.5rem;">
+                                    <span class="date-badge" style="background: #eff6ff; color: #3b82f6; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem;">
+                                        <i class="fas fa-calendar-day"></i> {{ consulta.fecha.strftime('%d/%m/%Y') if consulta.fecha else '-' }}
+                                    </span>
+                                    <span class="time-badge" style="background: #f1f5f9; color: #64748b; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem;">
+                                        <i class="fas fa-clock"></i> {{ consulta.hora.strftime('%H:%M') if consulta.hora else '--:--' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="consulta-paciente" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <i class="fas fa-user-circle" style="color: #3b82f6;"></i>
+                                <span style="font-weight: 600;">{{ consulta.paciente.nombre_completo if consulta.paciente else 'Paciente no encontrado' }}</span>
+                                <span style="font-size: 0.7rem; color: #64748b;">(Codigo: {{ consulta.paciente.codigo if consulta.paciente else '-' }})</span>
+                            </div>
+                            <div class="consulta-medico" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; color: #64748b;">
+                                <i class="fas fa-user-md"></i>
+                                Dr. {{ consulta.medico.datos_personales.nombre_completo if consulta.medico and consulta.medico.datos_personales else 'No asignado' }}
+                            </div>
+                            <div class="consulta-glucosa" style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                                <span class="glucosa-item" style="font-size: 0.75rem; background: #f8fafc; padding: 0.2rem 0.5rem; border-radius: 12px;">
+                                    <strong>Glucosa ayunas:</strong> {{ consulta.glucosa_ayunas or '-' }} mg/dL
+                                </span>
+                                <span class="glucosa-item" style="font-size: 0.75rem; background: #f8fafc; padding: 0.2rem 0.5rem; border-radius: 12px;">
+                                    <strong>Glucosa postprandial:</strong> {{ consulta.glucosa_postprandial or '-' }} mg/dL
+                                </span>
+                                <span class="glucosa-item" style="font-size: 0.75rem; background: #f8fafc; padding: 0.2rem 0.5rem; border-radius: 12px;">
+                                    <strong>HbA1c:</strong> {{ consulta.hemoglobina_glicosilada or '-' }}%
+                                </span>
+                            </div>
+                            <div class="consulta-actions" style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid #e2e8f0; display: flex; gap: 0.5rem;">
+                                <a href="{{ url_for('admin_ver_consulta', id=consulta.id_consulta) }}" class="btn-view-detail" style="background: transparent; border: 1px solid #3b82f6; color: #3b82f6; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.7rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                    <i class="fas fa-eye"></i> Ver detalle
+                                </a>
+                                <a href="{{ url_for('eliminar_consulta', id=consulta.id_consulta) }}" 
+                                   class="btn-view-detail" 
+                                   style="border-color: #dc2626; color: #dc2626; background: transparent; border: 1px solid #dc2626; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.7rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;"
+                                   onclick="return confirm('ADVERTENCIA: Esta accion eliminara permanentemente la consulta. ¿Continuar?')">
+                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="empty-state-modern" style="text-align: center; padding: 3rem; background: white; border-radius: 20px;">
+                        <i class="fas fa-notes-medical" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                        <p style="color: #64748b;">No hay consultas registradas en el sistema</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <style>
+        /* Estilos especificos para la pagina de consultas */
+        .filter-bar {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 180px;
+        }
+        
+        .filter-group label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .filter-group label i {
+            margin-right: 4px;
+        }
+        
+        .filter-group select, 
+        .filter-group input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            background: white;
+        }
+        
+        .filter-group select:focus, 
+        .filter-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+        }
+        
+        .btn-filter {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-filter:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .consulta-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        
+        .consulta-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .btn-view-detail {
+            transition: all 0.2s;
+        }
+        
+        .btn-view-detail:hover {
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 768px) {
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            .btn-filter {
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+    
+    <script>
+        function aplicarFiltros() {
+            const pacienteFilter = document.getElementById('filterPaciente').value.toLowerCase();
+            const medicoFilter = document.getElementById('filterMedico').value;
+            const fechaFilter = document.getElementById('filterFecha').value;
+            
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            
+            const cards = document.querySelectorAll('.consulta-card');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                let show = true;
+                
+                if (pacienteFilter) {
+                    const paciente = card.getAttribute('data-paciente') || '';
+                    if (!paciente.includes(pacienteFilter)) show = false;
+                }
+                
+                if (medicoFilter !== 'all' && show) {
+                    const medico = card.getAttribute('data-medico');
+                    if (medico !== medicoFilter) show = false;
+                }
+                
+                if (fechaFilter !== 'all' && show) {
+                    const fechaStr = card.getAttribute('data-fecha');
+                    if (fechaStr) {
+                        const fecha = new Date(fechaStr);
+                        const diffDays = Math.floor((hoy - fecha) / (1000 * 60 * 60 * 24));
+                        
+                        if (fechaFilter === 'today' && diffDays > 0) show = false;
+                        else if (fechaFilter === 'week' && diffDays > 7) show = false;
+                        else if (fechaFilter === 'month' && diffDays > 30) show = false;
+                    } else {
+                        show = false;
+                    }
+                }
+                
+                card.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+            
+            const totalSpan = document.querySelector('.view-all-link');
+            if (totalSpan) {
+                totalSpan.innerHTML = `<i class="fas fa-list"></i> Mostrando ${visibleCount} de {{ consultas|length }} consultas`;
+            }
+        }
+        
+        document.getElementById('filterPaciente').addEventListener('keyup', aplicarFiltros);
+        document.getElementById('filterMedico').addEventListener('change', aplicarFiltros);
+        document.getElementById('filterFecha').addEventListener('change', aplicarFiltros);
+        
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { if(flash && flash.parentElement) flash.remove(); }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
+</body>
+</html>

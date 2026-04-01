@@ -2,49 +2,104 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestionar Recepcionistas - Routine4Life</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar Recepcionistas | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body class="gestionar">
+    <header class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clínico para Diabetes</p>
+            </div>
+        </div>
+        <div class="user-info">
+            <div>
+                <span><i class="fas fa-user-cog"></i> {{ current_user.nombre_completo or current_user.email }}</span>
+                <div class="user-role">Administrador del Sistema</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+        </div>
+    </header>
+    
     <div class="container">
-        <h1>Gestión de Recepcionistas</h1>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-volver">← Volver al Dashboard</a>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
+        <div class="form-container" style="max-width: 1000px;">
+            <div class="table-header" style="margin-bottom: 24px;">
+                <h1><i class="fas fa-headset"></i> Gestión de Recepcionistas</h1>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% if recepcionistas %}
+            <div class="table-wrapper">
+                 <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Código</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </thead>
+                    <tbody>
+                        {% for recepcionista in recepcionistas %}
+                        <tr>
+                            <td data-label="Nombre"><strong>{{ recepcionista.datos_personales.nombre_completo if recepcionista.datos_personales else recepcionista.email }}</strong>\(%\)</td>
+                            <td data-label="Email">{{ recepcionista.email }}\(%\)</td>
+                            <td data-label="Teléfono">{{ recepcionista.datos_personales.telefono if recepcionista.datos_personales else '-' }}\(%\)</td>
+                            <td data-label="Código">{{ recepcionista.codigo }}\(%\)</td>
+                            <td data-label="Estado">{% if recepcionista.id_estatus_usuario == 1 %}<span class="status-active"><i class="fas fa-circle"></i> Activo</span>{% else %}<span class="status-inactive"><i class="fas fa-circle"></i> Inactivo</span>{% endif %}\(%\)</td>
+                            <td data-label="Acciones">
+                                <a href="{{ url_for('editar_recepcionista', id=recepcionista.id_medico) }}" class="btn-sm btn-primary"><i class="fas fa-edit"></i> Editar</a>
+                                {% if recepcionista.id_estatus_usuario == 1 %}
+                                    <a href="{{ url_for('desactivar_recepcionista', id=recepcionista.id_medico) }}" class="btn-sm btn-danger-sm" onclick="return confirm('¿Desactivar este recepcionista?')"><i class="fas fa-ban"></i> Desactivar</a>
+                                {% else %}
+                                    <a href="{{ url_for('activar_recepcionista', id=recepcionista.id_medico) }}" class="btn-sm btn-success-sm" onclick="return confirm('¿Activar este recepcionista?')"><i class="fas fa-check"></i> Activar</a>
+                                {% endif %}
+                            \(%\)</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                 </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-headset"></i>
+                <p>No hay recepcionistas registrados.</p>
+                <a href="{{ url_for('registro') }}" class="btn btn-primary">Registrar Primer Recepcionista</a>
+            </div>
             {% endif %}
-        {% endwith %}
-
-        {% if recepcionistas %}
-        <table>
-            <thead>
-                <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr>
-            </thead>
-            <tbody>
-                {% for recepcionista in recepcionistas %}
-                <tr>
-                    <td>{{ recepcionista.datos_personales.nombre_completo if recepcionista.datos_personales else recepcionista.email }}</td>
-                    <td>{{ recepcionista.email }}</td>
-                    <td>{{ recepcionista.datos_personales.telefono if recepcionista.datos_personales else '-' }}</td>
-                    <td class="{% if recepcionista.id_estatus_usuario == 1 %}status-active{% else %}status-inactive{% endif %}">
-                        {% if recepcionista.id_estatus_usuario == 1 %}Activo{% else %}Inactivo{% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('editar_recepcionista', id=recepcionista.id_medico) }}" class="btn btn-editar">Editar</a>
-                        {% if recepcionista.id_estatus_usuario == 1 %}
-                            <a href="{{ url_for('desactivar_recepcionista', id=recepcionista.id_medico) }}" class="btn btn-desactivar" onclick="return confirm('¿Desactivar este recepcionista?')">Desactivar</a>
-                        {% else %}
-                            <a href="{{ url_for('activar_recepcionista', id=recepcionista.id_medico) }}" class="btn btn-activar" onclick="return confirm('¿Activar este recepcionista?')">Activar</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}<p>No hay recepcionistas registrados.</p>{% endif %}
+        </div>
     </div>
+    
+    <footer class="footer">
+        <p>Routine4Life - Sistema de Control Clínico para Diabetes</p>
+        <p>© 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <script>
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    flash.style.transition = 'opacity 0.3s';
+                    flash.style.opacity = '0';
+                    setTimeout(function() { if(flash && flash.parentElement) flash.remove(); }, 300);
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

@@ -1,38 +1,63 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  db:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: sqlserver
-    environment:
-      SA_PASSWORD: "Password123!"
-      ACCEPT_EULA: "Y"
-    ports:
-      - "1433:1433"
-    restart: unless-stopped
-
-  api:
+  # ----------------------------
+  # | BACKEND WEB (FLASK)      |
+  # ----------------------------
+  flask_api:
     build:
-      context: .
-      dockerfile: dockerfile
+      context: "./routine4life_web" 
+      dockerfile: dockerfile 
     container_name: api_r4life
-    command: uvicorn miAPI.main:app --host 0.0.0.0 --port 5000
     ports:
-      - "5000:5000"
+      - "5050:5000" 
+    env_file:               
+      - .env                 
+    networks:
+      - app_network
+    volumes:
+      - "./routine4life_web:/app" 
+      - "./shared:/app/shared"
+
+  # ----------------------------
+  # | API DE LA WEB (miAPI)    |
+  # ----------------------------
+  web_api:
+    build:
+      context: "./routine4life_web" 
+      dockerfile: miAPI/Dockerfile 
+    container_name: miAPI_r4life
+    ports:
+      - "8080:8080" 
     env_file:
-      - .env.example
-    depends_on:
-      - db
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app_network
+    # --- CAMBIO AQUÍ ---
+    volumes:
+      - "./routine4life_web:/app" 
+      - "./shared:/app/shared"
+
+  # ----------------------------
+  # | BACKEND MÓVIL (FASTAPI)  |
+  # ----------------------------
+  mobile_api:
+    build:
+      context: . 
+      dockerfile: routine4life_mobile/backend/Dockerfile
+    container_name: routine4life_mobile_api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway" 
+    networks:
+      - app_network
     restart: unless-stopped
 
-  web:
-    build:
-      context: .
-      dockerfile: dockerfile
-    container_name: flask_r4life
-    command: python -m routine4life_web.app
-    ports:
-      - "8000:5000"
-    depends_on:
-      - api
-    restart: unless-stopped
+networks:
+  app_network:
+    driver: bridge

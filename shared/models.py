@@ -326,11 +326,15 @@ class horarios_medicos(Base):
 # r4l.pacientes
 class pacientes(Base):
     __tablename__ = "pacientes"
+    
     __table_args__ = (
         Index("ix_pacientes_id_sexo", "id_sexo"), 
         Index("ix_pacientes_id_estatus_usuario", "id_estatus_usuario"), 
         Index("ix_pacientes_id_tipo_diabetes", "id_tipo_diabetes"), 
-        {"schema": "r4l"}
+        {
+            "schema": "r4l",
+            "implicit_returning": False
+        }
     )
 
     id_paciente = Column(Integer, primary_key=True, autoincrement=True)
@@ -361,40 +365,41 @@ class pacientes(Base):
     # RELACIÓN: pacientes -> usuarios (1:1, OPCIONAL)
     usuario = relationship("usuarios", back_populates="paciente", uselist=False)
     # AGREGAR ESTA LÍNEA:
-    medico = relationship("medicos", back_populates="pacientes")  # Relación con médico
+    medico = relationship("medicos", back_populates="pacientes") 
 
+# r4l.citas_medicas
 # r4l.citas_medicas
 class citas_medicas(Base):
     __tablename__ = "citas_medicas"
     __table_args__ = (
-        Index("ix_citas_medicas_id_medico", "id_medico"), 
-        Index("ix_citas_medicas_id_paciente", "id_paciente"), 
-        Index("ix_citas_medicas_fecha", "fecha"), 
-        Index("ix_citas_medicas_id_estatus_cita", "id_estatus_cita"), 
-        {"schema": "r4l"}
-    )
+            Index("ix_citas_medicas_id_medico", "id_medico"), 
+            Index("ix_citas_medicas_id_paciente", "id_paciente"), 
+            Index("ix_citas_medicas_fecha", "fecha"), 
+            Index("ix_citas_medicas_id_estatus_cita", "id_estatus_cita"), 
+            {
+                "schema": "r4l",
+                "implicit_returning": False 
+            }
+        )
 
-    id_cita = Column(Integer, primary_key = True, autoincrement = True, comment = "IDENTIFICADOR ÚNICO DE LA CITA")
-    id_rol = Column(Integer, ForeignKey("r4l.roles_usuarios.id_rol"), nullable = False, comment = "IDENTIFICADOR DEL ROL (FK, QUIÉN SOLICITA)")
-    id_medico = Column(Integer, ForeignKey("r4l.medicos.id_medico"), nullable = False, comment = "IDENTIFICADOR DEL MÉDICO (FK)")
-    id_paciente = Column(Integer, ForeignKey("r4l.pacientes.id_paciente"), nullable = False, comment = "IDENTIFICADOR DEL PACIENTE (FK)")
-    id_estatus_cita = Column(Integer, ForeignKey("r4l.estatus_citas.id_estatus_cita"), nullable = False, comment = "IDENTIFICADOR DEL ESTATUS DE LA CITA (FK)")
-    fecha = Column(Date, nullable = False, comment = "FECHA DE LA CITA")
-    hora = Column(Time, nullable = False, comment = "HORA DE LA CITA")
-    motivo = Column(String(255), nullable = True, comment = "MOTIVO DE LA CONSULTA")
-    notas = Column(String(255), nullable = True, comment = "NOTAS ADICIONALES")
-    fecha_hora_solicitud = Column(DateTime, nullable = False, comment = "FECHA Y HORA DE SOLICITUD")
+    id_cita = Column(Integer, primary_key=True, autoincrement=True, comment="IDENTIFICADOR ÚNICO DE LA CITA")
+    id_rol = Column(Integer, ForeignKey("r4l.roles_usuarios.id_rol"), nullable=False)
+    id_medico = Column(Integer, ForeignKey("r4l.medicos.id_medico"), nullable=False)
+    id_paciente = Column(Integer, ForeignKey("r4l.pacientes.id_paciente"), nullable=False)
+    id_estatus_cita = Column(Integer, ForeignKey("r4l.estatus_citas.id_estatus_cita"), nullable=False)
+    fecha = Column(Date, nullable=False)
+    hora = Column(Time, nullable=False)
+    motivo = Column(String(255), nullable=True)
+    notas = Column(String(255), nullable=True)
+    fecha_hora_solicitud = Column(DateTime, nullable=False)
 
-    # RELACIÓN: citas_medicas -> roles_usuarios (N:1)
-    rol = relationship("roles_usuarios", back_populates = "citas")
-    # RELACIÓN: citas_medicas -> medicos (N:1)
-    medico = relationship("medicos", back_populates = "citas")
-    # RELACIÓN: citas_medicas -> pacientes (N:1)
-    paciente = relationship("pacientes", back_populates = "citas")
-    # RELACIÓN: citas_medicas -> estatus_citas (N:1)
-    estatus = relationship("estatus_citas", back_populates = "citas")
-    # RELACIÓN: citas_medicas -> consultas_medicas (1:1, OPCIONAL)
-    consulta = relationship("consultas_medicas", back_populates = "cita", uselist = False)
+    # Relaciones
+    rol = relationship("roles_usuarios", back_populates="citas")
+    medico = relationship("medicos", back_populates="citas")
+    paciente = relationship("pacientes", back_populates="citas")
+    estatus = relationship("estatus_citas", back_populates="citas")
+    consulta = relationship("consultas_medicas", back_populates="cita", uselist=False)
+    
 
 # r4l.consultas_medicas
 class consultas_medicas(Base):
@@ -560,11 +565,14 @@ class pacientes_aplicacion(Base):
 class registros_paciente(Base):
     __tablename__ = "registros_paciente"
     __table_args__ = (
-        Index("ix_registros_paciente_id_paciente", "id_paciente"), 
-        Index("ix_registros_paciente_id_tipo_registro", "id_tipo_registro"), 
-        Index("ix_registros_paciente_fecha", "fecha"), 
-        {"schema": "r4l"}
-    )
+            Index("ix_registros_paciente_id_paciente", "id_paciente"), 
+            Index("ix_registros_paciente_id_tipo_registro", "id_tipo_registro"), 
+            Index("ix_registros_paciente_fecha", "fecha"), 
+            {
+                "schema": "r4l",
+                "implicit_returning": False 
+            }
+        )
 
     id_registro = Column(Integer, primary_key = True, autoincrement = True, comment = "IDENTIFICADOR ÚNICO DEL REGISTRO")
     id_paciente = Column(Integer, ForeignKey("r4l.pacientes.id_paciente"), nullable = False, comment = "IDENTIFICADOR DEL PACIENTE (FK)")
@@ -575,9 +583,7 @@ class registros_paciente(Base):
     unidad_alternativa = Column(String(20), nullable = True, comment = "UNIDAD DE MEDIDA ALTERNATIVA (SI CORRESPONDE)")
     notas = Column(String(255), nullable = True, comment = "NOTAS ADICIONALES")
 
-    # RELACIÓN: registros_paciente -> pacientes (N:1)
     paciente = relationship("pacientes", back_populates = "registros")
-    # RELACIÓN: registros_paciente -> tipos_registros (N:1)
     tipo_registro = relationship("tipos_registros", back_populates = "registros_paciente")
 
 # r4l.usuarios
@@ -586,7 +592,10 @@ class usuarios(Base):
     __table_args__ = (
         Index("ix_usuarios_id_medico", "id_medico"), 
         Index("ix_usuarios_id_paciente", "id_paciente"), 
-        {"schema": "r4l"}
+        {
+            "schema": "r4l",
+            "implicit_returning": False
+        }
     )
 
     id_usuario = Column(Integer, primary_key = True, autoincrement = True, comment = "IDENTIFICADOR ÚNICO DEL USUARIO")

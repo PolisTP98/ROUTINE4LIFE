@@ -2,59 +2,483 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Agendar Cita - Routine4Life</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Cita | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body class="nueva-cita">
-    <div class="container">
-        <h1>Agendar Nueva Cita</h1>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form method="POST">
-            {% if current_user.id_rol == 1 %}
-            <label>Médico:</label>
-            <select name="id_medico" required>
-                <option value="">Seleccione...</option>
-                {% for medico in medicos %}
-                <option value="{{ medico.id_medico }}">{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}</option>
-                {% endfor %}
-            </select>
-            {% else %}
-            <input type="hidden" name="id_medico" value="{{ medicos[0].id_medico if medicos else '' }}">
-            {% endif %}
-
-            <label>Paciente:</label>
-            <select name="id_paciente" required>
-                <option value="">Seleccione...</option>
-                {% for paciente in pacientes %}
-                <option value="{{ paciente.id_paciente }}">{{ paciente.nombre_completo }}</option>
-                {% endfor %}
-            </select>
-
-            <label>Fecha:</label>
-            <input type="date" name="fecha" required>
-
-            <label>Hora:</label>
-            <input type="time" name="hora" required>
-
-            <label>Motivo:</label>
-            <textarea name="motivo" rows="3" placeholder="Motivo de la consulta..."></textarea>
-
-            <label>Notas adicionales:</label>
-            <textarea name="notas" rows="3" placeholder="Notas..."></textarea>
-
+<body class="dashboard-body">
+    <!-- Header Moderno sin boton de salir -->
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
             <div>
-                <button type="submit" class="btn btn-guardar">Agendar Cita</button>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-cancelar">Cancelar</a>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
             </div>
-        </form>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas {{ 'fa-shield-alt' if current_user.id_rol == 1 else 'fa-stethoscope' }}"></i> {{ 'Administrador' if current_user.id_rol == 1 else 'Medico Especialista' }}</div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <div class="form-container">
+            <h1><i class="fas fa-calendar-plus"></i> Agendar Nueva Cita</h1>
+            <p class="form-subtitle">Los campos marcados con <span class="required-star">*</span> son obligatorios</p>
+            
+            <!-- Mensajes Flash -->
+            <div class="flash-messages" id="flashMessagesContainer">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% elif category == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+            
+            <form method="POST" id="citaForm" novalidate>
+                {% if current_user.id_rol == 1 %}
+                <div class="form-group" id="medicoGroup">
+                    <label>Medico <span class="required-star">*</span></label>
+                    <select name="id_medico" id="id_medico">
+                        <option value="">Seleccione un medico...</option>
+                        {% for medico in medicos %}
+                        <option value="{{ medico.id_medico }}" {% if request.form.get('id_medico')|int == medico.id_medico %}selected{% endif %}>
+                            {{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}
+                            ({{ medico.especialidad.nombre if medico.especialidad else 'Sin especialidad' }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-message" id="medicoMessage"></div>
+                </div>
+                
+                <div class="form-group" id="pacienteGroup">
+                    <label>Paciente <span class="required-star">*</span></label>
+                    <select name="id_paciente" id="id_paciente" disabled>
+                        <option value="">Primero seleccione un medico</option>
+                    </select>
+                    <div class="field-message" id="pacienteMessage"></div>
+                    <small class="help-text"><i class="fas fa-info-circle"></i> Los pacientes se cargan segun el medico seleccionado</small>
+                </div>
+                {% else %}
+                <div class="form-group" id="pacienteGroup">
+                    <label>Paciente <span class="required-star">*</span></label>
+                    <select name="id_paciente" id="id_paciente">
+                        <option value="">Seleccione un paciente...</option>
+                        {% for paciente in pacientes %}
+                        <option value="{{ paciente.id_paciente }}" {% if request.form.get('id_paciente')|int == paciente.id_paciente %}selected{% endif %}>
+                            {{ paciente.nombre_completo }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-message" id="pacienteMessage"></div>
+                </div>
+                {% endif %}
+                
+                <div class="form-row">
+                    <div class="form-group" id="fechaGroup">
+                        <label>Fecha <span class="required-star">*</span></label>
+                        <input type="date" name="fecha" id="fecha" value="{{ request.form.get('fecha', '') }}">
+                        <div class="field-message" id="fechaMessage"></div>
+                        <small class="help-text"><i class="fas fa-calendar-alt"></i> Seleccione una fecha (no se permiten fechas pasadas)</small>
+                    </div>
+                    <div class="form-group" id="horaGroup">
+                        <label>Hora <span class="required-star">*</span></label>
+                        <input type="time" name="hora" id="hora" value="{{ request.form.get('hora', '') }}">
+                        <div class="field-message" id="horaMessage"></div>
+                        <small class="help-text"><i class="fas fa-clock"></i> Horario disponible: 24/7 (cualquier hora)</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Motivo de la consulta</label>
+                    <textarea name="motivo" id="motivo" rows="3" placeholder="Ejemplo: Control de glucosa, revision trimestral, sintomas nuevos...">{{ request.form.get('motivo', '') }}</textarea>
+                    <small class="help-text"><i class="fas fa-stethoscope"></i> Describa el motivo de la consulta</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Notas adicionales</label>
+                    <textarea name="notas" id="notas" rows="2" placeholder="Informacion adicional para el medico...">{{ request.form.get('notas', '') }}</textarea>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Agendar Cita</button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
+                </div>
+            </form>
+        </div>
     </div>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <style>
+        .field-message {
+            font-size: 0.7rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        
+        .field-message.error {
+            color: #ef4444;
+        }
+        
+        .field-error {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2;
+        }
+        
+        .field-success {
+            border-color: #10b981 !important;
+            background-color: #ecfdf5;
+        }
+        
+        .btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .help-text i {
+            margin-right: 0.25rem;
+        }
+    </style>
+    
+    <script>
+        // Obtener elementos del DOM
+        const form = document.getElementById('citaForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        {% if current_user.id_rol == 1 %}
+        const medicoSelect = document.getElementById('id_medico');
+        const pacienteSelect = document.getElementById('id_paciente');
+        const medicoMessage = document.getElementById('medicoMessage');
+        const pacienteMessage = document.getElementById('pacienteMessage');
+        const pacientesPorMedico = {{ pacientes_por_medico | tojson | safe }};
+        {% else %}
+        const pacienteSelect = document.getElementById('id_paciente');
+        const pacienteMessage = document.getElementById('pacienteMessage');
+        {% endif %}
+        
+        const fechaInput = document.getElementById('fecha');
+        const horaInput = document.getElementById('hora');
+        const fechaMessage = document.getElementById('fechaMessage');
+        const horaMessage = document.getElementById('horaMessage');
+        
+        // Obtener fecha actual en formato YYYY-MM-DD
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        // Funciones de utilidad
+        function showFieldError(inputElement, messageElement, message) {
+            messageElement.innerHTML = message;
+            messageElement.className = 'field-message error';
+            inputElement.classList.add('field-error');
+            inputElement.classList.remove('field-success');
+        }
+        
+        function clearFieldError(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error');
+            inputElement.classList.add('field-success');
+        }
+        
+        function resetField(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error', 'field-success');
+        }
+        
+        // Validar fecha
+        function validateFecha() {
+            const fecha = fechaInput.value;
+            
+            if (fecha === '') {
+                showFieldError(fechaInput, fechaMessage, 'Por favor, selecciona la fecha de la cita');
+                return false;
+            }
+            
+            if (fecha < hoy) {
+                showFieldError(fechaInput, fechaMessage, 'No se pueden agendar citas en fechas pasadas');
+                return false;
+            }
+            
+            clearFieldError(fechaInput, fechaMessage);
+            return true;
+        }
+        
+        // Validar hora
+        function validateHora() {
+            const hora = horaInput.value;
+            
+            if (hora === '') {
+                showFieldError(horaInput, horaMessage, 'Por favor, selecciona la hora de la cita');
+                return false;
+            }
+            
+            const horaRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
+            if (!horaRegex.test(hora)) {
+                showFieldError(horaInput, horaMessage, 'Formato de hora invalido');
+                return false;
+            }
+            
+            clearFieldError(horaInput, horaMessage);
+            return true;
+        }
+        
+        {% if current_user.id_rol == 1 %}
+        // Validar medico
+        function validateMedico() {
+            const medico = medicoSelect.value;
+            
+            if (medico === '') {
+                showFieldError(medicoSelect, medicoMessage, 'Por favor, selecciona un medico');
+                return false;
+            }
+            
+            clearFieldError(medicoSelect, medicoMessage);
+            return true;
+        }
+        
+        // Cargar pacientes segun medico seleccionado
+        function cargarPacientesPorMedico(medicoId) {
+            const pacientes = pacientesPorMedico[medicoId] || [];
+            
+            if (pacientes.length === 0) {
+                pacienteSelect.innerHTML = '<option value="">No hay pacientes asignados a este medico</option>';
+                pacienteSelect.disabled = true;
+                pacienteSelect.classList.remove('field-success', 'field-error');
+                resetField(pacienteSelect, pacienteMessage);
+            } else {
+                pacienteSelect.innerHTML = '<option value="">Seleccione un paciente...</option>';
+                pacientes.forEach(paciente => {
+                    const selected = '{{ request.form.get("id_paciente", "") }}' == paciente.id ? 'selected' : '';
+                    pacienteSelect.innerHTML += `<option value="${paciente.id}" ${selected}>${paciente.nombre}</option>`;
+                });
+                pacienteSelect.disabled = false;
+            }
+        }
+        
+        // Validar paciente
+        function validatePaciente() {
+            if (pacienteSelect.disabled) {
+                showFieldError(pacienteSelect, pacienteMessage, 'Primero debes seleccionar un medico');
+                return false;
+            }
+            
+            const paciente = pacienteSelect.value;
+            if (paciente === '') {
+                showFieldError(pacienteSelect, pacienteMessage, 'Por favor, selecciona un paciente');
+                return false;
+            }
+            
+            clearFieldError(pacienteSelect, pacienteMessage);
+            return true;
+        }
+        
+        // Eventos para medico
+        medicoSelect.addEventListener('change', function() {
+            const medicoId = this.value;
+            if (medicoId) {
+                cargarPacientesPorMedico(medicoId);
+                validateMedico();
+            } else {
+                pacienteSelect.innerHTML = '<option value="">Primero seleccione un medico</option>';
+                pacienteSelect.disabled = true;
+                resetField(pacienteSelect, pacienteMessage);
+                showFieldError(this, medicoMessage, 'Por favor, selecciona un medico');
+            }
+        });
+        
+        medicoSelect.addEventListener('input', function() {
+            if (this.value === '') {
+                showFieldError(this, medicoMessage, 'Por favor, selecciona un medico');
+            } else {
+                clearFieldError(this, medicoMessage);
+            }
+        });
+        
+        medicoSelect.addEventListener('blur', validateMedico);
+        medicoSelect.addEventListener('focus', function() {
+            if (this.value !== '') {
+                validateMedico();
+            } else {
+                resetField(this, medicoMessage);
+            }
+        });
+        
+        pacienteSelect.addEventListener('change', function() {
+            if (this.value !== '' && !this.disabled) {
+                validatePaciente();
+            }
+        });
+        
+        pacienteSelect.addEventListener('blur', validatePaciente);
+        pacienteSelect.addEventListener('focus', function() {
+            if (this.value !== '' && !this.disabled) {
+                validatePaciente();
+            } else {
+                resetField(this, pacienteMessage);
+            }
+        });
+        {% else %}
+        // Validar paciente (para medico)
+        function validatePaciente() {
+            const paciente = pacienteSelect.value;
+            
+            if (paciente === '') {
+                showFieldError(pacienteSelect, pacienteMessage, 'Por favor, selecciona un paciente');
+                return false;
+            }
+            
+            clearFieldError(pacienteSelect, pacienteMessage);
+            return true;
+        }
+        
+        pacienteSelect.addEventListener('change', function() {
+            if (this.value === '') {
+                showFieldError(this, pacienteMessage, 'Por favor, selecciona un paciente');
+            } else {
+                clearFieldError(this, pacienteMessage);
+            }
+        });
+        
+        pacienteSelect.addEventListener('blur', validatePaciente);
+        pacienteSelect.addEventListener('focus', function() {
+            if (this.value !== '') {
+                validatePaciente();
+            } else {
+                resetField(this, pacienteMessage);
+            }
+        });
+        {% endif %}
+        
+        // Eventos para fecha
+        fechaInput.addEventListener('input', function() {
+            const fecha = this.value;
+            if (fecha === '') {
+                showFieldError(this, fechaMessage, 'Por favor, selecciona la fecha de la cita');
+            } else if (fecha < hoy) {
+                showFieldError(this, fechaMessage, 'No se pueden agendar citas en fechas pasadas');
+            } else {
+                clearFieldError(this, fechaMessage);
+            }
+        });
+        
+        fechaInput.addEventListener('blur', validateFecha);
+        fechaInput.addEventListener('focus', function() {
+            if (this.value !== '') {
+                validateFecha();
+            } else {
+                resetField(this, fechaMessage);
+            }
+        });
+        
+        // Eventos para hora
+        horaInput.addEventListener('input', function() {
+            const hora = this.value;
+            if (hora === '') {
+                showFieldError(this, horaMessage, 'Por favor, selecciona la hora de la cita');
+            } else {
+                const horaRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
+                if (!horaRegex.test(hora)) {
+                    showFieldError(this, horaMessage, 'Formato de hora invalido');
+                } else {
+                    clearFieldError(this, horaMessage);
+                }
+            }
+        });
+        
+        horaInput.addEventListener('blur', validateHora);
+        horaInput.addEventListener('focus', function() {
+            if (this.value !== '') {
+                validateHora();
+            } else {
+                resetField(this, horaMessage);
+            }
+        });
+        
+        // Validacion inicial
+        window.addEventListener('DOMContentLoaded', function() {
+            if (fechaInput.value !== '') validateFecha();
+            if (horaInput.value !== '') validateHora();
+            
+            {% if current_user.id_rol == 1 %}
+            if (medicoSelect.value !== '') {
+                cargarPacientesPorMedico(medicoSelect.value);
+                validateMedico();
+            }
+            if (pacienteSelect.value !== '' && !pacienteSelect.disabled) validatePaciente();
+            {% else %}
+            if (pacienteSelect.value !== '') validatePaciente();
+            {% endif %}
+        });
+        
+        // Envio del formulario
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            let isValid = true;
+            
+            {% if current_user.id_rol == 1 %}
+            if (!validateMedico()) isValid = false;
+            if (!validatePaciente()) isValid = false;
+            {% else %}
+            if (!validatePaciente()) isValid = false;
+            {% endif %}
+            if (!validateFecha()) isValid = false;
+            if (!validateHora()) isValid = false;
+            
+            if (!isValid) {
+                let firstError = null;
+                {% if current_user.id_rol == 1 %}
+                if (!validateMedico()) firstError = medicoSelect;
+                else if (!validatePaciente()) firstError = pacienteSelect;
+                {% else %}
+                if (!validatePaciente()) firstError = pacienteSelect;
+                {% endif %}
+                if (!firstError && !validateFecha()) firstError = fechaInput;
+                if (!firstError && !validateHora()) firstError = horaInput;
+                
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+                return false;
+            }
+            
+            submitBtn.classList.add('loading');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Agendando cita...';
+            submitBtn.disabled = true;
+            
+            this.submit();
+        });
+        
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { 
+                            if(flash && flash.parentElement) flash.remove(); 
+                        }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

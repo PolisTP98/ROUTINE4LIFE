@@ -7,6 +7,101 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilos adicionales solo para mensajes personalizados */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        
+        .flash {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .flash-success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        
+        .flash-error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .flash-warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        
+        .flash-info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+        
+        /* Estilos para mensajes de validación por campo */
+        .field-error {
+            border-color: #dc3545 !important;
+            background-color: #fff8f8;
+        }
+        
+        .field-success {
+            border-color: #28a745 !important;
+            background-color: #f0fff4;
+        }
+        
+        .field-message {
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .field-message.error {
+            color: #dc3545;
+        }
+        
+        /* Estado de carga del botón */
+        .btn-login.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+            position: relative;
+        }
+        
+        .btn-login.loading::after {
+            content: " ...";
+            display: inline-block;
+        }
+    </style>
 </head>
 
 <body class="login-page">
@@ -15,7 +110,6 @@
 
         <!-- HEADER -->
         <div class="login-logo-area">
-
             <div class="logo-container">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
             </div>
@@ -45,22 +139,22 @@
                 {% endif %}
             {% endwith %}
 
-            <form method="POST" action="{{ url_for('login') }}" class="login-form">
-
-                <div class="input-group">
+            <form method="POST" action="{{ url_for('login') }}" class="login-form" id="loginForm" novalidate>
+                <div class="input-group" id="emailGroup">
                     <label>Correo electrónico</label>
-                    <input type="email" name="email" placeholder="tu@correo.com" required>
+                    <input type="email" name="email" id="email" placeholder="tu@correo.com" autocomplete="email" value="{{ request.form.get('email', '') }}">
+                    <div class="field-message" id="emailMessage"></div>
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" id="passwordGroup">
                     <label>Contraseña</label>
-                    <input type="password" name="password" placeholder="••••••••" required>
+                    <input type="password" name="password" id="password" placeholder="••••••••" autocomplete="current-password">
+                    <div class="field-message" id="passwordMessage"></div>
                 </div>
 
-                <button type="submit" class="btn-login">
+                <button type="submit" class="btn-login" id="loginBtn">
                     Iniciar Sesión
                 </button>
-
             </form>
 
             <div class="login-links">
@@ -68,12 +162,265 @@
             </div>
 
             <div class="register-link">
-                ¿No tienes cuenta? <a href="#">Contacta al administrador</a>
+                ¿No tienes cuenta? <a href="#" id="contactAdmin">Contacta al administrador</a>
             </div>
 
         </div>
 
     </div>
 
+    <script>
+        // Obtener elementos del DOM
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const emailMessage = document.getElementById('emailMessage');
+        const passwordMessage = document.getElementById('passwordMessage');
+        
+        // Función para validar email
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        // Función para mostrar mensaje de error en campo
+        function showFieldError(inputElement, messageElement, message) {
+            messageElement.innerHTML = message;
+            messageElement.className = 'field-message error';
+            inputElement.classList.add('field-error');
+            inputElement.classList.remove('field-success');
+        }
+        
+        // Función para limpiar mensajes de error y mostrar éxito (solo borde verde)
+        function clearFieldError(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error');
+            inputElement.classList.add('field-success');
+        }
+        
+        // Función para resetear campo (sin éxito ni error)
+        function resetField(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error', 'field-success');
+        }
+        
+        // Validar campo email
+        function validateEmailField() {
+            const email = emailInput.value.trim();
+            
+            if (email === '') {
+                showFieldError(emailInput, emailMessage, 'Por favor, ingresa tu correo electrónico');
+                return false;
+            }
+            
+            if (!isValidEmail(email)) {
+                showFieldError(emailInput, emailMessage, 'El correo electrónico no es válido. Ejemplo: usuario@dominio.com');
+                return false;
+            }
+            
+            // Campo válido - solo borde verde, sin mensaje
+            clearFieldError(emailInput, emailMessage);
+            return true;
+        }
+        
+        // Validar campo contraseña
+        function validatePasswordField() {
+            const password = passwordInput.value;
+            
+            if (password === '') {
+                showFieldError(passwordInput, passwordMessage, 'Por favor, ingresa tu contraseña');
+                return false;
+            }
+            
+            if (password.length < 6) {
+                showFieldError(passwordInput, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
+                return false;
+            }
+            
+            // Campo válido - solo borde verde, sin mensaje
+            clearFieldError(passwordInput, passwordMessage);
+            return true;
+        }
+        
+        // Validación en tiempo real para el campo email
+        emailInput.addEventListener('input', function() {
+            const email = this.value.trim();
+            
+            if (email === '') {
+                showFieldError(this, emailMessage, 'Por favor, ingresa tu correo electrónico');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showFieldError(this, emailMessage, 'Por favor, ingresa un correo electrónico válido (ejemplo: usuario@dominio.com)');
+            } else {
+                // Formato válido - solo borde verde, sin mensaje
+                clearFieldError(this, emailMessage);
+            }
+        });
+        
+        // Validación en tiempo real para la contraseña
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            
+            if (password === '') {
+                showFieldError(this, passwordMessage, 'Por favor, ingresa tu contraseña');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showFieldError(this, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
+            } else {
+                // Contraseña válida - solo borde verde, sin mensaje
+                clearFieldError(this, passwordMessage);
+            }
+        });
+        
+        // Validación al perder el foco
+        emailInput.addEventListener('blur', function() {
+            const email = this.value.trim();
+            if (email === '') {
+                showFieldError(this, emailMessage, 'Por favor, ingresa tu correo electrónico');
+            } else if (!isValidEmail(email)) {
+                showFieldError(this, emailMessage, 'El correo electrónico no es válido. Ejemplo: usuario@dominio.com');
+            } else if (email !== '') {
+                clearFieldError(this, emailMessage);
+            }
+        });
+        
+        passwordInput.addEventListener('blur', function() {
+            const password = this.value;
+            if (password === '') {
+                showFieldError(this, passwordMessage, 'Por favor, ingresa tu contraseña');
+            } else if (password.length < 6) {
+                showFieldError(this, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
+            } else if (password !== '') {
+                clearFieldError(this, passwordMessage);
+            }
+        });
+        
+        // Validación al hacer focus (resetear visualización pero mantener validación si hay valor)
+        emailInput.addEventListener('focus', function() {
+            if (this.value.trim() !== '') {
+                // Si ya tiene valor, validar nuevamente
+                const email = this.value.trim();
+                if (!isValidEmail(email)) {
+                    showFieldError(this, emailMessage, 'El correo electrónico no es válido. Ejemplo: usuario@dominio.com');
+                } else {
+                    clearFieldError(this, emailMessage);
+                }
+            } else {
+                resetField(this, emailMessage);
+            }
+        });
+        
+        passwordInput.addEventListener('focus', function() {
+            if (this.value !== '') {
+                const password = this.value;
+                if (password.length < 6) {
+                    showFieldError(this, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
+                } else {
+                    clearFieldError(this, passwordMessage);
+                }
+            } else {
+                resetField(this, passwordMessage);
+            }
+        });
+        
+        // Validación inicial al cargar la página
+        window.addEventListener('DOMContentLoaded', function() {
+            // Validar email si tiene valor
+            if (emailInput.value.trim() !== '') {
+                const email = emailInput.value.trim();
+                if (!isValidEmail(email)) {
+                    showFieldError(emailInput, emailMessage, 'El correo electrónico no es válido. Ejemplo: usuario@dominio.com');
+                } else {
+                    clearFieldError(emailInput, emailMessage);
+                }
+            }
+            
+            // Validar contraseña si tiene valor
+            if (passwordInput.value !== '') {
+                const password = passwordInput.value;
+                if (password.length < 6) {
+                    showFieldError(passwordInput, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
+                } else {
+                    clearFieldError(passwordInput, passwordMessage);
+                }
+            }
+        });
+        
+        // Validación antes de enviar el formulario
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevenir envío para validar primero
+            
+            // Validar ambos campos
+            const isEmailValid = validateEmailField();
+            const isPasswordValid = validatePasswordField();
+            
+            // Si hay errores, no enviar
+            if (!isEmailValid || !isPasswordValid) {
+                // Enfocar el primer campo con error
+                if (!isEmailValid) {
+                    emailInput.focus();
+                } else if (!isPasswordValid) {
+                    passwordInput.focus();
+                }
+                return false;
+            }
+            
+            // Si todo está bien, mostrar estado de carga y enviar
+            loginBtn.classList.add('loading');
+            loginBtn.textContent = 'Verificando credenciales...';
+            loginBtn.disabled = true;
+            
+            // Enviar el formulario
+            this.submit();
+        });
+        
+        // Contacto con administrador
+        const contactLink = document.getElementById('contactAdmin');
+        if (contactLink) {
+            contactLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Mostrar mensaje de contacto en el área de flash messages
+                const contactMsg = document.createElement('div');
+                contactMsg.className = 'flash flash-info';
+                contactMsg.innerHTML = `
+                    <strong>Contacto Administrador:</strong><br>
+                    Email: administracion@routine4life.com<br>
+                    Teléfono: (55) 1234-5678
+                `;
+                
+                // Insertar al inicio del contenedor de flash messages
+                const flashContainer = document.querySelector('.flash-messages');
+                if (flashContainer) {
+                    flashContainer.insertBefore(contactMsg, flashContainer.firstChild);
+                } else {
+                    const loginBody = document.querySelector('.login-body');
+                    loginBody.insertBefore(contactMsg, loginBody.firstChild);
+                }
+                
+                // Auto-eliminar después de 8 segundos
+                setTimeout(() => {
+                    if (contactMsg && contactMsg.remove) contactMsg.remove();
+                }, 8000);
+            });
+        }
+        
+        // Auto-eliminar mensajes flash después de 5 segundos
+        setTimeout(() => {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(flash => {
+                setTimeout(() => {
+                    if (flash && flash.remove) flash.remove();
+                }, 5000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

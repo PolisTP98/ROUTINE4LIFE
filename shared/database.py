@@ -1,9 +1,11 @@
 import os
+import urllib.parse 
 from pathlib import Path
 from dotenv import load_dotenv
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+
 from sqlalchemy.engine import URL
 
 load_dotenv()
@@ -24,6 +26,7 @@ engine = create_engine(
     DATABASE_URL,
     echo=False,
     pool_pre_ping=True
+
 )
 
 # Base
