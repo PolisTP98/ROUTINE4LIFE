@@ -2,6 +2,23 @@ version: '3.8'
 
 services:
   # ----------------------------
+  # | BASE DE DATOS (SQL SERVER)|
+  # ----------------------------
+  sql_server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: db_r4life
+    ports:
+      - "14333:1433" 
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Routine4Life_2026!
+    networks:
+      - app_network
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: unless-stopped
+
+  # ----------------------------
   # | BACKEND WEB (FLASK)      |
   # ----------------------------
   flask_api:
@@ -35,7 +52,6 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - app_network
-    # --- CAMBIO AQUÍ ---
     volumes:
       - "./routine4life_web:/app" 
       - "./shared:/app/shared"
@@ -56,8 +72,17 @@ services:
       - "host.docker.internal:host-gateway" 
     networks:
       - app_network
+    volumes:
+      - "./routine4life_mobile:/app/routine4life_mobile"
+      - "./shared:/app/shared"
     restart: unless-stopped
 
+# ----------------------------
+# | DECLARACIONES GLOBALES   |
+# ----------------------------
 networks:
   app_network:
     driver: bridge
+
+volumes:
+  sqlserver_data:
