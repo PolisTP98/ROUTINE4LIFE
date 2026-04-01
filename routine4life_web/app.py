@@ -22,7 +22,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, date
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import text
+from sqlalchemy import text, extract
 
 
 app = Flask(__name__)
@@ -371,39 +371,76 @@ def admin_dashboard():
     
     db = Session(bind=engine)
     
-    medicos_list = db.query(medicos).options(
-        joinedload(medicos.datos_personales),
-        joinedload(medicos.especialidad)
-    ).filter(medicos.id_rol == 2).all()
-    
-    pacientes_list = db.query(pacientes).options(
-        joinedload(pacientes.tipo_diabetes),
-        joinedload(pacientes.sexo)
-    ).filter(
-        pacientes.id_medico == current_user.id
-    ).all()
-    
-    proximas_citas = db.query(citas_medicas).options(
-        joinedload(citas_medicas.paciente),
-        joinedload(citas_medicas.medico),
-        joinedload(citas_medicas.estatus)
-    ).filter(
-        citas_medicas.fecha >= date.today()
-    ).order_by(citas_medicas.fecha).limit(10).all()
-    
-    total_pacientes_admin = len(pacientes_list)
-    total_pacientes = db.query(pacientes).count()
-    
-    db.close()
-    
-    return render_template("dashboard.html",
-                         medicos=medicos_list,
-                         pacientes=pacientes_list,
-                         proximas_citas=proximas_citas,
-                         total_medicos=len(medicos_list),
-                         total_pacientes_admin=total_pacientes_admin,
-                         total_pacientes=total_pacientes,
-                         now_date=date.today())
+    try:
+        medicos_list = db.query(medicos).options(
+            joinedload(medicos.datos_personales),
+            joinedload(medicos.especialidad)
+        ).filter(medicos.id_rol == 2).all()
+        
+        pacientes_list = db.query(pacientes).options(
+            joinedload(pacientes.tipo_diabetes),
+            joinedload(pacientes.sexo)
+        ).all()
+        
+        proximas_citas = db.query(citas_medicas).options(
+            joinedload(citas_medicas.paciente),
+            joinedload(citas_medicas.medico).joinedload(medicos.datos_personales)
+        ).filter(
+            citas_medicas.fecha >= date.today(),
+            citas_medicas.id_estatus_cita == 1
+        ).order_by(citas_medicas.fecha).limit(10).all()
+        
+        # Consultas por mes - CORREGIDO (sin func.format)
+        consultas = db.query(consultas_medicas).all()
+        
+        consultas_por_mes_dict = {}
+        for consulta in consultas:
+            if consulta.fecha:
+                mes_key = consulta.fecha.strftime('%Y-%m')
+                if mes_key not in consultas_por_mes_dict:
+                    consultas_por_mes_dict[mes_key] = 0
+                consultas_por_mes_dict[mes_key] += 1
+        
+        consultas_mes_data = []
+        for mes_key in sorted(consultas_por_mes_dict.keys(), reverse=True)[:6]:
+            anio, mes = mes_key.split('-')
+            nombre_mes = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][int(mes)-1]
+            consultas_mes_data.append({
+                'mes': f"{nombre_mes} {anio}",
+                'total': consultas_por_mes_dict[mes_key]
+            })
+        
+        # Ordenar cronológicamente
+        consultas_mes_data.reverse()
+        
+        total_medicos = len(medicos_list)
+        total_pacientes = len(pacientes_list)
+        
+        # Consultas del mes actual
+        mes_actual = date.today().month
+        ano_actual = date.today().year
+        consultas_mes = 0
+        for consulta in consultas:
+            if consulta.fecha and consulta.fecha.month == mes_actual and consulta.fecha.year == ano_actual:
+                consultas_mes += 1
+        
+        db.close()
+        
+        return render_template("admin_dashboard.html",
+                             medicos=medicos_list,
+                             pacientes=pacientes_list,
+                             proximas_citas=proximas_citas,
+                             total_medicos=total_medicos,
+                             total_pacientes=total_pacientes,
+                             consultas_mes=consultas_mes,
+                             consultas_por_mes=consultas_mes_data,
+                             now_date=date.today())
+                             
+    except Exception as e:
+        db.close()
+        flash(f'Error al cargar el dashboard: {str(e)}', 'danger')
+        return redirect(url_for('dashboard'))
 
 # ==================== ADMIN - GESTION DE MEDICOS ====================
 
@@ -713,37 +750,52 @@ def reportes_generales():
         flash('No tienes acceso.', 'danger')
         return redirect(url_for('dashboard'))
     
-    from sqlalchemy import func, text
-    
     db = Session(bind=engine)
     
-    total_medicos = db.query(medicos).filter(medicos.id_rol == 2).count()
-    total_enfermeros = db.query(medicos).filter(medicos.id_rol == 4).count()
-    total_recepcionistas = db.query(medicos).filter(medicos.id_rol == 5).count()
-    total_pacientes = db.query(pacientes).count()
-    total_consultas = db.query(consultas_medicas).count()
-    
-    consultas_por_mes = db.query(
-        func.concat(func.year(consultas_medicas.fecha), '-', 
-                    func.right(func.concat('0', func.month(consultas_medicas.fecha)), 2)).label('mes'),
-        func.count().label('total')
-    ).group_by(
-        func.year(consultas_medicas.fecha),
-        func.month(consultas_medicas.fecha)
-    ).order_by(
-        func.year(consultas_medicas.fecha).desc(),
-        func.month(consultas_medicas.fecha).desc()
-    ).limit(6).all()
-    
-    db.close()
-    
-    return render_template("reportes_generales.html",
-                         total_medicos=total_medicos,
-                         total_enfermeros=total_enfermeros,
-                         total_recepcionistas=total_recepcionistas,
-                         total_pacientes=total_pacientes,
-                         total_consultas=total_consultas,
-                         consultas_por_mes=consultas_por_mes)
+    try:
+        total_medicos = db.query(medicos).filter(medicos.id_rol == 2).count()
+        total_enfermeros = db.query(medicos).filter(medicos.id_rol == 4).count()
+        total_recepcionistas = db.query(medicos).filter(medicos.id_rol == 5).count()
+        total_pacientes = db.query(pacientes).count()
+        total_consultas = db.query(consultas_medicas).count()
+        
+        # Consultas por mes - CORREGIDO
+        consultas = db.query(consultas_medicas).all()
+        
+        consultas_por_mes_dict = {}
+        for consulta in consultas:
+            if consulta.fecha:
+                mes_key = consulta.fecha.strftime('%Y-%m')
+                if mes_key not in consultas_por_mes_dict:
+                    consultas_por_mes_dict[mes_key] = 0
+                consultas_por_mes_dict[mes_key] += 1
+        
+        consultas_mes_data = []
+        for mes_key in sorted(consultas_por_mes_dict.keys(), reverse=True)[:6]:
+            anio, mes = mes_key.split('-')
+            nombre_mes = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][int(mes)-1]
+            consultas_mes_data.append({
+                'mes': f"{nombre_mes} {anio}",
+                'total': consultas_por_mes_dict[mes_key]
+            })
+        
+        consultas_mes_data.reverse()
+        
+        db.close()
+        
+        return render_template("reportes_generales.html",
+                             total_medicos=total_medicos,
+                             total_enfermeros=total_enfermeros,
+                             total_recepcionistas=total_recepcionistas,
+                             total_pacientes=total_pacientes,
+                             total_consultas=total_consultas,
+                             consultas_por_mes=consultas_mes_data)
+                             
+    except Exception as e:
+        db.close()
+        flash(f'Error al cargar reportes: {str(e)}', 'danger')
+        return redirect(url_for('dashboard'))
 
 # ==================== DASHBOARD MEDICO ====================
 
@@ -756,55 +808,84 @@ def medico_dashboard():
     
     db = Session(bind=engine)
     
-    pacientes_list = db.query(pacientes).options(
-        joinedload(pacientes.tipo_diabetes),
-        joinedload(pacientes.sexo)
-    ).filter(
-        pacientes.id_medico == current_user.id
-    ).all()
-    
-    pacientes_data = []
-    for paciente in pacientes_list:
-        ultima = db.query(consultas_medicas).filter(
-            consultas_medicas.id_paciente == paciente.id_paciente
-        ).order_by(consultas_medicas.fecha.desc()).first()
+    try:
+        pacientes_list = db.query(pacientes).filter(
+            pacientes.id_medico == current_user.id
+        ).all()
         
-        paciente_data = {
-            'id': paciente.id_paciente,
-            'nombre_completo': paciente.nombre_completo,
-            'fecha_nacimiento': paciente.fecha_nacimiento,
-            'codigo': paciente.codigo,
-            'tipo_diabetes_nombre': paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None,
-            'sexo_nombre': paciente.sexo.nombre if paciente.sexo else None,
-            'ultima_consulta': ultima.fecha if ultima else None
-        }
-        pacientes_data.append(paciente_data)
-    
-    proximas_citas = db.query(citas_medicas).options(
-        joinedload(citas_medicas.paciente),
-        joinedload(citas_medicas.medico)
-    ).filter(
-        citas_medicas.id_medico == current_user.id,
-        citas_medicas.fecha >= date.today()
-    ).order_by(citas_medicas.fecha).limit(5).all()
-    
-    citas_data = []
-    for cita in proximas_citas:
-        cita_data = {
-            'fecha': cita.fecha if cita.fecha else None,
-            'hora': cita.hora if cita.hora else None,
-            'paciente_nombre': cita.paciente.nombre_completo if cita.paciente else 'No especificado',
-            'motivo': cita.motivo
-        }
-        citas_data.append(cita_data)
-    
-    db.close()
-    
-    return render_template("dashboard_medicos.html",
-                         pacientes=pacientes_data,
-                         total_pacientes=len(pacientes_data),
-                         proximas_citas=citas_data,
-                         now_date=date.today())
+        pacientes_data = []
+        for paciente in pacientes_list:
+            ultima = db.query(consultas_medicas).filter(
+                consultas_medicas.id_paciente == paciente.id_paciente
+            ).order_by(consultas_medicas.fecha.desc()).first()
+            
+            pacientes_data.append({
+                'id': paciente.id_paciente,
+                'nombre_completo': paciente.nombre_completo,
+                'codigo': paciente.codigo,
+                'fecha_nacimiento': paciente.fecha_nacimiento,
+                'tipo_diabetes_nombre': paciente.tipo_diabetes.nombre if paciente.tipo_diabetes else None,
+                'ultima_consulta': ultima.fecha if ultima else None
+            })
+        
+        proximas_citas = db.query(citas_medicas).options(
+            joinedload(citas_medicas.paciente)
+        ).filter(
+            citas_medicas.id_medico == current_user.id,
+            citas_medicas.fecha >= date.today(),
+            citas_medicas.id_estatus_cita == 1
+        ).order_by(citas_medicas.fecha).limit(10).all()
+        
+        citas_data = []
+        for cita in proximas_citas:
+            citas_data.append({
+                'id_cita': cita.id_cita,
+                'fecha': cita.fecha,
+                'hora': cita.hora,
+                'paciente_nombre': cita.paciente.nombre_completo if cita.paciente else 'No especificado',
+                'paciente_id': cita.id_paciente,
+                'motivo': cita.motivo
+            })
+        
+        # Consultas por mes - CORREGIDO (sin func.format)
+        consultas = db.query(consultas_medicas).filter(
+            consultas_medicas.id_medico == current_user.id
+        ).all()
+        
+        consultas_por_mes_dict = {}
+        for consulta in consultas:
+            if consulta.fecha:
+                mes_key = consulta.fecha.strftime('%Y-%m')
+                if mes_key not in consultas_por_mes_dict:
+                    consultas_por_mes_dict[mes_key] = 0
+                consultas_por_mes_dict[mes_key] += 1
+        
+        consultas_mes_data = []
+        for mes_key in sorted(consultas_por_mes_dict.keys(), reverse=True)[:6]:
+            anio, mes = mes_key.split('-')
+            nombre_mes = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][int(mes)-1]
+            consultas_mes_data.append({
+                'mes': f"{nombre_mes} {anio}",
+                'total': consultas_por_mes_dict[mes_key]
+            })
+        
+        # Ordenar cronológicamente
+        consultas_mes_data.reverse()
+        
+        db.close()
+        
+        return render_template("medico_dashboard.html",
+                             pacientes=pacientes_data,
+                             total_pacientes=len(pacientes_data),
+                             proximas_citas=citas_data,
+                             consultas_por_mes=consultas_mes_data,
+                             now_date=date.today())
+                             
+    except Exception as e:
+        db.close()
+        flash(f'Error al cargar el dashboard: {str(e)}', 'danger')
+        return redirect(url_for('dashboard'))
 
 # ==================== DASHBOARD ENFERMERO ====================
 
@@ -1616,6 +1697,8 @@ def eliminar_consulta(id):
         return redirect(url_for('admin_gestionar_consultas'))
     else:
         return redirect(url_for('detalle_paciente', id=paciente_id))
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

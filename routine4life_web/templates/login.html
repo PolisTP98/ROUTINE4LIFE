@@ -98,8 +98,61 @@
         }
         
         .btn-login.loading::after {
-            content: " ...";
+            content: "";
             display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-left: 8px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* Mejoras visuales */
+        .login-page {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .login-card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Mejora en el botón */
+        .btn-login {
+            transition: all 0.3s ease;
+        }
+        
+        .btn-login:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Enlaces */
+        .login-links a, .register-link a {
+            transition: color 0.2s ease;
+        }
+        
+        .login-links a:hover, .register-link a:hover {
+            color: #5a67d8;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -111,7 +164,7 @@
         <!-- HEADER -->
         <div class="login-logo-area">
             <div class="logo-container">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Routine4Life">
             </div>
 
             <h1 class="system-title">
@@ -351,18 +404,27 @@
                     clearFieldError(passwordInput, passwordMessage);
                 }
             }
+            
+            // Auto-eliminar mensajes flash después de 5 segundos
+            setTimeout(() => {
+                const flashes = document.querySelectorAll('.flash');
+                flashes.forEach(flash => {
+                    setTimeout(() => {
+                        if (flash && flash.remove) flash.remove();
+                    }, 5000);
+                });
+            }, 100);
         });
         
         // Validación antes de enviar el formulario
         form.addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevenir envío para validar primero
-            
             // Validar ambos campos
             const isEmailValid = validateEmailField();
             const isPasswordValid = validatePasswordField();
             
-            // Si hay errores, no enviar
+            // Si hay errores, prevenir envío
             if (!isEmailValid || !isPasswordValid) {
+                e.preventDefault();
                 // Enfocar el primer campo con error
                 if (!isEmailValid) {
                     emailInput.focus();
@@ -372,13 +434,13 @@
                 return false;
             }
             
-            // Si todo está bien, mostrar estado de carga y enviar
+            // Si todo está bien, mostrar estado de carga
             loginBtn.classList.add('loading');
             loginBtn.textContent = 'Verificando credenciales...';
             loginBtn.disabled = true;
             
-            // Enviar el formulario
-            this.submit();
+            // El formulario se enviará normalmente
+            return true;
         });
         
         // Contacto con administrador
@@ -391,9 +453,9 @@
                 const contactMsg = document.createElement('div');
                 contactMsg.className = 'flash flash-info';
                 contactMsg.innerHTML = `
-                    <strong>Contacto Administrador:</strong><br>
+                    <strong>📧 Contacto Administrador:</strong><br>
                     Email: administracion@routine4life.com<br>
-                    Teléfono: (55) 1234-5678
+                    📞 Teléfono: (55) 1234-5678
                 `;
                 
                 // Insertar al inicio del contenedor de flash messages
@@ -412,15 +474,15 @@
             });
         }
         
-        // Auto-eliminar mensajes flash después de 5 segundos
-        setTimeout(() => {
-            const flashes = document.querySelectorAll('.flash');
-            flashes.forEach(flash => {
-                setTimeout(() => {
-                    if (flash && flash.remove) flash.remove();
-                }, 5000);
-            });
-        }, 100);
+        // Prevenir envío doble del formulario
+        let submitted = false;
+        form.addEventListener('submit', function() {
+            if (submitted) {
+                return false;
+            }
+            submitted = true;
+            return true;
+        });
     </script>
 </body>
 </html>
