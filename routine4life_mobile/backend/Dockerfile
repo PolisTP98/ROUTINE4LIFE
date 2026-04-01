@@ -1,5 +1,5 @@
 # Usamos una versión específica y estable de Debian (Bookworm)
-FROM python:3.11-slim-bookworm
+FROM python:3.11-slim-bullseye
 
 # Instalar dependencias, la clave de MS con el método moderno y el driver ODBC
 RUN apt-get update \

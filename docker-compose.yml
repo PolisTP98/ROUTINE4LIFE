@@ -6,18 +6,20 @@ services:
   # ----------------------------
   flask_api:
     build:
-      context: "./routine4life_web" 
-      dockerfile: dockerfile 
+      context: "./routine4life_web"
+      dockerfile: dockerfile
     container_name: api_r4life
     ports:
-      - "5050:5000" 
-    env_file:               
-      - .env                 
+      - "5050:5000"
+    env_file:
+      - .env
     networks:
       - app_network
     volumes:
-      - "./routine4life_web:/app" 
+      - "./routine4life_web:/app"
       - "./shared:/app/shared"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # ----------------------------
   # | API DE LA WEB (miAPI)    |
@@ -25,7 +27,7 @@ services:
   web_api:
     build:
       context: "./routine4life_web" 
-      dockerfile: miAPI/Dockerfile 
+      dockerfile: miAPI/dockerfile 
     container_name: miAPI_r4life
     ports:
       - "8080:8080" 
@@ -35,7 +37,6 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - app_network
-    # --- CAMBIO AQUÍ ---
     volumes:
       - "./routine4life_web:/app" 
       - "./shared:/app/shared"

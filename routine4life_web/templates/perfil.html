@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil - Routine4Life{% endblock %}
+
+{% block header_title %}Mi Perfil{% endblock %}
+
+{% block content %}
+<div class="stats-cards">
+    <div class="stat-card-white">
+        <div class="stat-header">
+            <div class="stat-title">Información Personal</div>
+            <div class="stat-icon">
+                <i class="fas fa-user-md"></i>
+            </div>
+        </div>
+        <div class="stat-value">{{ current_user.nombre_completo }}</div>
+        <div class="stat-change">{{ current_user.email }}</div>
+    </div>
+    
+    <div class="stat-card-white">
+        <div class="stat-header">
+            <div class="stat-title">Próximas Citas</div>
+            <div class="stat-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+        </div>
+        <div class="stat-value">{{ proximas_citas|length }}</div>
+        <div class="stat-change">Citas programadas</div>
+    </div>
+    
+    <div class="stat-card-white">
+        <div class="stat-header">
+            <div class="stat-title">Rol</div>
+            <div class="stat-icon">
+                <i class="fas fa-stethoscope"></i>
+            </div>
+        </div>
+        <div class="stat-value">Médico</div>
+        <div class="stat-change">Especialista en Diabetes</div>
+    </div>
+    
+    <div class="stat-card-white">
+        <div class="stat-header">
+            <div class="stat-title">Acceso</div>
+            <div class="stat-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+        </div>
+        <div class="stat-value">Activo</div>
+        <div class="stat-change">Cuenta verificada</div>
+    </div>
+</div>
+
+<div class="table-container">
+    <div class="table-header">
+        <h3>
+            <i class="fas fa-calendar-alt"></i>
+            Mis Próximas Citas
+        </h3>
+        <a href="#" class="btn btn-primary btn-sm" id="btn-agendar-cita-perfil">
+            <i class="fas fa-plus"></i> Agendar Cita
+        </a>
+    </div>
+    <div class="table-wrapper">
+        {% if proximas_citas %}
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Paciente</th>
+                    <th>Motivo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cita in proximas_citas %}
+                <tr>
+                    <td>
+                        <strong>{{ cita.fecha.strftime('%d/%m/%Y') }}</strong>
+                        <br>
+                        <small>{{ cita.fecha.strftime('%A') }}</small>
+                    </td>
+                    <td>{{ cita.hora.strftime('%H:%M') }}</td>
+                    <td>
+                        <strong>{{ cita.paciente_nombre }}</strong>
+                        <br>
+                        <small>Código: {{ cita.paciente_codigo }}</small>
+                    </td>
+                    <td>{{ cita.motivo if cita.motivo else 'Consulta general' }}</td>
+                    <td>
+                        <div class="action-buttons" style="display: flex; gap: 0.5rem;">
+                            <a href="{{ url_for('detalle_paciente', id=cita.id_paciente) }}" class="btn btn-outline btn-sm">
+                                <i class="fas fa-eye"></i> Ver Paciente
+                            </a>
+                            {% if not cita.tiene_consulta %}
+                            <a href="{{ url_for('nueva_consulta', id=cita.id_paciente, cita_id=cita.id_cita) }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-stethoscope"></i> Iniciar Consulta
+                            </a>
+                            {% else %}
+                            <span class="badge badge-success">
+                                <i class="fas fa-check"></i> Consulta Realizada
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state-modern">
+            <i class="fas fa-calendar-alt"></i>
+            <p>No tienes citas programadas próximamente</p>
+            <a href="#" class="btn btn-primary mt-3" id="btn-agendar-cita-empty-perfil">Agendar primera cita</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('modal-cita');
+        const btnAgendarPerfil = document.getElementById('btn-agendar-cita-perfil');
+        const btnAgendarEmpty = document.getElementById('btn-agendar-cita-empty-perfil');
+        
+        if (btnAgendarPerfil) {
+            btnAgendarPerfil.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (modal) modal.style.display = 'block';
+            });
+        }
+        
+        if (btnAgendarEmpty) {
+            btnAgendarEmpty.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (modal) modal.style.display = 'block';
+            });
+        }
+    });
+</script>
+{% endblock %}

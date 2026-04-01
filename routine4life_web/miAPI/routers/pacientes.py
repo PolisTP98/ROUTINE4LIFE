@@ -1,8 +1,6 @@
-# miAPI/routers/pacientes.py
 import sys
 import os
 
-# Agregar la carpeta ROUTINE4LIFE al path
 project_folder = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 if project_folder not in sys.path:
     sys.path.insert(0, project_folder)
@@ -19,7 +17,6 @@ from shared.models import pacientes, sexos, tipos_diabetes, medicos
 
 router = APIRouter(tags=["CRUD Pacientes"])
 
-# ==================== GET ALL ====================
 @router.get("/", response_model=dict)
 def listar_pacientes(
     admin: medicos = Depends(get_current_admin),
@@ -65,7 +62,6 @@ def listar_pacientes(
             "medico_nombre": medico_nombre
         })
     
-    # Mensaje de confirmación
     filtros = []
     if medico_id:
         filtros.append(f"médico ID: {medico_id}")
@@ -82,7 +78,6 @@ def listar_pacientes(
         "pacientes": result
     }
 
-# ==================== GET BY ID ====================
 @router.get("/{paciente_id}", response_model=dict)
 def obtener_paciente(
     paciente_id: int,
@@ -117,7 +112,6 @@ def obtener_paciente(
         "activo": (paciente.id_estatus_usuario == 1)
     }
 
-# ==================== CREATE ====================
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=dict)
 def crear_paciente(
     data: PacienteCreate,
@@ -126,12 +120,10 @@ def crear_paciente(
 ):
     """Crear un nuevo paciente"""
     
-    # Verificar que el médico existe
     medico = db.query(medicos).filter(medicos.id_medico == data.id_medico).first()
     if not medico:
         raise HTTPException(status_code=400, detail="Médico no encontrado")
     
-    # Generar código automático
     ultimo = db.query(pacientes).order_by(pacientes.id_paciente.desc()).first()
     if ultimo:
         try:
@@ -172,7 +164,6 @@ def crear_paciente(
         "activo": True
     }
 
-# ==================== UPDATE ====================
 @router.put("/{paciente_id}", response_model=dict)
 def actualizar_paciente(
     paciente_id: int,
@@ -192,7 +183,6 @@ def actualizar_paciente(
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
     
-    # Registrar cambios para el mensaje
     cambios = []
     nombre_original = paciente.nombre_completo
     
@@ -246,7 +236,6 @@ def actualizar_paciente(
         "activo": (paciente.id_estatus_usuario == 1)
     }
 
-# ==================== DELETE (soft delete) ====================
 @router.delete("/{paciente_id}", status_code=status.HTTP_200_OK, response_model=dict)
 def eliminar_paciente(
     paciente_id: int,
@@ -263,7 +252,6 @@ def eliminar_paciente(
     nombre_paciente = paciente.nombre_completo
     estado_anterior = "activo" if paciente.id_estatus_usuario == 1 else "inactivo"
     
-    # Soft delete: desactivar en lugar de eliminar
     paciente.id_estatus_usuario = 2
     db.commit()
     
@@ -277,7 +265,6 @@ def eliminar_paciente(
         "nota": "El paciente ha sido desactivado pero sus datos permanecen en el sistema"
     }
 
-# ==================== ACTIVAR ====================
 @router.patch("/{paciente_id}/activar", response_model=dict)
 def activar_paciente(
     paciente_id: int,

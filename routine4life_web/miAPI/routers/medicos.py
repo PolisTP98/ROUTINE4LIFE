@@ -1,8 +1,6 @@
-# miAPI/routers/medicos.py
 import sys
 import os
 
-# Agregar la carpeta ROUTINE4LIFE al path
 project_folder = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 if project_folder not in sys.path:
     sys.path.insert(0, project_folder)
@@ -47,7 +45,6 @@ def listar_medicos(
             activo=(m.id_estatus_usuario == 1)
         ))
     
-    # Mensaje de confirmación en los headers
     return result
 
 @router.get("/{medico_id}", response_model=MedicoResponse)
@@ -81,7 +78,6 @@ def crear_medico(
     admin: medicos = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    # Validaciones
     if db.query(medicos).filter(medicos.email == data.email).first():
         raise HTTPException(status_code=400, detail="Error: El email ya está registrado")
     
@@ -91,7 +87,6 @@ def crear_medico(
     if db.query(medicos).filter(medicos.cedula_profesional == data.cedula_profesional).first():
         raise HTTPException(status_code=400, detail="Error: La cédula profesional ya está registrada")
     
-    # Generar código
     ultimo = db.query(medicos).order_by(medicos.id_medico.desc()).first()
     if ultimo:
         try:
@@ -102,7 +97,6 @@ def crear_medico(
         num = 1
     codigo_generado = f"MED-{num:04d}"
     
-    # Crear datos personales
     datos = datos_personales_medico(
         id_sexo=data.id_sexo,
         id_pais=1,
@@ -114,7 +108,6 @@ def crear_medico(
     db.add(datos)
     db.flush()
     
-    # Crear médico
     nuevo_medico = medicos(
         id_medico=datos.id_medico,
         id_rol=2,
@@ -128,7 +121,6 @@ def crear_medico(
     db.add(nuevo_medico)
     db.flush()
     
-    # Crear usuario
     hashed_password = generate_password_hash(data.contrasena)
     nuevo_usuario = usuarios(
         id_rol=2,
@@ -144,7 +136,6 @@ def crear_medico(
         especialidades_medicas.id_especialidad == data.id_especialidad
     ).first()
     
-    # Mensaje de confirmación
     return {
         "mensaje": f"Médico registrado exitosamente",
         "id_medico": nuevo_medico.id_medico,
@@ -173,7 +164,6 @@ def actualizar_medico(
     if not medico:
         raise HTTPException(status_code=404, detail="Médico no encontrado")
     
-    # Registrar cambios para el mensaje
     cambios = []
     nombre_original = medico.datos_personales.nombre_completo
     
@@ -236,7 +226,6 @@ def eliminar_medico(
     
     nombre_medico = medico.datos_personales.nombre_completo if medico.datos_personales else "Médico"
     
-    # Desactivar en lugar de eliminar físicamente
     medico.id_estatus_usuario = 2
     db.commit()
     
