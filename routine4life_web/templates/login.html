@@ -116,10 +116,6 @@
         }
         
         /* Mejoras visuales */
-        .login-page {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
         .login-card {
             animation: fadeInUp 0.5s ease-out;
         }
@@ -153,6 +149,15 @@
         .login-links a:hover, .register-link a:hover {
             color: #5a67d8;
             text-decoration: underline;
+        }
+        
+        /* Prevenir autocompletado visual */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px white inset !important;
+            box-shadow: 0 0 0 30px white inset !important;
         }
     </style>
 </head>
@@ -191,16 +196,16 @@
                 {% endif %}
             {% endwith %}
 
-            <form method="POST" action="{{ url_for('login') }}" class="login-form" id="loginForm" novalidate>
+            <form method="POST" action="{{ url_for('login') }}" class="login-form" id="loginForm" novalidate autocomplete="off">
                 <div class="input-group" id="emailGroup">
                     <label>Correo electrónico</label>
-                    <input type="email" name="email" id="email" placeholder="tu@correo.com" autocomplete="email" value="{{ request.form.get('email', '') }}">
+                    <input type="email" name="email" id="email" placeholder="tu@correo.com" autocomplete="off" value="">
                     <div class="field-message" id="emailMessage"></div>
                 </div>
 
                 <div class="input-group" id="passwordGroup">
                     <label>Contraseña</label>
-                    <input type="password" name="password" id="password" placeholder="••••••••" autocomplete="current-password">
+                    <input type="password" name="password" id="password" placeholder="••••••••" autocomplete="off">
                     <div class="field-message" id="passwordMessage"></div>
                 </div>
 
@@ -221,6 +226,26 @@
     </div>
 
     <script>
+        // Limpiar campos automáticamente al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Limpiar los campos de forma explícita
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            
+            if (emailInput) emailInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+            
+            // También limpiar cualquier mensaje flash después de un tiempo
+            setTimeout(() => {
+                const flashes = document.querySelectorAll('.flash');
+                flashes.forEach(flash => {
+                    setTimeout(() => {
+                        if (flash && flash.remove) flash.remove();
+                    }, 5000);
+                });
+            }, 100);
+        });
+        
         // Obtener elementos del DOM
         const form = document.getElementById('loginForm');
         const emailInput = document.getElementById('email');
@@ -381,39 +406,6 @@
             }
         });
         
-        // Validación inicial al cargar la página
-        window.addEventListener('DOMContentLoaded', function() {
-            // Validar email si tiene valor
-            if (emailInput.value.trim() !== '') {
-                const email = emailInput.value.trim();
-                if (!isValidEmail(email)) {
-                    showFieldError(emailInput, emailMessage, 'El correo electrónico no es válido. Ejemplo: usuario@dominio.com');
-                } else {
-                    clearFieldError(emailInput, emailMessage);
-                }
-            }
-            
-            // Validar contraseña si tiene valor
-            if (passwordInput.value !== '') {
-                const password = passwordInput.value;
-                if (password.length < 6) {
-                    showFieldError(passwordInput, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
-                } else {
-                    clearFieldError(passwordInput, passwordMessage);
-                }
-            }
-            
-            // Auto-eliminar mensajes flash después de 5 segundos
-            setTimeout(() => {
-                const flashes = document.querySelectorAll('.flash');
-                flashes.forEach(flash => {
-                    setTimeout(() => {
-                        if (flash && flash.remove) flash.remove();
-                    }, 5000);
-                });
-            }, 100);
-        });
-        
         // Validación antes de enviar el formulario
         form.addEventListener('submit', function(e) {
             // Validar ambos campos
@@ -451,9 +443,8 @@
                 const contactMsg = document.createElement('div');
                 contactMsg.className = 'flash flash-info';
                 contactMsg.innerHTML = `
-                    <strong>📧 Contacto Administrador:</strong><br>
+                    <strong>Contacto Administrador:</strong><br>
                     Email: administracion@routine4life.com<br>
-                    📞 Teléfono: (55) 1234-5678
                 `;
                 
                 // Insertar al inicio del contenedor de flash messages

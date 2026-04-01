@@ -27,6 +27,14 @@
     </header>
     
     <div class="dashboard-container">
+        <!-- Boton de navegacion superior (Volver al Detalle) -->
+        <div style="margin-bottom: 1.5rem;">
+            <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="btn-back" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #f1f5f9; color: #475569; border-radius: 8px; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;">
+                <i class="fas fa-arrow-left"></i>
+                Volver al Detalle del Paciente
+            </a>
+        </div>
+        
         <div class="form-container extra-wide" style="max-width: 1400px;">
             <h1><i class="fas fa-history"></i> Historial de Consultas</h1>
             <p class="form-subtitle">Registro completo de todas las consultas realizadas</p>
@@ -78,7 +86,7 @@
                 <div class="table-wrapper">
                     <table class="modern-table">
                         <thead>
-                            <tr>
+                            70<tr
                                 <th>Fecha</th>
                                 <th>Hora</th>
                                 <th>Glucosa Ayunas</th>
@@ -93,8 +101,8 @@
                             </thead>
                         <tbody>
                             {% for c in consultas %}
-                            <tr>
-                                <td data-label="Fecha"><strong>{{ c.fecha }}</strong></td>
+                            <tr
+                                70<td data-label="Fecha"><strong>{{ c.fecha }}</strong></td>
                                 <td data-label="Hora">{{ c.hora.strftime('%H:%M') if c.hora else '--:--' }}</td>
                                 <td data-label="Glucosa Ayunas">
                                     {% if c.glucosa_ayunas %}
@@ -167,7 +175,7 @@
                                         {% endif %}
                                     </div>
                                 </td>
-                             </tr>
+                              </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -177,19 +185,14 @@
             <div class="empty-state-modern">
                 <i class="fas fa-notes-medical"></i>
                 <p>No hay consultas registradas para este paciente.</p>
-                <a href="{{ url_for('nueva_consulta', id=paciente.id_paciente) }}" class="btn btn-primary" style="margin-top: 1rem;">
-                    <i class="fas fa-plus"></i> Registrar Primera Consulta
-                </a>
+                <!-- Eliminado el botón de "Registrar Primera Consulta" que estaba aquí -->
             </div>
             {% endif %}
             
-            <!-- Botones de accion -->
+            <!-- Botones de accion (solo un botón de Nueva Consulta) -->
             <div class="button-group" style="margin-top: 1.5rem;">
                 <a href="{{ url_for('nueva_consulta', id=paciente.id_paciente) }}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Nueva Consulta
-                </a>
-                <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver al Detalle
                 </a>
                 <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
                     <i class="fas fa-home"></i> Dashboard
@@ -228,6 +231,24 @@
         .btn-danger-sm {
             background: #ef4444;
             color: white;
+        }
+        
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-back:hover {
+            background: #e2e8f0;
+            transform: translateX(-2px);
         }
         
         @media (max-width: 768px) {

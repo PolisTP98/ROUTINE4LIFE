@@ -28,13 +28,11 @@ from sqlalchemy import text, extract
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tu-clave-secreta-cambia-en-produccion'
 
-# Configurar Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Por favor inicia sesión para acceder'
 
-# Clase wrapper para Flask-Login
 class UserMedico(UserMixin):
     def __init__(self, medico_data):
         self.id = medico_data.id_medico
@@ -104,15 +102,11 @@ def login():
                 db.close()
                 return render_template("login.html")
             
-            # Verificar contraseña
             if check_password_hash(usuario.contrasena, password):
-                # Verificar estatus de usuario
                 if medico_data.id_estatus_usuario == 1:
-                    # Login exitoso
                     user = UserMedico(medico_data)
                     login_user(user)
                     
-                    # Mensaje personalizado según el rol
                     nombre_medico = medico_data.datos_personales.nombre_completo if medico_data.datos_personales else "Usuario"
                     
                     if medico_data.id_rol == 1:
@@ -129,18 +123,13 @@ def login():
                     db.close()
                     return redirect(url_for('dashboard'))
                 else:
-                    # Cuenta desactivada
                     flash('Tu cuenta se encuentra desactivada. Por favor, contacta al administrador del sistema para reactivarla.', 'warning')
             else:
-                # Contraseña incorrecta
                 flash('Contraseña incorrecta. Por favor, verifica tu contraseña e intenta nuevamente.', 'error')
                 
-                # Registrar intento fallido (opcional)
-                # Log de intento fallido
                 print(f"[LOG] Intento fallido de login para: {email}")
                 
         except Exception as e:
-            # Error del servidor
             flash('Ocurrió un error en el servidor. Por favor, intenta nuevamente más tarde o contacta al administrador.', 'error')
             print(f"Error en login: {str(e)}")
         
@@ -153,46 +142,38 @@ def login():
 @login_required
 def registro():
     if current_user.id_rol != 1:
-        flash('No tienes permisos para registrar nuevo personal. Solo el administrador puede realizar esta acción.', 'warning')
+        flash('No tienes permisos para registrar nuevo personal.', 'warning')
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
         db = Session(bind=engine)
         
         try:
-            # Validar email duplicado
             email = request.form.get('email')
             if db.query(medicos).filter(medicos.email == email).first():
-                flash(f'El correo electrónico "{email}" ya está registrado en el sistema. Por favor utiliza otro correo.', 'danger')
+                flash(f'El correo {email} ya está registrado.', 'danger')
                 db.close()
                 return redirect(url_for('registro'))
             
-            # Validar contraseñas
             contrasena = request.form.get('contrasena')
             confirmar = request.form.get('confirmar_contrasena')
             
             if contrasena != confirmar:
-                flash('Las contraseñas no coinciden. Por favor verifica e intenta nuevamente.', 'danger')
+                flash('Las contraseñas no coinciden.', 'danger')
                 db.close()
                 return redirect(url_for('registro'))
             
             if len(contrasena) < 6:
-                flash('La contraseña debe tener al menos 6 caracteres para garantizar la seguridad de la cuenta.', 'warning')
+                flash('La contraseña debe tener al menos 6 caracteres.', 'warning')
                 db.close()
                 return redirect(url_for('registro'))
             
             rol_seleccionado = int(request.form.get('id_rol'))
             
-            # Obtener nombre del rol
-            rol_nombre = db.query(roles_usuarios).filter(roles_usuarios.id_rol == rol_seleccionado).first()
-            rol_texto = rol_nombre.nombre if rol_nombre else "Personal"
-            
-            # Procesar teléfono
             codigo_pais = request.form.get('codigo_pais')
             telefono = request.form.get('telefono')
             telefono_completo = codigo_pais + telefono if codigo_pais else telefono
             
-            # Generar código único
             ultimo_medico = db.query(medicos).order_by(medicos.id_medico.desc()).first()
             if ultimo_medico:
                 try:
@@ -203,14 +184,12 @@ def registro():
                 num = 1
             codigo_generado = f"MED-{num:04d}"
             
-            # Obtener datos del formulario
             nombre_completo = request.form.get('nombre_completo')
             fecha_nacimiento = datetime.strptime(request.form.get('fecha_nacimiento'), '%Y-%m-%d').date()
             id_sexo = int(request.form.get('id_sexo'))
             id_pais = int(request.form.get('id_pais'))
             rfc = request.form.get('rfc')
             
-            # Crear datos personales
             datos_personales = datos_personales_medico(
                 id_sexo=id_sexo,
                 id_pais=id_pais,
@@ -222,7 +201,6 @@ def registro():
             db.add(datos_personales)
             db.flush()
             
-            # Crear personal médico
             nuevo_personal = medicos(
                 id_medico=datos_personales.id_medico,
                 id_rol=rol_seleccionado,
@@ -236,7 +214,6 @@ def registro():
             db.add(nuevo_personal)
             db.flush()
             
-            # Crear usuario
             hashed_password = generate_password_hash(contrasena)
             nuevo_usuario = usuarios(
                 id_rol=rol_seleccionado,
@@ -249,70 +226,22 @@ def registro():
             
             db.commit()
             
-            # Obtener información adicional para el mensaje
-            especialidad_texto = ""
             if rol_seleccionado == 2:
-                especialidad = db.query(especialidades_medicas).filter(
-                    especialidades_medicas.id_especialidad == int(request.form.get('id_especialidad'))
-                ).first()
-                especialidad_texto = f" • Especialidad: {especialidad.nombre}\n" if especialidad else ""
-            
-            # Mensaje flash personalizado según el rol
-            if rol_seleccionado == 2:
-                flash(
-                    f"MÉDICO REGISTRADO CORRECTAMENTE\n\n"
-                    f"Datos del nuevo médico:\n"
-                    f"• Nombre: {nombre_completo}\n"
-                    f"• Email: {email}\n"
-                    f"• RFC: {rfc}\n"
-                    f"• Cédula profesional: {request.form.get('cedula_profesional')}\n"
-                    f"• Código: {codigo_generado}\n"
-                    f"{especialidad_texto}"
-                    f"• Teléfono: {telefono_completo}\n\n"
-                    f"El médico ya puede iniciar sesión en el sistema.",
-                    "success"
-                )
+                flash(f'Médico registrado exitosamente: {nombre_completo}', 'success')
             elif rol_seleccionado == 4:
-                flash(
-                    f"ENFERMERO REGISTRADO CORRECTAMENTE\n\n"
-                    f"Datos del nuevo enfermero:\n"
-                    f"• Nombre: {nombre_completo}\n"
-                    f"• Email: {email}\n"
-                    f"• RFC: {rfc}\n"
-                    f"• Código: {codigo_generado}\n"
-                    f"• Teléfono: {telefono_completo}\n\n"
-                    f"El enfermero ya puede iniciar sesión en el sistema.",
-                    "success"
-                )
+                flash(f'Enfermero registrado exitosamente: {nombre_completo}', 'success')
             elif rol_seleccionado == 5:
-                flash(
-                    f"RECEPCIONISTA REGISTRADO CORRECTAMENTE\n\n"
-                    f"Datos del nuevo recepcionista:\n"
-                    f"• Nombre: {nombre_completo}\n"
-                    f"• Email: {email}\n"
-                    f"• RFC: {rfc}\n"
-                    f"• Código: {codigo_generado}\n"
-                    f"• Teléfono: {telefono_completo}\n\n"
-                    f"El recepcionista ya puede iniciar sesión en el sistema.",
-                    "success"
-                )
+                flash(f'Recepcionista registrado exitosamente: {nombre_completo}', 'success')
             
             db.close()
             return redirect(url_for('admin_dashboard'))
             
         except Exception as e:
             db.rollback()
-            flash(
-                f"ERROR AL REGISTRAR PERSONAL\n\n"
-                f"No se pudo completar el registro. Detalle del error:\n"
-                f"{str(e)}\n\n"
-                f"Por favor verifica los datos e intenta nuevamente.",
-                "danger"
-            )
+            flash(f'Error al registrar: {str(e)}', 'danger')
             db.close()
             return redirect(url_for('registro'))
     
-    # GET: cargar catálogos
     db = Session(bind=engine)
     especialidades = db.query(especialidades_medicas).all()
     sexos_list = db.query(sexos).all()
@@ -325,7 +254,6 @@ def registro():
                          sexos=sexos_list,
                          paises=paises_list,
                          roles=roles_list)
-
 
 @app.route("/recuperar_contrasena", methods=['GET', 'POST'])
 def recuperar_contrasena():
@@ -372,34 +300,34 @@ def admin_dashboard():
     db = Session(bind=engine)
     
     try:
-        medicos_list = db.query(medicos).options(
-            joinedload(medicos.datos_personales),
-            joinedload(medicos.especialidad)
-        ).filter(medicos.id_rol == 2).all()
-        
-        pacientes_list = db.query(pacientes).options(
-            joinedload(pacientes.tipo_diabetes),
-            joinedload(pacientes.sexo)
-        ).all()
+        total_medicos = db.query(medicos).filter(medicos.id_rol == 2).count()
+        total_pacientes = db.query(pacientes).count()
+        total_citas = db.query(citas_medicas).count()
+        total_consultas = db.query(consultas_medicas).count()
         
         proximas_citas = db.query(citas_medicas).options(
             joinedload(citas_medicas.paciente),
-            joinedload(citas_medicas.medico).joinedload(medicos.datos_personales)
+            joinedload(citas_medicas.medico).joinedload(medicos.datos_personales),
+            joinedload(citas_medicas.medico).joinedload(medicos.especialidad)
         ).filter(
             citas_medicas.fecha >= date.today(),
             citas_medicas.id_estatus_cita == 1
         ).order_by(citas_medicas.fecha).limit(10).all()
         
-        # Consultas por mes - CORREGIDO (sin func.format)
-        consultas = db.query(consultas_medicas).all()
+        # Últimas consultas
+        ultimas_consultas = db.query(consultas_medicas).options(
+            joinedload(consultas_medicas.paciente),
+            joinedload(consultas_medicas.medico).joinedload(medicos.datos_personales),
+            joinedload(consultas_medicas.medico).joinedload(medicos.especialidad)
+        ).order_by(consultas_medicas.fecha.desc()).limit(10).all()
         
+        # Consultas por mes para gráfica
+        consultas = db.query(consultas_medicas).all()
         consultas_por_mes_dict = {}
         for consulta in consultas:
             if consulta.fecha:
                 mes_key = consulta.fecha.strftime('%Y-%m')
-                if mes_key not in consultas_por_mes_dict:
-                    consultas_por_mes_dict[mes_key] = 0
-                consultas_por_mes_dict[mes_key] += 1
+                consultas_por_mes_dict[mes_key] = consultas_por_mes_dict.get(mes_key, 0) + 1
         
         consultas_mes_data = []
         for mes_key in sorted(consultas_por_mes_dict.keys(), reverse=True)[:6]:
@@ -410,37 +338,45 @@ def admin_dashboard():
                 'mes': f"{nombre_mes} {anio}",
                 'total': consultas_por_mes_dict[mes_key]
             })
-        
-        # Ordenar cronológicamente
         consultas_mes_data.reverse()
         
-        total_medicos = len(medicos_list)
-        total_pacientes = len(pacientes_list)
+        # Citas por mes para gráfica
+        citas = db.query(citas_medicas).all()
+        citas_por_mes_dict = {}
+        for cita in citas:
+            if cita.fecha:
+                mes_key = cita.fecha.strftime('%Y-%m')
+                citas_por_mes_dict[mes_key] = citas_por_mes_dict.get(mes_key, 0) + 1
         
-        # Consultas del mes actual
-        mes_actual = date.today().month
-        ano_actual = date.today().year
-        consultas_mes = 0
-        for consulta in consultas:
-            if consulta.fecha and consulta.fecha.month == mes_actual and consulta.fecha.year == ano_actual:
-                consultas_mes += 1
+        citas_mes_data = []
+        for mes_key in sorted(citas_por_mes_dict.keys(), reverse=True)[:6]:
+            anio, mes = mes_key.split('-')
+            nombre_mes = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][int(mes)-1]
+            citas_mes_data.append({
+                'mes': f"{nombre_mes} {anio}",
+                'total': citas_por_mes_dict[mes_key]
+            })
+        citas_mes_data.reverse()
         
         db.close()
         
-        return render_template("admin_dashboard.html",
-                             medicos=medicos_list,
-                             pacientes=pacientes_list,
-                             proximas_citas=proximas_citas,
+        return render_template("dashboard.html",
                              total_medicos=total_medicos,
                              total_pacientes=total_pacientes,
-                             consultas_mes=consultas_mes,
+                             total_citas=total_citas,
+                             total_consultas=total_consultas,
+                             proximas_citas=proximas_citas,
+                             ultimas_consultas=ultimas_consultas,
                              consultas_por_mes=consultas_mes_data,
+                             citas_por_mes=citas_mes_data,
                              now_date=date.today())
                              
     except Exception as e:
         db.close()
         flash(f'Error al cargar el dashboard: {str(e)}', 'danger')
         return redirect(url_for('dashboard'))
+
 
 # ==================== ADMIN - GESTION DE MEDICOS ====================
 
@@ -485,11 +421,12 @@ def editar_medico(id):
     
     if request.method == 'POST':
         try:
+            telefono_completo = request.form.get('telefono')
+            
             nombre_original = medico.datos_personales.nombre_completo
             
-            # Actualizar datos
             medico.datos_personales.nombre_completo = request.form.get('nombre_completo')
-            medico.datos_personales.telefono = request.form.get('telefono')
+            medico.datos_personales.telefono = telefono_completo
             medico.datos_personales.fecha_nacimiento = datetime.strptime(request.form.get('fecha_nacimiento'), '%Y-%m-%d').date()
             medico.datos_personales.id_sexo = int(request.form.get('id_sexo'))
             medico.email = request.form.get('email')
@@ -500,7 +437,7 @@ def editar_medico(id):
             
             db.commit()
             
-            flash(f'Médico actualizado: {nombre_original} → {medico.datos_personales.nombre_completo}', 'success')
+            flash(f'Médico actualizado: {medico.datos_personales.nombre_completo}', 'success')
             db.close()
             return redirect(url_for('gestionar_medicos'))
             
@@ -510,12 +447,14 @@ def editar_medico(id):
     
     especialidades = db.query(especialidades_medicas).all()
     sexos_list = db.query(sexos).all()
+    paises_list = db.query(paises).all()
     db.close()
     
     return render_template("editar_medico.html", 
                          medico=medico, 
                          especialidades=especialidades,
-                         sexos=sexos_list)
+                         sexos=sexos_list,
+                         paises=paises_list)
 
 @app.route("/desactivar_medico/<int:id>")
 @login_required
@@ -796,6 +735,62 @@ def reportes_generales():
         db.close()
         flash(f'Error al cargar reportes: {str(e)}', 'danger')
         return redirect(url_for('dashboard'))
+    
+@app.route("/generar_reporte")
+@login_required
+def generar_reporte():
+    if current_user.id_rol != 1:
+        flash('No tienes acceso.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    db = Session(bind=engine)
+
+    try:
+        tipo = request.args.get('tipo_reporte')
+        medico_id = request.args.get('medico_id')
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+
+        datos = []
+
+        # 🔹 REPORTE: Pacientes por médico
+        if tipo == "pacientes_medico":
+            query = db.query(
+                pacientes.nombre,
+                pacientes.apellido_paterno,
+                pacientes.apellido_materno,
+                medicos.nombre.label("medico")
+            ).join(medicos, pacientes.id_medico == medicos.id)
+
+            if medico_id:
+                query = query.filter(medicos.id == medico_id)
+
+            datos = query.all()
+
+        # 🔹 REPORTE: Consultas por fecha
+        elif tipo == "consultas_fecha":
+            query = db.query(consultas_medicas)
+
+            if fecha_inicio and fecha_fin:
+                query = query.filter(
+                    consultas_medicas.fecha.between(fecha_inicio, fecha_fin)
+                )
+
+            datos = query.all()
+
+        db.close()
+
+        return render_template(
+            "reporte_pdf.html",
+            datos=datos,
+            tipo=tipo
+        )
+
+    except Exception as e:
+        db.close()
+        flash(f'Error al generar reporte: {str(e)}', 'danger')
+        return redirect(url_for('reportes_generales'))
+
 
 # ==================== DASHBOARD MEDICO ====================
 
@@ -809,7 +804,9 @@ def medico_dashboard():
     db = Session(bind=engine)
     
     try:
-        pacientes_list = db.query(pacientes).filter(
+        pacientes_list = db.query(pacientes).options(
+            joinedload(pacientes.tipo_diabetes)
+        ).filter(
             pacientes.id_medico == current_user.id
         ).all()
         
@@ -847,46 +844,18 @@ def medico_dashboard():
                 'motivo': cita.motivo
             })
         
-        # Consultas por mes - CORREGIDO (sin func.format)
-        consultas = db.query(consultas_medicas).filter(
-            consultas_medicas.id_medico == current_user.id
-        ).all()
-        
-        consultas_por_mes_dict = {}
-        for consulta in consultas:
-            if consulta.fecha:
-                mes_key = consulta.fecha.strftime('%Y-%m')
-                if mes_key not in consultas_por_mes_dict:
-                    consultas_por_mes_dict[mes_key] = 0
-                consultas_por_mes_dict[mes_key] += 1
-        
-        consultas_mes_data = []
-        for mes_key in sorted(consultas_por_mes_dict.keys(), reverse=True)[:6]:
-            anio, mes = mes_key.split('-')
-            nombre_mes = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
-                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][int(mes)-1]
-            consultas_mes_data.append({
-                'mes': f"{nombre_mes} {anio}",
-                'total': consultas_por_mes_dict[mes_key]
-            })
-        
-        # Ordenar cronológicamente
-        consultas_mes_data.reverse()
-        
         db.close()
         
-        return render_template("medico_dashboard.html",
+        return render_template("dashboard_medicos.html",
                              pacientes=pacientes_data,
                              total_pacientes=len(pacientes_data),
                              proximas_citas=citas_data,
-                             consultas_por_mes=consultas_mes_data,
                              now_date=date.today())
                              
     except Exception as e:
         db.close()
         flash(f'Error al cargar el dashboard: {str(e)}', 'danger')
         return redirect(url_for('dashboard'))
-
 # ==================== DASHBOARD ENFERMERO ====================
 
 @app.route("/enfermero/dashboard")

@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body class="dashboard-body">
-    <!-- Header Moderno con boton de salir -->
+    <!-- Header Moderno -->
     <header class="dashboard-header">
         <div class="dashboard-logo">
             <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
@@ -28,7 +28,15 @@
     </header>
     
     <div class="dashboard-container">
-        <div class="form-container" style="max-width: 900px;">
+        <!-- Boton de navegacion superior -->
+        <div style="margin-bottom: 1.5rem;">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn-back" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #f1f5f9; color: #475569; border-radius: 8px; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;">
+                <i class="fas fa-arrow-left"></i>
+                Volver al Dashboard
+            </a>
+        </div>
+        
+        <div class="form-container" style="max-width: 800px;">
             <h1><i class="fas fa-user-plus"></i> Registro de Personal</h1>
             <p class="form-subtitle">Complete el formulario para registrar un nuevo miembro del equipo medico</p>
             
@@ -47,37 +55,22 @@
             {% endwith %}
             
             <form method="POST" id="registroForm" novalidate>
-                <div class="form-row">
-                    <div class="form-group" id="rolGroup">
-                        <label>Rol <span class="required-star">*</span></label>
-                        <select name="id_rol" id="id_rol">
-                            <option value="">Seleccione un rol...</option>
-                            {% if roles %}
-                                {% for rol in roles %}
-                                <option value="{{ rol.id_rol }}">{{ rol.nombre }}</option>
-                                {% endfor %}
-                            {% endif %}
-                        </select>
-                        <div class="field-message" id="rolMessage"></div>
-                    </div>
-                    <div class="form-group" id="nombreGroup">
-                        <label>Nombre completo <span class="required-star">*</span></label>
-                        <input type="text" name="nombre_completo" id="nombre_completo" placeholder="Ejemplo: Dr. Juan Perez Gonzalez" value="{{ request.form.get('nombre_completo', '') }}">
-                        <div class="field-message" id="nombreMessage"></div>
-                    </div>
+                <div class="form-group" id="nombreGroup">
+                    <label>Nombre completo <span class="required-star">*</span></label>
+                    <input type="text" name="nombre_completo" id="nombre_completo" placeholder="Ejemplo: Dr. Juan Perez Gonzalez">
+                    <div class="field-message" id="nombreMessage"></div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group" id="emailGroup">
                         <label>Correo electronico <span class="required-star">*</span></label>
-                        <input type="email" name="email" id="email" placeholder="ejemplo@hospital.com" value="{{ request.form.get('email', '') }}">
+                        <input type="email" name="email" id="email" placeholder="ejemplo@hospital.com">
                         <div class="field-message" id="emailMessage"></div>
                     </div>
                     <div class="form-group" id="rfcGroup">
                         <label>RFC <span class="required-star">*</span></label>
-                        <input type="text" name="rfc" id="rfc" placeholder="Ejemplo: PERE851015HDF" value="{{ request.form.get('rfc', '') }}">
+                        <input type="text" name="rfc" id="rfc" placeholder="Ejemplo: PERE851015HDF">
                         <div class="field-message" id="rfcMessage"></div>
-                        <small class="help-text">Formato: 4 letras, 6 numeros, 3 caracteres</small>
                     </div>
                 </div>
                 
@@ -89,40 +82,8 @@
                     </div>
                     <div class="form-group" id="confirmarGroup">
                         <label>Confirmar contraseña <span class="required-star">*</span></label>
-                        <input type="password" name="confirmar_contrasena" id="confirmar_contrasena" placeholder="Repita la contraseña">
+                        <input type="password" name="confirmar_contrasena" id="confirmar_contrasena" placeholder="Repite la contraseña">
                         <div class="field-message" id="confirmarMessage"></div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group" id="codigoGroup">
-                        <label>Codigo interno <span class="required-star">*</span></label>
-                        <input type="text" name="codigo" id="codigo" placeholder="Ejemplo: MED-0001" value="{{ request.form.get('codigo', '') }}">
-                        <div class="field-message" id="codigoMessage"></div>
-                        <small class="help-text">Formato: 3 letras mayusculas, guion, 4 numeros</small>
-                    </div>
-                    <div class="form-group campo-medico" id="cedulaGroup" style="display: none;">
-                        <label>Cedula profesional</label>
-                        <input type="text" name="cedula_profesional" id="cedula_profesional" placeholder="Ejemplo: 12345678" value="{{ request.form.get('cedula_profesional', '') }}">
-                        <div class="field-message" id="cedulaMessage"></div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group campo-medico" id="especialidadGroup" style="display: none;">
-                        <label>Especialidad</label>
-                        <select name="id_especialidad" id="id_especialidad">
-                            <option value="">Seleccione una especialidad...</option>
-                            {% for esp in especialidades %}
-                            <option value="{{ esp.id_especialidad }}">{{ esp.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="field-message" id="especialidadMessage"></div>
-                    </div>
-                    <div class="form-group" id="fechaGroup">
-                        <label>Fecha de nacimiento <span class="required-star">*</span></label>
-                        <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" value="{{ request.form.get('fecha_nacimiento', '') }}">
-                        <div class="field-message" id="fechaMessage"></div>
                     </div>
                 </div>
                 
@@ -131,30 +92,38 @@
                         <label>Telefono <span class="required-star">*</span></label>
                         <div style="display: flex; gap: 10px;">
                             <select name="codigo_pais" id="codigo_pais" style="width: 100px;">
-                                <option value="+52">+52 (MX)</option>
+                                <option value="+52">+52 (Mexico)</option>
                                 <option value="+1">+1 (USA)</option>
-                                <option value="+34">+34 (ES)</option>
-                                <option value="+54">+54 (AR)</option>
+                                <option value="+34">+34 (España)</option>
+                                <option value="+54">+54 (Argentina)</option>
+                                <option value="+57">+57 (Colombia)</option>
+                                <option value="+56">+56 (Chile)</option>
+                                <option value="+51">+51 (Peru)</option>
+                                <option value="+58">+58 (Venezuela)</option>
                             </select>
-                            <input type="tel" name="telefono" id="telefono" placeholder="5512345678" style="flex: 1;" value="{{ request.form.get('telefono', '') }}">
+                            <input type="tel" name="telefono" id="telefono" placeholder="1234567890" style="flex: 1;">
                         </div>
+                        <small class="help-text">Selecciona el codigo de pais y escribe el numero sin espacios</small>
                         <div class="field-message" id="telefonoMessage"></div>
                     </div>
-                    <div class="form-group" id="paisGroup">
-                        <label>Pais de origen <span class="required-star">*</span></label>
-                        <select name="id_pais" id="id_pais">
-                            <option value="">Seleccione un pais...</option>
-                            {% if paises %}
-                                {% for pais in paises %}
-                                <option value="{{ pais.id_pais }}">{{ pais.nombre }}</option>
-                                {% endfor %}
-                            {% endif %}
-                        </select>
-                        <div class="field-message" id="paisMessage"></div>
+                    <div class="form-group" id="fechaGroup">
+                        <label>Fecha de nacimiento <span class="required-star">*</span></label>
+                        <input type="date" name="fecha_nacimiento" id="fecha_nacimiento">
+                        <div class="field-message" id="fechaMessage"></div>
                     </div>
                 </div>
                 
                 <div class="form-row">
+                    <div class="form-group" id="rolGroup">
+                        <label>Rol <span class="required-star">*</span></label>
+                        <select name="id_rol" id="id_rol">
+                            <option value="">Seleccione un rol...</option>
+                            {% for rol in roles %}
+                            <option value="{{ rol.id_rol }}">{{ rol.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="field-message" id="rolMessage"></div>
+                    </div>
                     <div class="form-group" id="sexoGroup">
                         <label>Sexo <span class="required-star">*</span></label>
                         <select name="id_sexo" id="id_sexo">
@@ -167,10 +136,37 @@
                     </div>
                 </div>
                 
+                <div class="form-row">
+                    <div class="form-group" id="paisGroup">
+                        <label>Pais <span class="required-star">*</span></label>
+                        <select name="id_pais" id="id_pais">
+                            <option value="">Seleccione un pais...</option>
+                            {% for pais in paises %}
+                            <option value="{{ pais.id_pais }}">{{ pais.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="field-message" id="paisMessage"></div>
+                    </div>
+                    <div class="form-group" id="especialidadGroup" style="display: none;">
+                        <label>Especialidad <span class="required-star">*</span></label>
+                        <select name="id_especialidad" id="id_especialidad">
+                            <option value="">Seleccione una especialidad...</option>
+                            {% for esp in especialidades %}
+                            <option value="{{ esp.id_especialidad }}">{{ esp.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="field-message" id="especialidadMessage"></div>
+                    </div>
+                    <div class="form-group" id="cedulaGroup" style="display: none;">
+                        <label>Cedula profesional <span class="required-star">*</span></label>
+                        <input type="text" name="cedula_profesional" id="cedula_profesional" placeholder="Ejemplo: 12345678">
+                        <div class="field-message" id="cedulaMessage"></div>
+                    </div>
+                </div>
+                
                 <div class="button-group">
-                    <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Registrar Personal</button>
-                    <button type="reset" class="btn btn-secondary" id="resetBtn"><i class="fas fa-undo"></i> Limpiar Formulario</button>
-                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Registrar</button>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
                 </div>
             </form>
         </div>
@@ -178,47 +174,83 @@
     
     <footer class="dashboard-footer">
         <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
-        <p>&copy; 2025 - Todos los derechos reservados</p>
+        <p>&copy; 2026 - Todos los derechos reservados</p>
     </footer>
     
+    <style>
+        .field-message {
+            font-size: 0.7rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        .field-message.error {
+            color: #ef4444;
+        }
+        .field-error {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2;
+        }
+        .field-success {
+            border-color: #10b981 !important;
+            background-color: #ecfdf5;
+        }
+        .help-text {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 4px;
+            display: block;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .btn-back:hover {
+            background: #e2e8f0;
+            transform: translateX(-2px);
+        }
+    </style>
+    
     <script>
-        // Obtener elementos del DOM
         const form = document.getElementById('registroForm');
         const submitBtn = document.getElementById('submitBtn');
-        const selectRol = document.getElementById('id_rol');
-        const camposMedico = document.querySelectorAll('.campo-medico');
-        
-        // Campos
         const rolSelect = document.getElementById('id_rol');
+        const especialidadGroup = document.getElementById('especialidadGroup');
+        const cedulaGroup = document.getElementById('cedulaGroup');
+        
         const nombreInput = document.getElementById('nombre_completo');
         const emailInput = document.getElementById('email');
         const rfcInput = document.getElementById('rfc');
         const contrasenaInput = document.getElementById('contrasena');
         const confirmarInput = document.getElementById('confirmar_contrasena');
-        const codigoInput = document.getElementById('codigo');
-        const cedulaInput = document.getElementById('cedula_profesional');
-        const especialidadSelect = document.getElementById('id_especialidad');
-        const fechaInput = document.getElementById('fecha_nacimiento');
         const telefonoInput = document.getElementById('telefono');
-        const paisSelect = document.getElementById('id_pais');
+        const fechaInput = document.getElementById('fecha_nacimiento');
+        const rolSelectField = document.getElementById('id_rol');
         const sexoSelect = document.getElementById('id_sexo');
+        const paisSelect = document.getElementById('id_pais');
+        const especialidadSelect = document.getElementById('id_especialidad');
+        const cedulaInputField = document.getElementById('cedula_profesional');
         
-        // Mensajes
-        const rolMessage = document.getElementById('rolMessage');
         const nombreMessage = document.getElementById('nombreMessage');
         const emailMessage = document.getElementById('emailMessage');
         const rfcMessage = document.getElementById('rfcMessage');
         const contrasenaMessage = document.getElementById('contrasenaMessage');
         const confirmarMessage = document.getElementById('confirmarMessage');
-        const codigoMessage = document.getElementById('codigoMessage');
-        const cedulaMessage = document.getElementById('cedulaMessage');
-        const especialidadMessage = document.getElementById('especialidadMessage');
-        const fechaMessage = document.getElementById('fechaMessage');
         const telefonoMessage = document.getElementById('telefonoMessage');
-        const paisMessage = document.getElementById('paisMessage');
+        const fechaMessage = document.getElementById('fechaMessage');
+        const rolMessage = document.getElementById('rolMessage');
         const sexoMessage = document.getElementById('sexoMessage');
+        const paisMessage = document.getElementById('paisMessage');
+        const especialidadMessage = document.getElementById('especialidadMessage');
+        const cedulaMessage = document.getElementById('cedulaMessage');
         
-        // Funciones de utilidad
         function showFieldError(input, messageElement, message) {
             messageElement.innerHTML = message;
             messageElement.className = 'field-message error';
@@ -233,50 +265,6 @@
             input.classList.add('field-success');
         }
         
-        function resetField(input, messageElement) {
-            messageElement.innerHTML = '';
-            messageElement.className = 'field-message';
-            input.classList.remove('field-error', 'field-success');
-        }
-        
-        // Mostrar/ocultar campos de medico
-        function toggleCamposMedico() {
-            const isMedico = (selectRol.value === '2');
-            camposMedico.forEach(function(campo) {
-                campo.style.display = isMedico ? 'block' : 'none';
-            });
-            if (isMedico) {
-                cedulaInput.required = true;
-                especialidadSelect.required = true;
-            } else {
-                cedulaInput.required = false;
-                especialidadSelect.required = false;
-                resetField(cedulaInput, cedulaMessage);
-                resetField(especialidadSelect, especialidadMessage);
-            }
-        }
-        
-        selectRol.addEventListener('change', function() {
-            toggleCamposMedico();
-            if (this.value === '') {
-                showFieldError(this, rolMessage, 'Por favor, selecciona un rol');
-            } else {
-                clearFieldError(this, rolMessage);
-            }
-        });
-        
-        // Validar rol
-        function validateRol() {
-            const rol = rolSelect.value;
-            if (rol === '') {
-                showFieldError(rolSelect, rolMessage, 'Por favor, selecciona un rol');
-                return false;
-            }
-            clearFieldError(rolSelect, rolMessage);
-            return true;
-        }
-        
-        // Validar nombre
         function validateNombre() {
             const nombre = nombreInput.value.trim();
             if (nombre === '') {
@@ -291,7 +279,6 @@
             return true;
         }
         
-        // Validar email
         function validateEmail() {
             const email = emailInput.value.trim();
             const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
@@ -307,7 +294,6 @@
             return true;
         }
         
-        // Validar RFC
         function validateRFC() {
             const rfc = rfcInput.value.trim().toUpperCase();
             const rfcRegex = /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/;
@@ -323,11 +309,10 @@
             return true;
         }
         
-        // Validar contraseña
         function validateContrasena() {
             const contrasena = contrasenaInput.value;
             if (contrasena === '') {
-                showFieldError(contrasenaInput, contrasenaMessage, 'Por favor, ingresa una contraseña');
+                showFieldError(contrasenaInput, contrasenaMessage, 'Por favor, ingresa la contraseña');
                 return false;
             }
             if (contrasena.length < 6) {
@@ -338,7 +323,6 @@
             return true;
         }
         
-        // Validar confirmacion
         function validateConfirmar() {
             const contrasena = contrasenaInput.value;
             const confirmar = confirmarInput.value;
@@ -354,52 +338,21 @@
             return true;
         }
         
-        // Validar codigo
-        function validateCodigo() {
-            const codigo = codigoInput.value.trim().toUpperCase();
-            const codigoRegex = /^[A-Z]{3}-[0-9]{4}$/;
-            if (codigo === '') {
-                showFieldError(codigoInput, codigoMessage, 'Por favor, ingresa el codigo interno');
+        function validateTelefono() {
+            const telefono = telefonoInput.value.trim();
+            if (telefono === '') {
+                showFieldError(telefonoInput, telefonoMessage, 'Por favor, ingresa el numero de telefono');
                 return false;
             }
-            if (!codigoRegex.test(codigo)) {
-                showFieldError(codigoInput, codigoMessage, 'Formato invalido (Ejemplo: MED-0001)');
+            const telefonoRegex = /^[0-9]{10}$/;
+            if (!telefonoRegex.test(telefono)) {
+                showFieldError(telefonoInput, telefonoMessage, 'El telefono debe tener 10 digitos');
                 return false;
             }
-            clearFieldError(codigoInput, codigoMessage);
+            clearFieldError(telefonoInput, telefonoMessage);
             return true;
         }
         
-        // Validar cedula (solo para medicos)
-        function validateCedula() {
-            if (rolSelect.value !== '2') return true;
-            const cedula = cedulaInput.value.trim();
-            const cedulaRegex = /^[0-9]{8}$/;
-            if (cedula === '') {
-                showFieldError(cedulaInput, cedulaMessage, 'Por favor, ingresa la cedula profesional');
-                return false;
-            }
-            if (!cedulaRegex.test(cedula)) {
-                showFieldError(cedulaInput, cedulaMessage, 'Cedula invalida (debe tener 8 digitos)');
-                return false;
-            }
-            clearFieldError(cedulaInput, cedulaMessage);
-            return true;
-        }
-        
-        // Validar especialidad (solo para medicos)
-        function validateEspecialidad() {
-            if (rolSelect.value !== '2') return true;
-            const especialidad = especialidadSelect.value;
-            if (especialidad === '') {
-                showFieldError(especialidadSelect, especialidadMessage, 'Por favor, selecciona una especialidad');
-                return false;
-            }
-            clearFieldError(especialidadSelect, especialidadMessage);
-            return true;
-        }
-        
-        // Validar fecha de nacimiento
         function validateFecha() {
             const fecha = fechaInput.value;
             if (fecha === '') {
@@ -410,9 +363,11 @@
             const hoy = new Date();
             let edad = hoy.getFullYear() - fechaNac.getFullYear();
             const mes = hoy.getMonth() - fechaNac.getMonth();
-            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+                edad--;
+            }
             if (edad < 18) {
-                showFieldError(fechaInput, fechaMessage, 'Debe ser mayor de edad (18 años o mas)');
+                showFieldError(fechaInput, fechaMessage, 'La persona debe ser mayor de edad (18 años o mas)');
                 return false;
             }
             if (edad > 100) {
@@ -423,34 +378,16 @@
             return true;
         }
         
-        // Validar telefono
-        function validateTelefono() {
-            const telefono = telefonoInput.value.trim();
-            const telefonoRegex = /^[0-9]{8,12}$/;
-            if (telefono === '') {
-                showFieldError(telefonoInput, telefonoMessage, 'Por favor, ingresa el telefono');
+        function validateRol() {
+            const rol = rolSelectField.value;
+            if (rol === '') {
+                showFieldError(rolSelectField, rolMessage, 'Por favor, selecciona un rol');
                 return false;
             }
-            if (!telefonoRegex.test(telefono)) {
-                showFieldError(telefonoInput, telefonoMessage, 'Telefono invalido (debe tener 8-12 digitos)');
-                return false;
-            }
-            clearFieldError(telefonoInput, telefonoMessage);
+            clearFieldError(rolSelectField, rolMessage);
             return true;
         }
         
-        // Validar pais
-        function validatePais() {
-            const pais = paisSelect.value;
-            if (pais === '') {
-                showFieldError(paisSelect, paisMessage, 'Por favor, selecciona un pais');
-                return false;
-            }
-            clearFieldError(paisSelect, paisMessage);
-            return true;
-        }
-        
-        // Validar sexo
         function validateSexo() {
             const sexo = sexoSelect.value;
             if (sexo === '') {
@@ -461,59 +398,96 @@
             return true;
         }
         
-        // Eventos en tiempo real
-        rolSelect.addEventListener('change', validateRol);
+        function validatePais() {
+            const pais = paisSelect.value;
+            if (pais === '') {
+                showFieldError(paisSelect, paisMessage, 'Por favor, selecciona un pais');
+                return false;
+            }
+            clearFieldError(paisSelect, paisMessage);
+            return true;
+        }
+        
+        function validateEspecialidad() {
+            const rol = rolSelectField.value;
+            if (rol === '2') {
+                const especialidad = especialidadSelect.value;
+                if (especialidad === '') {
+                    showFieldError(especialidadSelect, especialidadMessage, 'Por favor, selecciona la especialidad');
+                    return false;
+                }
+                clearFieldError(especialidadSelect, especialidadMessage);
+            }
+            return true;
+        }
+        
+        function validateCedula() {
+            const rol = rolSelectField.value;
+            if (rol === '2') {
+                const cedula = cedulaInputField.value.trim();
+                if (cedula === '') {
+                    showFieldError(cedulaInputField, cedulaMessage, 'Por favor, ingresa la cedula profesional');
+                    return false;
+                }
+                const cedulaRegex = /^[0-9]{8}$/;
+                if (!cedulaRegex.test(cedula)) {
+                    showFieldError(cedulaInputField, cedulaMessage, 'La cedula debe tener 8 digitos');
+                    return false;
+                }
+                clearFieldError(cedulaInputField, cedulaMessage);
+            }
+            return true;
+        }
+        
+        function toggleCamposMedico() {
+            const rol = rolSelectField.value;
+            if (rol === '2') {
+                especialidadGroup.style.display = 'block';
+                cedulaGroup.style.display = 'block';
+            } else {
+                especialidadGroup.style.display = 'none';
+                cedulaGroup.style.display = 'none';
+                especialidadSelect.value = '';
+                cedulaInputField.value = '';
+                clearFieldError(especialidadSelect, especialidadMessage);
+                clearFieldError(cedulaInputField, cedulaMessage);
+            }
+        }
+        
         nombreInput.addEventListener('input', validateNombre);
         emailInput.addEventListener('input', validateEmail);
         rfcInput.addEventListener('input', validateRFC);
         contrasenaInput.addEventListener('input', validateContrasena);
         confirmarInput.addEventListener('input', validateConfirmar);
-        codigoInput.addEventListener('input', validateCodigo);
-        cedulaInput.addEventListener('input', validateCedula);
-        especialidadSelect.addEventListener('change', validateEspecialidad);
-        fechaInput.addEventListener('input', validateFecha);
         telefonoInput.addEventListener('input', validateTelefono);
-        paisSelect.addEventListener('change', validatePais);
+        fechaInput.addEventListener('input', validateFecha);
+        rolSelectField.addEventListener('change', function() {
+            validateRol();
+            toggleCamposMedico();
+        });
         sexoSelect.addEventListener('change', validateSexo);
+        paisSelect.addEventListener('change', validatePais);
+        especialidadSelect.addEventListener('change', validateEspecialidad);
+        cedulaInputField.addEventListener('input', validateCedula);
         
-        // Eventos blur
-        rolSelect.addEventListener('blur', validateRol);
         nombreInput.addEventListener('blur', validateNombre);
         emailInput.addEventListener('blur', validateEmail);
         rfcInput.addEventListener('blur', validateRFC);
         contrasenaInput.addEventListener('blur', validateContrasena);
         confirmarInput.addEventListener('blur', validateConfirmar);
-        codigoInput.addEventListener('blur', validateCodigo);
-        cedulaInput.addEventListener('blur', validateCedula);
-        especialidadSelect.addEventListener('blur', validateEspecialidad);
-        fechaInput.addEventListener('blur', validateFecha);
         telefonoInput.addEventListener('blur', validateTelefono);
-        paisSelect.addEventListener('blur', validatePais);
+        fechaInput.addEventListener('blur', validateFecha);
+        rolSelectField.addEventListener('blur', validateRol);
         sexoSelect.addEventListener('blur', validateSexo);
+        paisSelect.addEventListener('blur', validatePais);
         
-        // Boton reset
-        document.getElementById('resetBtn').addEventListener('click', function() {
-            setTimeout(function() {
-                const allInputs = form.querySelectorAll('input, select');
-                allInputs.forEach(input => {
-                    resetField(input, input.parentElement.querySelector('.field-message'));
-                });
-                toggleCamposMedico();
-            }, 10);
-        });
-        
-        // Validacion al enviar
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            let isValid = validateRol() && validateNombre() && validateEmail() &&
-                         validateRFC() && validateContrasena() && validateConfirmar() &&
-                         validateCodigo() && validateFecha() && validateTelefono() &&
-                         validatePais() && validateSexo();
-            
-            if (rolSelect.value === '2') {
-                isValid = isValid && validateCedula() && validateEspecialidad();
-            }
+            const isValid = validateNombre() && validateEmail() && validateRFC() &&
+                           validateContrasena() && validateConfirmar() && validateTelefono() &&
+                           validateFecha() && validateRol() && validateSexo() && validatePais() &&
+                           validateEspecialidad() && validateCedula();
             
             if (!isValid) {
                 let firstError = document.querySelector('.field-error');
@@ -525,16 +499,12 @@
             }
             
             submitBtn.classList.add('loading');
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando personal...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
             submitBtn.disabled = true;
             
             this.submit();
         });
         
-        // Inicializar
-        toggleCamposMedico();
-        
-        // Auto-eliminar mensajes flash
         setTimeout(function() {
             const flashes = document.querySelectorAll('.flash');
             flashes.forEach(function(flash) {

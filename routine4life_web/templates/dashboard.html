@@ -1,690 +1,896 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
 
-{% block title %}Dashboard Médico - Routine4Life{% endblock %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrador | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
 
-{% block header_title %}Panel de Control Médico{% endblock %}
-
-{% block extra_css %}
-<style>
-    /* Estilos adicionales específicos para el dashboard */
-    .welcome-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .welcome-card::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-        transform: rotate(30deg);
-    }
-    
-    .welcome-card h2 {
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .welcome-card p {
-        opacity: 0.9;
-        margin-bottom: 0;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .stat-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        transition: all 0.3s;
-        border: 1px solid #e2e8f0;
-        height: 100%;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px -12px rgba(0,0,0,0.15);
-    }
-    
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-label {
-        color: #64748b;
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-    
-    .trend-up {
-        color: #10b981;
-        font-size: 0.75rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        margin-top: 0.5rem;
-    }
-    
-    .cita-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem;
-        border-bottom: 1px solid #e2e8f0;
-        transition: all 0.2s;
-    }
-    
-    .cita-item:last-child {
-        border-bottom: none;
-    }
-    
-    .cita-item:hover {
-        background: #f8fafc;
-        transform: translateX(4px);
-    }
-    
-    .cita-fecha {
-        font-weight: 600;
-        color: #667eea;
-        min-width: 100px;
-    }
-    
-    .cita-hora {
-        color: #64748b;
-        font-size: 0.85rem;
-        min-width: 80px;
-    }
-    
-    .cita-paciente {
-        flex: 1;
-        font-weight: 500;
-    }
-    
-    .cita-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
-    
-    .glucose-trend {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: #f1f5f9;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<!-- Tarjeta de bienvenida -->
-<div class="welcome-card">
-    <h2>
-        <i class="fas fa-stethoscope"></i> 
-        ¡Bienvenido Dr/a. {{ current_user.nombre_completo }}!
-    </h2>
-    <p>Hoy es {{ now_date.strftime('%d de %B de %Y') if now_date else 'Fecha no disponible' }}. Revisa tus pacientes y citas programadas.</p>
-</div>
-
-<!-- Tarjetas de estadísticas principales -->
-<div class="stats-cards">
-    <div class="stat-card">
-        <div class="stat-header">
-            <span class="stat-title">Total Pacientes</span>
-            <div class="stat-icon primary">
-                <i class="fas fa-users"></i>
+<body>
+    <div class="dashboard-layout">
+        <!-- Menu Lateral -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+                <h2>Routine4Life</h2>
+                <p>Sistema de Control Clinico para Diabetes</p>
             </div>
-        </div>
-        <div class="stat-number">{{ total_pacientes }}</div>
-        <div class="stat-label">Pacientes registrados</div>
-        {% if total_pacientes > 0 %}
-        <div class="trend-up">
-            <i class="fas fa-arrow-up"></i> Activos
-        </div>
-        {% endif %}
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-header">
-            <span class="stat-title">Citas Hoy</span>
-            <div class="stat-icon success">
-                <i class="fas fa-calendar-day"></i>
-            </div>
-        </div>
-        <div class="stat-number">{{ citas_hoy|default(0) }}</div>
-        <div class="stat-label">Programadas para hoy</div>
-        {% if citas_hoy|default(0) > 0 %}
-        <div class="trend-up">
-            <i class="fas fa-clock"></i> Pendientes
-        </div>
-        {% endif %}
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-header">
-            <span class="stat-title">Consultas Este Mes</span>
-            <div class="stat-icon warning">
-                <i class="fas fa-chart-line"></i>
-            </div>
-        </div>
-        <div class="stat-number">{{ consultas_mes|default(0) }}</div>
-        <div class="stat-label">Enero - {{ now_date.strftime('%B') if now_date else 'Actual' }}</div>
-        {% if consultas_mes|default(0) > 0 %}
-        <div class="trend-up">
-            <i class="fas fa-chart-line"></i> +{{ (consultas_mes/12)|round|default(0) }}% vs mes anterior
-        </div>
-        {% endif %}
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-header">
-            <span class="stat-title">Pacientes Controlados</span>
-            <div class="stat-icon info">
-                <i class="fas fa-heartbeat"></i>
-            </div>
-        </div>
-        <div class="stat-number">{{ pacientes_controlados|default(0) }}%</div>
-        <div class="stat-label">HbA1c &lt; 7%</div>
-        {% if pacientes_controlados|default(0) > 70 %}
-        <div class="trend-up">
-            <i class="fas fa-check-circle"></i> Excelente control
-        </div>
-        {% endif %}
-    </div>
-</div>
 
-<!-- Gráficas principales -->
-<div class="charts-row">
-    <!-- Gráfica de consultas por mes -->
-    <div class="chart-card">
-        <div class="chart-title">
-            <i class="fas fa-chart-bar"></i>
-            Consultas Realizadas
-            <span style="font-size: 0.7rem; margin-left: auto; color: #64748b;">Últimos 6 meses</span>
-        </div>
-        <div class="chart-container">
-            <canvas id="consultasChart"></canvas>
-        </div>
-    </div>
-    
-    <!-- Gráfica de tipos de diabetes -->
-    <div class="chart-card">
-        <div class="chart-title">
-            <i class="fas fa-chart-pie"></i>
-            Distribución por Tipo de Diabetes
-        </div>
-        <div class="chart-container">
-            <canvas id="diabetesChart"></canvas>
-        </div>
-    </div>
-</div>
+            <nav class="sidebar-menu">
+                <a href="{{ url_for('admin_dashboard') }}" class="menu-item active">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('registro') }}" class="menu-item">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Registrar Personal</span>
+                </a>
+                <div class="menu-divider"></div>
+                <a href="{{ url_for('gestionar_medicos') }}" class="menu-item">
+                    <i class="fas fa-user-md"></i>
+                    <span>Gestionar Médicos</span>
+                </a>
+                <a href="{{ url_for('admin_gestionar_citas') }}" class="menu-item">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Gestionar Citas</span>
+                </a>
+                <a href="{{ url_for('admin_gestionar_consultas') }}" class="menu-item">
+                    <i class="fas fa-file-medical"></i>
+                    <span>Gestionar Consultas</span>
+                </a>
+                <a href="{{ url_for('reportes_generales') }}" class="menu-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reportes Generales</span>
+                </a>
+                <div class="menu-divider"></div>
+                <a href="#" class="menu-item">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Control de Usuarios</span>
+                </a>
+            </nav>
 
-<!-- Segunda fila de gráficas -->
-<div class="charts-row">
-    <!-- Gráfica de tendencia de glucosa -->
-    <div class="chart-card">
-        <div class="chart-title">
-            <i class="fas fa-chart-line"></i>
-            Tendencia de Glucosa Promedio
-            <span style="font-size: 0.7rem; margin-left: auto; color: #64748b;">Últimas consultas</span>
-        </div>
-        <div class="chart-container">
-            <canvas id="glucosaChart"></canvas>
-        </div>
-    </div>
-    
-    <!-- Gráfica de evolución de HbA1c -->
-    <div class="chart-card">
-        <div class="chart-title">
-            <i class="fas fa-chart-line"></i>
-            Evolución de HbA1c
-            <span style="font-size: 0.7rem; margin-left: auto; color: #64748b;">Control metabólico</span>
-        </div>
-        <div class="chart-container">
-            <canvas id="hba1cChart"></canvas>
-        </div>
-    </div>
-</div>
+            <div class="menu-footer">
+                <a href="{{ url_for('logout') }}" class="logout-menu">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
+        </aside>
 
-<!-- Próximas citas -->
-<div class="table-container">
-    <div class="table-header">
-        <h3>
-            <i class="fas fa-calendar-alt"></i>
-            Próximas Citas
-        </h3>
-        <a href="{{ url_for('nueva_cita') }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus"></i> Agendar Cita
-        </a>
-    </div>
-    <div class="table-wrapper">
-        {% if proximas_citas %}
-        <table class="modern-table">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                    <th>Paciente</th>
-                    <th>Motivo</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cita in proximas_citas %}
-                <tr>
-                    <td>
-                        <strong>{{ cita.fecha.strftime('%d/%m/%Y') }}</strong>
-                        <br>
-                        <small class="text-muted">{{ cita.fecha.strftime('%A') }}</small>
-                    </td>
-                    <td>{{ cita.hora.strftime('%H:%M') }}</td>
-                    <td>
-                        <strong>{{ cita.paciente_nombre }}</strong>
-                        <br>
-                        <small>Código: {{ cita.paciente_codigo }}</small>
-                    </td>
-                    <td>{{ cita.motivo if cita.motivo else 'Consulta general' }}</td>
-                    <td>
-                        <div class="action-buttons" style="display: flex; gap: 0.5rem;">
-                            <a href="{{ url_for('detalle_paciente', id=cita.id_paciente) }}" class="btn btn-outline btn-sm">
-                                <i class="fas fa-eye"></i> Ver
-                            </a>
-                            {% if not cita.tiene_consulta %}
-                            <a href="{{ url_for('nueva_consulta', id=cita.id_paciente, cita_id=cita.id_cita) }}" class="btn btn-success btn-sm">
-                                <i class="fas fa-stethoscope"></i> Iniciar Consulta
-                            </a>
-                            {% else %}
-                            <span class="badge badge-success">
-                                <i class="fas fa-check"></i> Completada
-                            </span>
-                            {% endif %}
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div class="main-header">
+                <div class="user-menu">
+                    <div class="user-info-header">
+                        <div class="user-name-header">{{ current_user.nombre_completo }}</div>
+                        <div class="user-role-header">Administrador Sistema</div>
+                    </div>
+                    <div class="user-avatar">
+                        {{ (current_user.nombre_completo or 'A')[0] }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                <!-- Mensajes Flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% elif category == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- Tarjeta de bienvenida -->
+                <div class="welcome-card">
+                    <h2>
+                        <i class="fas fa-user-cog"></i>
+                        ¡Bienvenido, {{ current_user.nombre_completo }}!
+                    </h2>
+                    <p>Panel de administración del sistema Routine4Life. Tienes acceso completo a la gestión del sistema.</p>
+                </div>
+
+                <!-- Tarjetas de estadisticas -->
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Total Médicos</span>
+                            <div class="stat-icon primary">
+                                <i class="fas fa-user-md"></i>
+                            </div>
                         </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state-modern">
-            <i class="fas fa-calendar-alt"></i>
-            <p>No hay citas programadas próximamente</p>
-            <a href="{{ url_for('nueva_cita') }}" class="btn btn-primary mt-3">Agendar primera cita</a>
-        </div>
-        {% endif %}
-    </div>
-</div>
+                        <div class="stat-number">{{ total_medicos }}</div>
+                        <div class="stat-label">Médicos registrados</div>
+                    </div>
 
-<!-- Lista de pacientes recientes -->
-<div class="table-container">
-    <div class="table-header">
-        <h3>
-            <i class="fas fa-user-friends"></i>
-            Pacientes Recientes
-        </h3>
-        <a href="{{ url_for('nuevo_paciente') }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus"></i> Nuevo Paciente
-        </a>
-    </div>
-    <div class="table-wrapper">
-        {% if pacientes_recientes %}
-        <table class="modern-table">
-            <thead>
-                <tr>
-                    <th>Código</th>
-                    <th>Nombre Completo</th>
-                    <th>Edad</th>
-                    <th>Tipo Diabetes</th>
-                    <th>Última Consulta</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for paciente in pacientes_recientes %}
-                <tr>
-                    <td><code>{{ paciente.codigo }}</code></td>
-                    <td>
-                        <strong>{{ paciente.nombre_completo }}</strong>
-                    </td>
-                    <td>
-                        {% set edad = (now_date.year - paciente.fecha_nacimiento.year) - ((now_date.month, now_date.day) < (paciente.fecha_nacimiento.month, paciente.fecha_nacimiento.day)) %}
-                        {{ edad }} años
-                    </td>
-                    <td>
-                        {% if paciente.tipo_diabetes %}
-                        <span class="diabetes-badge diabetes-{{ paciente.tipo_diabetes.nombre|lower }}">
-                            {{ paciente.tipo_diabetes.nombre }}
-                        </span>
-                        {% else %}
-                        <span class="badge badge-warning">No especificado</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if paciente.ultima_consulta %}
-                        {{ paciente.ultima_consulta.strftime('%d/%m/%Y') }}
-                        {% else %}
-                        <span class="text-muted">Sin consultas</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="btn btn-outline btn-sm">
-                            <i class="fas fa-eye"></i> Ver
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state-modern">
-            <i class="fas fa-user-plus"></i>
-            <p>No tienes pacientes registrados</p>
-            <a href="{{ url_for('nuevo_paciente') }}" class="btn btn-primary mt-3">Registrar primer paciente</a>
-        </div>
-        {% endif %}
-    </div>
-</div>
-{% endblock %}
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Total Pacientes</span>
+                            <div class="stat-icon success">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">{{ total_pacientes }}</div>
+                        <div class="stat-label">Pacientes en el sistema</div>
+                    </div>
 
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Gráfica de consultas por mes
-        const ctx1 = document.getElementById('consultasChart').getContext('2d');
-        const consultasData = {{ consultas_por_mes_json|default('[]')|safe }};
-        
-        new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: consultasData.map(item => item.mes),
-                datasets: [{
-                    label: 'Número de Consultas',
-                    data: consultasData.map(item => item.total),
-                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    barPercentage: 0.7,
-                    categoryPercentage: 0.8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 12
-                            }
-                        }
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Total Citas</span>
+                            <div class="stat-icon warning">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">{{ total_citas }}</div>
+                        <div class="stat-label">Citas registradas</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Total Consultas</span>
+                            <div class="stat-icon info">
+                                <i class="fas fa-stethoscope"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number">{{ total_consultas }}</div>
+                        <div class="stat-label">Consultas realizadas</div>
+                    </div>
+                </div>
+
+                <!-- Botones de accion principales -->
+                <div class="action-buttons-container">
+                    <a href="{{ url_for('registro') }}" class="btn-action btn-action-primary">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Registrar Personal</span>
+                    </a>
+                    <a href="{{ url_for('gestionar_medicos') }}" class="btn-action btn-action-secondary">
+                        <i class="fas fa-user-md"></i>
+                        <span>Gestionar Médicos</span>
+                    </a>
+                </div>
+
+                <!-- Gráfica de consultas por mes -->
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Consultas por Mes
+                        <span class="chart-badge">Últimos 6 meses</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="consultasChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabla de todas las citas -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3><i class="fas fa-calendar-alt"></i> Próximas Citas</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        {% if proximas_citas %}
+                        <table class="modern-table">
+                            <thead>
+                                70<tr
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Paciente</th>
+                                    <th>Médico</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </thead>
+                            <tbody>
+                                {% for cita in proximas_citas %}
+                                <tr
+                                    70<td
+                                        <strong>{{ cita.fecha.strftime('%d/%m/%Y') }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ cita.fecha.strftime('%A') }}</small>
+                                    </td>
+                                    70<td>{{ cita.hora.strftime('%H:%M') }}</td>
+                                    70<td
+                                        <strong>{{ cita.paciente.nombre_completo if cita.paciente else 'No especificado' }}</strong>
+                                        <br>
+                                        <span class="patient-code">Código: {{ cita.paciente.codigo if cita.paciente else '-' }}</span>
+                                    </td>
+                                    70<td
+                                        {% if cita.medico and cita.medico.datos_personales %}
+                                        <strong>Dr/a. {{ cita.medico.datos_personales.nombre_completo }}</strong>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    70<td
+                                        {% if cita.id_estatus_cita == 1 %}
+                                        <span class="badge badge-info">
+                                            <i class="fas fa-clock"></i> Programada
+                                        </span>
+                                        {% elif cita.id_estatus_cita == 2 %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-times"></i> Cancelada
+                                        </span>
+                                        {% elif cita.id_estatus_cita == 3 %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> Completada
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    70<td
+                                        <div class="action-buttons">
+                                            <a href="{{ url_for('admin_editar_cita', id=cita.id_cita) }}" class="btn-icon" title="Editar cita">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('detalle_paciente', id=cita.id_paciente) }}" class="btn-icon" title="Ver paciente">
+                                                <i class="fas fa-user"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div class="empty-state-modern">
+                            <i class="fas fa-calendar-alt"></i>
+                            <p>No hay citas programadas próximamente</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Tabla de últimas consultas -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3><i class="fas fa-stethoscope"></i> Últimas Consultas</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        {% if ultimas_consultas %}
+                        <table class="modern-table">
+                            <thead>
+                                70<tr
+                                    <th>Fecha</th>
+                                    <th>Paciente</th>
+                                    <th>Médico</th>
+                                    <th>Glucosa Ayunas</th>
+                                    <th>HbA1c</th>
+                                    <th>Acciones</th>
+                                </thead>
+                            <tbody>
+                                {% for consulta in ultimas_consultas %}
+                                <tr
+                                    70<td>{{ consulta.fecha.strftime('%d/%m/%Y') }}</td>
+                                    70<td
+                                        <strong>{{ consulta.paciente.nombre_completo if consulta.paciente else '-' }}</strong>
+                                        <br>
+                                        <span class="patient-code">Código: {{ consulta.paciente.codigo if consulta.paciente else '-' }}</span>
+                                    </td>
+                                    70<td
+                                        {% if consulta.medico and consulta.medico.datos_personales %}
+                                        Dr/a. {{ consulta.medico.datos_personales.nombre_completo }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    70<td>{{ consulta.glucosa_ayunas if consulta.glucosa_ayunas else '-' }} mg/dL</td>
+                                    70<td>{{ consulta.hemoglobina_glicosilada if consulta.hemoglobina_glicosilada else '-' }}%</td>
+                                    70<td
+                                        <div class="action-buttons">
+                                            <a href="{{ url_for('admin_ver_consulta', id=consulta.id_consulta) }}" class="btn-icon" title="Ver consulta">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div class="empty-state-modern">
+                            <i class="fas fa-stethoscope"></i>
+                            <p>No hay consultas registradas aún</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        .dashboard-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1.8rem 1.5rem;
+            text-align: center;
+        }
+
+        .sidebar-header img {
+            height: 65px;
+            margin-bottom: 1rem;
+            filter: brightness(0) invert(1);
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+
+        .sidebar-header p {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 0.5rem;
+        }
+
+        .sidebar-menu {
+            padding: 1rem 0;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item i {
+            width: 20px;
+            font-size: 1rem;
+        }
+
+        .menu-item span {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: #f1f5f9;
+            color: #667eea;
+            border-left-color: #667eea;
+        }
+
+        .menu-item.active {
+            background: #eff6ff;
+            border-left-color: #667eea;
+            color: #667eea;
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 0.5rem 1.5rem;
+        }
+
+        .menu-footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .logout-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #ef4444;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            padding: 0.5rem;
+            border-radius: 8px;
+        }
+
+        .logout-menu:hover {
+            color: #dc2626;
+            background: #fef2f2;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            background: #ffffff;
+            min-height: 100vh;
+        }
+
+        .main-header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-info-header {
+            text-align: right;
+        }
+
+        .user-name-header {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.85rem;
+        }
+
+        .user-role-header {
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+
+        .content-wrapper {
+            padding: 2rem;
+        }
+
+        .flash-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        }
+
+        .flash {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .flash-success { border-left-color: #10b981; }
+        .flash-success i { color: #10b981; }
+        .flash-error, .flash-danger { border-left-color: #ef4444; }
+        .flash-error i, .flash-danger i { color: #ef4444; }
+        .flash-warning { border-left-color: #f59e0b; }
+        .flash-warning i { color: #f59e0b; }
+        .flash-info { border-left-color: #3b82f6; }
+        .flash-info i { color: #3b82f6; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .welcome-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .stat-icon.primary { background: #eff6ff; color: #667eea; }
+        .stat-icon.success { background: #ecfdf5; color: #10b981; }
+        .stat-icon.warning { background: #fffbeb; color: #f59e0b; }
+        .stat-icon.info { background: #f5f3ff; color: #8b5cf6; }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .action-buttons-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.9rem 1.8rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-action-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-action-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-action-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-action-secondary:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .chart-title i {
+            color: #667eea;
+            margin-right: 0.5rem;
+        }
+
+        .chart-badge {
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: #f1f5f9;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            color: #64748b;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .modern-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .modern-table th {
+            text-align: left;
+            padding: 0.8rem 1.5rem;
+            background: #f8fafc;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modern-table td {
+            padding: 0.9rem 1.5rem;
+            font-size: 0.85rem;
+            color: #1e293b;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .modern-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .patient-code {
+            font-size: 0.7rem;
+            color: #64748b;
+            font-family: monospace;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            border-radius: 8px;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .badge-info { background: #eff6ff; color: #3b82f6; }
+        .badge-warning { background: #fffbeb; color: #d97706; }
+        .badge-success { background: #ecfdf5; color: #10b981; }
+
+        .empty-state-modern {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .empty-state-modern i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #667eea;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+        }
+
+        .text-muted {
+            color: #64748b;
+            font-size: 0.7rem;
+        }
+
+        @media (max-width: 1024px) {
+            .stats-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 1000;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .main-header {
+                justify-content: flex-end;
+                padding-left: 4rem;
+            }
+
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons-container {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                justify-content: center;
+            }
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        setTimeout(function () {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function (flash) {
+                setTimeout(function () {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function () {
+                            if (flash && flash.parentElement) flash.remove();
+                        }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gráfica de consultas por mes - usando la variable que ya existe
+            const ctx1 = document.getElementById('consultasChart').getContext('2d');
+            const consultasData = {{ consultas_por_mes|tojson }};
+            
+            if (consultasData && consultasData.length > 0) {
+                new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: consultasData.map(item => item.mes),
+                        datasets: [{
+                            label: 'Número de Consultas',
+                            data: consultasData.map(item => item.total),
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            barPercentage: 0.7
+                        }]
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `Consultas: ${context.raw}`;
-                            }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { size: 12 } } },
+                            tooltip: { callbacks: { label: function(context) { return `Consultas: ${context.raw}`; } } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0' } },
+                            x: { grid: { display: false } }
                         }
                     }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1,
-                            font: {
-                                size: 11
-                            }
-                        },
-                        grid: {
-                            color: '#e2e8f0'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            font: {
-                                size: 11
-                            }
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
+                });
+            } else {
+                ctx1.canvas.parentElement.innerHTML = '<div class="empty-state-modern"><i class="fas fa-chart-line"></i><p>No hay datos de consultas para mostrar</p></div>';
             }
         });
-        
-        // Gráfica de tipos de diabetes
-        const ctx2 = document.getElementById('diabetesChart').getContext('2d');
-        const diabetesData = {{ diabetes_distribucion_json|default('[]')|safe }};
-        
-        new Chart(ctx2, {
-            type: 'pie',
-            data: {
-                labels: diabetesData.map(item => item.tipo),
-                datasets: [{
-                    data: diabetesData.map(item => item.cantidad),
-                    backgroundColor: [
-                        'rgba(102, 126, 234, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(245, 158, 11, 0.8)',
-                        'rgba(239, 68, 68, 0.8)',
-                        'rgba(139, 92, 246, 0.8)'
-                    ],
-                    borderWidth: 2,
-                    borderColor: 'white'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: {
-                                size: 11
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ${value} pacientes (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Gráfica de tendencia de glucosa
-        const ctx3 = document.getElementById('glucosaChart').getContext('2d');
-        const glucosaData = {{ glucosa_tendencia_json|default('[]')|safe }};
-        
-        new Chart(ctx3, {
-            type: 'line',
-            data: {
-                labels: glucosaData.map(item => item.fecha),
-                datasets: [
-                    {
-                        label: 'Glucosa en Ayunas (mg/dL)',
-                        data: glucosaData.map(item => item.glucosa_ayunas),
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    },
-                    {
-                        label: 'Glucosa Postprandial (mg/dL)',
-                        data: glucosaData.map(item => item.glucosa_postprandial),
-                        borderColor: 'rgba(16, 185, 129, 1)',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 11
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: ${context.raw} mg/dL`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'mg/dL',
-                            font: {
-                                size: 11
-                            }
-                        },
-                        grid: {
-                            color: '#e2e8f0'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Fecha de Consulta',
-                            font: {
-                                size: 11
-                            }
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Gráfica de evolución de HbA1c
-        const ctx4 = document.getElementById('hba1cChart').getContext('2d');
-        const hba1cData = {{ hba1c_evolucion_json|default('[]')|safe }};
-        
-        new Chart(ctx4, {
-            type: 'line',
-            data: {
-                labels: hba1cData.map(item => item.fecha),
-                datasets: [{
-                    label: 'Hemoglobina Glicosilada (HbA1c)',
-                    data: hba1cData.map(item => item.hba1c),
-                    borderColor: 'rgba(239, 68, 68, 1)',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: 'rgba(239, 68, 68, 1)'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 11
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `HbA1c: ${context.raw}%`;
-                            }
-                        }
-                    },
-                    annotation: {
-                        annotations: {
-                            line7: {
-                                type: 'line',
-                                yMin: 7,
-                                yMax: 7,
-                                borderColor: 'rgba(245, 158, 11, 0.5)',
-                                borderWidth: 2,
-                                borderDash: [5, 5],
-                                label: {
-                                    content: 'Objetivo < 7%',
-                                    enabled: true,
-                                    position: 'end'
-                                }
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        min: 4,
-                        max: 12,
-                        title: {
-                            display: true,
-                            text: 'HbA1c (%)',
-                            font: {
-                                size: 11
-                            }
-                        },
-                        grid: {
-                            color: '#e2e8f0'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Fecha de Consulta',
-                            font: {
-                                size: 11
-                            }
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    });
-</script>
-{% endblock %}
+    </script>
+</body>
+
+</html>

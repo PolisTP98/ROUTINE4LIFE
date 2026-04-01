@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Routine4Life{% endblock %}</title>
+
+    <!-- CSS global -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- ============================================
+         MENSAJES FLASH - DEBE ESTAR ANTES DEL CONTENIDO
+    ============================================ -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}" style="
+                        background: white;
+                        border-radius: 12px;
+                        padding: 1rem 1.2rem;
+                        margin-bottom: 0.8rem;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        border-left: 4px solid 
+                            {% if category == 'success' %} #10b981
+                            {% elif category == 'error' or category == 'danger' %} #ef4444
+                            {% elif category == 'warning' %} #f59e0b
+                            {% else %} #3b82f6
+                            {% endif %};
+                        animation: slideIn 0.3s ease-out;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas 
+                                {% if category == 'success' %} fa-check-circle
+                                {% elif category == 'error' or category == 'danger' %} fa-exclamation-circle
+                                {% elif category == 'warning' %} fa-exclamation-triangle
+                                {% else %} fa-info-circle
+                                {% endif %}" 
+                                style="font-size: 1.2rem; color: 
+                                    {% if category == 'success' %} #10b981
+                                    {% elif category == 'error' or category == 'danger' %} #ef4444
+                                    {% elif category == 'warning' %} #f59e0b
+                                    {% else %} #3b82f6
+                                    {% endif %};">
+                            </i>
+                            <div style="flex: 1; white-space: pre-line;">{{ message|safe }}</div>
+                            <button onclick="this.parentElement.parentElement.remove()" 
+                                    style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">
+                                &times;
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <script>
+                // Auto-eliminar mensajes después de 5 segundos
+                setTimeout(() => {
+                    const flashes = document.querySelectorAll('.flash');
+                    flashes.forEach(flash => {
+                        flash.style.transition = 'opacity 0.5s';
+                        flash.style.opacity = '0';
+                        setTimeout(() => flash.remove(), 500);
+                    });
+                }, 5000);
+            </script>
+        {% endif %}
+    {% endwith %}
+
+    <header>
+        <h1>{% block header_title %}Panel{% endblock %}</h1>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- JS global -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+
+    {% block extra_js %}{% endblock %}
+
+</body>
+
+</html>

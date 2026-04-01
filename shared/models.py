@@ -612,3 +612,4 @@ class usuarios(Base):
     medico = relationship("medicos", back_populates = "usuario")
     # RELACIÓN: usuarios -> pacientes (1:1, OPCIONAL)
     paciente = relationship("pacientes", back_populates = "usuario")
+    

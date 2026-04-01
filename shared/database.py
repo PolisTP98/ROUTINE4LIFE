@@ -11,7 +11,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-DB_SERVER = os.getenv('DB_SERVER', 'DESKTOP-6RRSB8S\SQLEXPRESS01')
+DB_SERVER = os.getenv('DB_SERVER', 'DESKTOP-6RRSB8S\\SQLEXPRESS01')
 DB_PORT = os.getenv('DB_PORT', '1433')
 DB_NAME = os.getenv('DB_NAME', 'routine4life')
 DB_USER = os.getenv('DB_USER', 'appuser')
@@ -22,14 +22,14 @@ DB_DRIVER = os.getenv('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
 
 # Construir cadena de conexión
 connection_string = (
-    f"Driver={DB_DRIVER};"
-    f"Server={DB_SERVER},{DB_PORT};"
-    f"Database={DB_NAME};"
-    f"Uid={DB_USER};"
-    f"Pwd={DB_PASSWORD};"
-    f"Encrypt=yes;"
-    f"TrustServerCertificate=yes;"  
-    f"Connection Timeout=60;"
+    f"DRIVER={DB_DRIVER};"
+    f"SERVER={DB_SERVER},{DB_PORT};"
+    f"DATABASE={DB_NAME};"
+    f"UID={DB_USER};"
+    f"PWD={DB_PASSWORD};"
+    #f"Trusted_Connection=yes;"  
+    #f"TrustServerCertificate=yes;"
+    
 )
 
 #connection_string = (
