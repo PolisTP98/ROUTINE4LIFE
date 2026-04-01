@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "routine4life",
+    "slug": "routine4life",
+    "version": "1.0.0",
+    "newArchEnabled": false,
+    "jsEngine": "jsc", 
+    "android": {
+      "jsEngine": "jsc"
+    }
+  }
+}

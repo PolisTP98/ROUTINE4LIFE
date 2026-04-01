@@ -3,6 +3,25 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Dependencias
+node_modules/
+
+# Android
+.gradle/
+build/
+*.iml
+local.properties
+
+# iOS
+Pods/
+build/
+DerivedData/
+*.moved-aside
+
+# Expo (si lo usas)
+.expo/
+dist/
+
 # C extensions
 *.so
 
