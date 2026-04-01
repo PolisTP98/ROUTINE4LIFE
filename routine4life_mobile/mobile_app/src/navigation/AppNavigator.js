@@ -27,7 +27,7 @@ const DrawerNavigator = () => {
         drawerStyle: { width: '80%' },
       }}
     >
-      <Drawer.Screen name="Home" component={HomeScreen} />
+      <Drawer.Screen name="HomeScreen" component={HomeScreen} />
       {/* Aquí puedes agregar más pantallas que deban tener el menú lateral,
          por ejemplo: Drawer.Screen name="Profile" component={ProfileScreen} 
       */}
