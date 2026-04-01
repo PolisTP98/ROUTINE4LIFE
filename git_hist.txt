@@ -1,0 +1,1096 @@
+﻿commit cf0f81e6f7d978696c481ca76df49fd5dde41a93
+Author: Isaac S├ínchez <123047038@upq.edu.mx>
+Date:   Tue Mar 31 11:53:38 2026 -0600
+
+    Endpoint para restablecer contrase├▒a
+
+diff --git a/routine4life_mobile/backend/crud/paciente.py b/routine4life_mobile/backend/crud/paciente.py
+index 3b539e21..1132ab23 100644
+--- a/routine4life_mobile/backend/crud/paciente.py
++++ b/routine4life_mobile/backend/crud/paciente.py
+@@ -116,9 +116,7 @@ def crear_registro_paciente(db: Session, registro: schemas.RegistroPacienteCreat
+ 
+ def obtener_hash_contrasena(contrasena: str):
+     contrasena_bytes = contrasena.encode('utf-8')
+-    
+     hash_bytes = bcrypt.hashpw(contrasena_bytes, bcrypt.gensalt())
+-    
+     return hash_bytes.decode('utf-8')
+ 
+ def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
+@@ -154,4 +152,20 @@ def autenticar_paciente(db: Session, credenciales: schemas.LoginRequest):
+     if not verificar_contrasena(credenciales.contrasena, usuario.contrasena):
+         return None
+         
+-    return usuario
+\ No newline at end of file
++    return usuario
++
++# NUEVA FUNCI├ôN PARA ACTUALIZAR CONTRASE├æA
++def actualizar_contrasena_paciente(db: Session, datos: schemas.RestablecerContrasenaRequest):
++    usuario = db.query(models.usuarios)\
++                .join(models.pacientes_aplicacion, models.pacientes_aplicacion.id_paciente == models.usuarios.id_paciente)\
++                .filter(models.pacientes_aplicacion.email == datos.email)\
++                .first()
++    
++    if not usuario:
++        return False
++        
++    usuario.contrasena = obtener_hash_contrasena(datos.nueva_contrasena)
++    db.commit()
++    db.refresh(usuario)
++    
++    return True
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/routers/pacientes.py b/routine4life_mobile/backend/routers/pacientes.py
+index f9078fe6..97e0ae20 100644
+--- a/routine4life_mobile/backend/routers/pacientes.py
++++ b/routine4life_mobile/backend/routers/pacientes.py
+@@ -137,7 +137,7 @@ def guardar_registro_medico(registro: schemas.RegistroPacienteCreate, db: Sessio
+         nuevo_registro = crud.crear_registro_paciente(db=db, registro=registro)
+         return nuevo_registro
+     except Exception as e:
+-        db.rollback() # Protegemos la base de datos si algo sale mal
++        db.rollback() 
+         raise HTTPException(
+             status_code=400, 
+             detail=f"Error al guardar el registro. Verifica que el paciente y el tipo de registro existan. Detalle: {str(e)}"
+@@ -145,7 +145,6 @@ def guardar_registro_medico(registro: schemas.RegistroPacienteCreate, db: Sessio
+         
+ @router.post("/crear-cuenta", response_model=schemas.UsuarioResponse)
+ def registrar_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
+-    # 1. Validar que no manden todo vac├¡o
+     if not usuario.id_paciente and not usuario.id_medico:
+         raise HTTPException(
+             status_code=400, 
+@@ -181,4 +180,25 @@ def login_paciente(credenciales: schemas.LoginRequest, db: Session = Depends(get
+         "id_usuario": usuario_autenticado.id_usuario,
+         "id_paciente": usuario_autenticado.id_paciente,
+         "id_rol": usuario_autenticado.id_rol
+-    }
+\ No newline at end of file
++    }
++
++# NUEVO ENDPOINT PARA RESTABLECER CONTRASE├æA
++@router.put("/restablecer-contrasena", response_model=schemas.RestablecerContrasenaResponse)
++def restablecer_contrasena(datos: schemas.RestablecerContrasenaRequest, db: Session = Depends(get_db)):
++    try:
++        exito = crud.actualizar_contrasena_paciente(db=db, datos=datos)
++        
++        if not exito:
++            raise HTTPException(
++                status_code=404,
++                detail="No se encontr├│ una cuenta asociada a este correo electr├│nico."
++            )
++            
++        return {"mensaje": "Contrase├▒a actualizada correctamente."}
++        
++    except Exception as e:
++        db.rollback()
++        raise HTTPException(
++            status_code=500, 
++            detail=f"Ocurri├│ un error al intentar actualizar la contrase├▒a: {str(e)}"
++        )
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/schemas/paciente.py b/routine4life_mobile/backend/schemas/paciente.py
+index 7db0b424..2023f7d7 100644
+--- a/routine4life_mobile/backend/schemas/paciente.py
++++ b/routine4life_mobile/backend/schemas/paciente.py
+@@ -4,7 +4,6 @@ from datetime import date, time, datetime
+ from typing import List, Optional
+ from decimal import Decimal
+ 
+-
+ class RegistroAppCreate(BaseModel):
+     id_paciente: int  
+     id_sexo: int
+@@ -163,8 +162,6 @@ class UsuarioResponse(BaseModel):
+     class Config:
+         from_attributes = True
+         
+-# ... (Tu c├│digo anterior)
+-
+ class LoginRequest(BaseModel):
+     email: str
+     contrasena: str
+@@ -176,4 +173,12 @@ class LoginResponse(BaseModel):
+     id_rol: int
+ 
+     class Config:
+-        from_attributes = True
+\ No newline at end of file
++        from_attributes = True
++
++# NUEVOS ESQUEMAS PARA RESTABLECER CONTRASE├æA
++class RestablecerContrasenaRequest(BaseModel):
++    email: str
++    nueva_contrasena: str
++
++class RestablecerContrasenaResponse(BaseModel):
++    mensaje: str
+\ No newline at end of file
+
+commit 261694055152fe7980bcb382263b20915c296880
+Author: M0chapaprika <yanyan2.0xd@gmail.com>
+Date:   Tue Mar 31 09:01:56 2026 -0600
+
+    Login
+    
+    Creacion del endpoint del login
+
+diff --git a/routine4life_mobile/backend/crud/paciente.py b/routine4life_mobile/backend/crud/paciente.py
+index 46fd912c..3b539e21 100644
+--- a/routine4life_mobile/backend/crud/paciente.py
++++ b/routine4life_mobile/backend/crud/paciente.py
+@@ -110,7 +110,7 @@ def crear_registro_paciente(db: Session, registro: schemas.RegistroPacienteCreat
+     
+     db.add(nuevo_registro)
+     db.commit()
+-    db.refresh(nuevo_registro) # SQL Server nos devuelve el id_registro generado
++    db.refresh(nuevo_registro) 
+     
+     return nuevo_registro
+ 
+@@ -126,12 +126,32 @@ def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
+         id_rol=usuario.id_rol,
+         id_medico=usuario.id_medico,
+         id_paciente=usuario.id_paciente,
+-        contrasena=obtener_hash_contrasena(usuario.contrasena), # Encriptamos antes de guardar
+-        fecha_registro=date.today() # Generamos la fecha del servidor
++        contrasena=obtener_hash_contrasena(usuario.contrasena),
++        fecha_registro=date.today() 
+     )
+     
+     db.add(nuevo_usuario)
+     db.commit()
+     db.refresh(nuevo_usuario)
+     
+-    return nuevo_usuario
+\ No newline at end of file
++    return nuevo_usuario
++
++def verificar_contrasena(contrasena_plana: str, contrasena_hash: str):
++    return bcrypt.checkpw(
++        contrasena_plana.encode('utf-8'), 
++        contrasena_hash.encode('utf-8')
++    )
++
++def autenticar_paciente(db: Session, credenciales: schemas.LoginRequest):
++    usuario = db.query(models.usuarios)\
++                .join(models.pacientes_aplicacion, models.pacientes_aplicacion.id_paciente == models.usuarios.id_paciente)\
++                .filter(models.pacientes_aplicacion.email == credenciales.email)\
++                .first()
++    
++    if not usuario:
++        return None
++        
++    if not verificar_contrasena(credenciales.contrasena, usuario.contrasena):
++        return None
++        
++    return usuario
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/routers/pacientes.py b/routine4life_mobile/backend/routers/pacientes.py
+index b1c581d4..f9078fe6 100644
+--- a/routine4life_mobile/backend/routers/pacientes.py
++++ b/routine4life_mobile/backend/routers/pacientes.py
+@@ -164,4 +164,21 @@ def registrar_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_
+         )
+     except Exception as e:
+         db.rollback()
+-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+\ No newline at end of file
++        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
++    
++@router.post("/login", response_model=schemas.LoginResponse)
++def login_paciente(credenciales: schemas.LoginRequest, db: Session = Depends(get_db)):
++    usuario_autenticado = crud.autenticar_paciente(db=db, credenciales=credenciales)
++    
++    if not usuario_autenticado:
++        raise HTTPException(
++            status_code=401, 
++            detail="Credenciales inv├ílidas. Verifica tu correo electr├│nico y contrase├▒a."
++        )
++        
++    return {
++        "mensaje": "Inicio de sesi├│n exitoso",
++        "id_usuario": usuario_autenticado.id_usuario,
++        "id_paciente": usuario_autenticado.id_paciente,
++        "id_rol": usuario_autenticado.id_rol
++    }
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/schemas/paciente.py b/routine4life_mobile/backend/schemas/paciente.py
+index fcbab52c..7db0b424 100644
+--- a/routine4life_mobile/backend/schemas/paciente.py
++++ b/routine4life_mobile/backend/schemas/paciente.py
+@@ -160,5 +160,20 @@ class UsuarioResponse(BaseModel):
+     id_medico: Optional[int] = None
+     fecha_registro: date
+ 
++    class Config:
++        from_attributes = True
++        
++# ... (Tu c├│digo anterior)
++
++class LoginRequest(BaseModel):
++    email: str
++    contrasena: str
++
++class LoginResponse(BaseModel):
++    mensaje: str
++    id_usuario: int
++    id_paciente: Optional[int] = None
++    id_rol: int
++
+     class Config:
+         from_attributes = True
+\ No newline at end of file
+
+commit 998b6e67f89622fef5f2f0432e379dd1245bdc7b
+Author: Isaac S├ínchez <123047038@upq.edu.mx>
+Date:   Mon Mar 30 17:46:20 2026 -0600
+
+    Update paciente.py
+
+diff --git a/routine4life_mobile/backend/schemas/paciente.py b/routine4life_mobile/backend/schemas/paciente.py
+index c06fa7a8..fcbab52c 100644
+--- a/routine4life_mobile/backend/schemas/paciente.py
++++ b/routine4life_mobile/backend/schemas/paciente.py
+@@ -151,8 +151,8 @@ class UsuarioCreate(BaseModel):
+     id_rol: int
+     id_paciente: Optional[int] = None
+     id_medico: Optional[int] = None
+-    contrasena: str # La recibimos cruda desde la app, la encriptaremos en el CRUD
+-
++    contrasena: str
++    
+ class UsuarioResponse(BaseModel):
+     id_usuario: int
+     id_rol: int
+
+commit f4d28189b771f5c5116dc4c047aa664f049e2efb
+Author: M0chapaprika <yanyan2.0xd@gmail.com>
+Date:   Sat Mar 28 22:22:11 2026 -0600
+
+    Endpoints
+    
+    Creacion de todos los endpoints faltantes
+
+diff --git a/routine4life_mobile/backend/crud/paciente.py b/routine4life_mobile/backend/crud/paciente.py
+index e29c5e05..46fd912c 100644
+--- a/routine4life_mobile/backend/crud/paciente.py
++++ b/routine4life_mobile/backend/crud/paciente.py
+@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
+ from shared import models 
+ from routine4life_mobile.backend.schemas import paciente as schemas
+ from datetime import date, datetime
++import bcrypt
+ 
+ def registrar_cuenta_movil(db: Session, registro: schemas.RegistroAppCreate):
+     db_registro_app = models.pacientes_aplicacion(
+@@ -60,4 +61,77 @@ def crear_cita_medica(db: Session, cita: schemas.CitaCreate):
+     db.commit()
+     db.refresh(nueva_cita) 
+     
+-    return nueva_cita
+\ No newline at end of file
++    return nueva_cita
++
++def obtener_historial_consultas(db: Session, id_paciente: int):
++    return db.query(models.consultas_medicas)\
++             .filter(models.consultas_medicas.id_paciente == id_paciente)\
++             .order_by(models.consultas_medicas.fecha.desc())\
++             .all()
++             
++def obtener_sintomas_paciente(db: Session, id_paciente: int):
++    return db.query(models.sintomas_consulta)\
++             .join(models.consultas_medicas, models.consultas_medicas.id_consulta == models.sintomas_consulta.id_consulta)\
++             .filter(models.consultas_medicas.id_paciente == id_paciente)\
++             .all()
++             
++def obtener_recetas_paciente(db: Session, id_paciente: int):
++    # Puente: Recetas -> Consultas -> Paciente
++    return db.query(models.recetas_medicas)\
++             .join(models.consultas_medicas, models.consultas_medicas.id_consulta == models.recetas_medicas.id_consulta)\
++             .filter(models.consultas_medicas.id_paciente == id_paciente)\
++             .order_by(models.recetas_medicas.fecha.desc())\
++             .all()
++             
++def obtener_medicamentos_paciente(db: Session, id_paciente: int):
++    return db.query(models.medicamentos_recetados)\
++             .join(models.recetas_medicas, models.recetas_medicas.id_receta == models.medicamentos_recetados.id_receta)\
++             .join(models.consultas_medicas, models.consultas_medicas.id_consulta == models.recetas_medicas.id_consulta)\
++             .filter(models.consultas_medicas.id_paciente == id_paciente)\
++             .all()
++             
++def obtener_rutinas_paciente(db: Session, id_paciente: int):
++    return db.query(models.rutinas_recetadas)\
++             .join(models.recetas_medicas, models.recetas_medicas.id_receta == models.rutinas_recetadas.id_receta)\
++             .join(models.consultas_medicas, models.consultas_medicas.id_consulta == models.recetas_medicas.id_consulta)\
++             .filter(models.consultas_medicas.id_paciente == id_paciente)\
++             .all()
++             
++def crear_registro_paciente(db: Session, registro: schemas.RegistroPacienteCreate):
++    nuevo_registro = models.registros_paciente(
++        id_paciente=registro.id_paciente,
++        id_tipo_registro=registro.id_tipo_registro,
++        fecha=registro.fecha,
++        hora=registro.hora,
++        valor=registro.valor,
++        unidad_alternativa=registro.unidad_alternativa,
++        notas=registro.notas
++    )
++    
++    db.add(nuevo_registro)
++    db.commit()
++    db.refresh(nuevo_registro) # SQL Server nos devuelve el id_registro generado
++    
++    return nuevo_registro
++
++def obtener_hash_contrasena(contrasena: str):
++    contrasena_bytes = contrasena.encode('utf-8')
++    
++    hash_bytes = bcrypt.hashpw(contrasena_bytes, bcrypt.gensalt())
++    
++    return hash_bytes.decode('utf-8')
++
++def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
++    nuevo_usuario = models.usuarios(
++        id_rol=usuario.id_rol,
++        id_medico=usuario.id_medico,
++        id_paciente=usuario.id_paciente,
++        contrasena=obtener_hash_contrasena(usuario.contrasena), # Encriptamos antes de guardar
++        fecha_registro=date.today() # Generamos la fecha del servidor
++    )
++    
++    db.add(nuevo_usuario)
++    db.commit()
++    db.refresh(nuevo_usuario)
++    
++    return nuevo_usuario
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/routers/pacientes.py b/routine4life_mobile/backend/routers/pacientes.py
+index 2bc3e0d5..b1c581d4 100644
+--- a/routine4life_mobile/backend/routers/pacientes.py
++++ b/routine4life_mobile/backend/routers/pacientes.py
+@@ -69,4 +69,99 @@ def agendar_cita(cita: schemas.CitaCreate, db: Session = Depends(get_db)):
+         raise HTTPException(
+             status_code=400, 
+             detail=f"Error al agendar la cita. Verifica que los IDs existan. Detalle: {str(e)}"
+-        )
+\ No newline at end of file
++        )
++        
++@router.get("/{id_paciente}/consultas", response_model=List[schemas.ConsultaMedicaResponse])
++def obtener_consultas_paciente(id_paciente: int, db: Session = Depends(get_db)):
++    consultas = crud.obtener_historial_consultas(db=db, id_paciente=id_paciente)
++    
++    if not consultas:
++        raise HTTPException(
++            status_code=404, 
++            detail="No se encontraron consultas m├®dicas en el historial de este paciente."
++        )
++        
++    return consultas
++
++@router.get("/{id_paciente}/sintomas", response_model=List[schemas.SintomaConsultaResponse])
++def obtener_sintomas_diagnosticados(id_paciente: int, db: Session = Depends(get_db)):
++    sintomas = crud.obtener_sintomas_paciente(db=db, id_paciente=id_paciente)
++    
++    if not sintomas:
++        raise HTTPException(
++            status_code=404, 
++            detail="No se encontraron s├¡ntomas registrados en las consultas de este paciente."
++        )
++        
++    return sintomas
++
++@router.get("/{id_paciente}/recetas", response_model=List[schemas.RecetaMedicaResponse])
++def obtener_recetas_emitidas(id_paciente: int, db: Session = Depends(get_db)):
++    recetas = crud.obtener_recetas_paciente(db=db, id_paciente=id_paciente)
++    
++    if not recetas:
++        raise HTTPException(
++            status_code=404, 
++            detail="No se encontraron recetas m├®dicas en el historial de este paciente."
++        )
++        
++    return recetas
++
++@router.get("/{id_paciente}/medicamentos", response_model=List[schemas.MedicamentoRecetadoResponse])
++def obtener_medicamentos_recetados(id_paciente: int, db: Session = Depends(get_db)):
++    medicamentos = crud.obtener_medicamentos_paciente(db=db, id_paciente=id_paciente)
++    
++    if not medicamentos:
++        raise HTTPException(
++            status_code=404, 
++            detail="No se encontraron medicamentos recetados en el historial de este paciente."
++        )
++        
++    return medicamentos
++
++@router.get("/{id_paciente}/rutinas", response_model=List[schemas.RutinaRecetadaResponse])
++def obtener_rutinas_recetadas(id_paciente: int, db: Session = Depends(get_db)):
++    rutinas = crud.obtener_rutinas_paciente(db=db, id_paciente=id_paciente)
++    
++    if not rutinas:
++        raise HTTPException(
++            status_code=404, 
++            detail="No se encontraron rutinas recetadas en el historial de este paciente."
++        )
++        
++    return rutinas
++
++@router.post("/registros", response_model=schemas.RegistroPacienteResponse)
++def guardar_registro_medico(registro: schemas.RegistroPacienteCreate, db: Session = Depends(get_db)):
++    try:
++        nuevo_registro = crud.crear_registro_paciente(db=db, registro=registro)
++        return nuevo_registro
++    except Exception as e:
++        db.rollback() # Protegemos la base de datos si algo sale mal
++        raise HTTPException(
++            status_code=400, 
++            detail=f"Error al guardar el registro. Verifica que el paciente y el tipo de registro existan. Detalle: {str(e)}"
++        )
++        
++@router.post("/crear-cuenta", response_model=schemas.UsuarioResponse)
++def registrar_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
++    # 1. Validar que no manden todo vac├¡o
++    if not usuario.id_paciente and not usuario.id_medico:
++        raise HTTPException(
++            status_code=400, 
++            detail="Debes proporcionar el id_paciente o el id_medico para vincular la cuenta."
++        )
++        
++    try:
++        nuevo_usuario = crud.crear_credenciales_usuario(db=db, usuario=usuario)
++        return nuevo_usuario
++        
++    except IntegrityError:
++        db.rollback()
++        raise HTTPException(
++            status_code=400, 
++            detail="Error: Este paciente o m├®dico ya tiene una cuenta registrada, o los IDs proporcionados no existen."
++        )
++    except Exception as e:
++        db.rollback()
++        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/schemas/paciente.py b/routine4life_mobile/backend/schemas/paciente.py
+index c524a59a..c06fa7a8 100644
+--- a/routine4life_mobile/backend/schemas/paciente.py
++++ b/routine4life_mobile/backend/schemas/paciente.py
+@@ -1,8 +1,9 @@
+ # routine4life_mobile/backend/schemas/paciente.py
+ from pydantic import BaseModel
+ from datetime import date, time, datetime
+-from typing import List
+-from typing import Optional
++from typing import List, Optional
++from decimal import Decimal
++
+ 
+ class RegistroAppCreate(BaseModel):
+     id_paciente: int  
+@@ -58,5 +59,106 @@ class CitaResponse(CitaCreate):
+     id_cita: int
+     fecha_hora_solicitud: datetime
+ 
++    class Config:
++        from_attributes = True
++        
++class ConsultaMedicaResponse(BaseModel):
++    id_consulta: int
++    id_cita: int
++    id_medico: int
++    fecha: date
++    hora: time
++    peso: Optional[Decimal] = None
++    altura: Optional[int] = None
++    presion_sistolica: Optional[int] = None
++    presion_diastolica: Optional[int] = None
++    frecuencia_cardiaca: Optional[int] = None
++    glucosa_ayunas: Optional[Decimal] = None
++    glucosa_postprandial: Optional[Decimal] = None
++    hemoglobina_glicosilada: Optional[Decimal] = None
++    colesterol_total: Optional[Decimal] = None
++    trigliceridos: Optional[Decimal] = None
++    nivel_insulina: Optional[Decimal] = None
++    notas: Optional[str] = None
++    plan_tratamiento: Optional[str] = None
++
++    class Config:
++        from_attributes = True
++        
++class SintomaConsultaResponse(BaseModel):
++    id_sintoma: int
++    id_consulta: int
++    id_sintoma_diabetes: int
++    intensidad: Optional[int] = None
++    duracion: Optional[str] = None
++    notas: Optional[str] = None
++
++    class Config:
++        from_attributes = True
++        
++class RecetaMedicaResponse(BaseModel):
++    id_receta: int
++    id_consulta: int
++    fecha: date
++    hora: time
++    instrucciones_generales: Optional[str] = None
++    url_pdf: Optional[str] = None
++
++    class Config:
++        from_attributes = True
++        
++class MedicamentoRecetadoResponse(BaseModel):
++    id_medicamento: int
++    id_receta: int
++    id_medicamento_diabetes: int
++    dosis: str
++    frecuencia: str
++    duracion: Optional[str] = None
++    instrucciones_adicionales: Optional[str] = None
++
++    class Config:
++        from_attributes = True
++        
++class RutinaRecetadaResponse(BaseModel):
++    id_rutina: int
++    id_receta: int
++    id_tipo_rutina: int
++    id_comida: Optional[int] = None
++    descripcion: str
++    frecuencia: Optional[str] = None
++    duracion: Optional[str] = None
++    notas: Optional[str] = None
++
++    class Config:
++        from_attributes = True
++        
++class RegistroPacienteCreate(BaseModel):
++    id_paciente: int
++    id_tipo_registro: int 
++    fecha: date
++    hora: time
++    valor: Decimal
++    unidad_alternativa: Optional[str] = None
++    notas: Optional[str] = None
++
++class RegistroPacienteResponse(RegistroPacienteCreate):
++    id_registro: int
++
++    class Config:
++        from_attributes = True
++        
++class UsuarioCreate(BaseModel):
++    id_rol: int
++    id_paciente: Optional[int] = None
++    id_medico: Optional[int] = None
++    contrasena: str # La recibimos cruda desde la app, la encriptaremos en el CRUD
++
++class UsuarioResponse(BaseModel):
++    id_usuario: int
++    id_rol: int
++    id_paciente: Optional[int] = None
++    id_medico: Optional[int] = None
++    fecha_registro: date
++
+     class Config:
+         from_attributes = True
+\ No newline at end of file
+
+commit d87adfd5879cb93b58dab4102d61709783c5cc73
+Author: M0chapaprika <yanyan2.0xd@gmail.com>
+Date:   Fri Mar 27 23:03:39 2026 -0600
+
+    Endpontis
+    
+    Creacion de endpoints de la API para movil
+
+diff --git a/routine4life_mobile/backend/crud/paciente.py b/routine4life_mobile/backend/crud/paciente.py
+index 186b8382..e29c5e05 100644
+--- a/routine4life_mobile/backend/crud/paciente.py
++++ b/routine4life_mobile/backend/crud/paciente.py
+@@ -2,7 +2,7 @@
+ from sqlalchemy.orm import Session
+ from shared import models 
+ from routine4life_mobile.backend.schemas import paciente as schemas
+-from datetime import date
++from datetime import date, datetime
+ 
+ def registrar_cuenta_movil(db: Session, registro: schemas.RegistroAppCreate):
+     db_registro_app = models.pacientes_aplicacion(
+@@ -19,4 +19,45 @@ def registrar_cuenta_movil(db: Session, registro: schemas.RegistroAppCreate):
+     db.add(db_registro_app)
+     db.commit()
+     db.refresh(db_registro_app)
+-    return db_registro_app
+\ No newline at end of file
++    return db_registro_app
++
++def obtener_diagnostico_paciente(db: Session, id_paciente: int):
++    return db.query(models.tipos_diabetes)\
++             .join(models.pacientes)\
++             .filter(models.pacientes.id_paciente == id_paciente)\
++             .first()
++             
++def obtener_medico_de_paciente(db: Session, id_paciente: int):
++    
++    return db.query(models.datos_personales_medico)\
++             .join(models.medicos, models.medicos.id_medico == models.datos_personales_medico.id_medico)\
++             .join(models.consultas_medicas, models.consultas_medicas.id_medico == models.medicos.id_medico)\
++             .filter(models.consultas_medicas.id_paciente == id_paciente)\
++             .first() 
++             
++def obtener_horarios_medico(db: Session, id_medico: int):
++    return db.query(models.horarios_medicos)\
++             .filter(
++                 models.horarios_medicos.id_medico == id_medico,
++                 models.horarios_medicos.activo == True
++             )\
++             .all()
++             
++def crear_cita_medica(db: Session, cita: schemas.CitaCreate):
++    nueva_cita = models.citas_medicas(
++        id_rol=cita.id_rol,
++        id_medico=cita.id_medico,
++        id_paciente=cita.id_paciente,
++        id_estatus_cita=cita.id_estatus_cita,
++        fecha=cita.fecha,
++        hora=cita.hora,
++        motivo=cita.motivo,
++        notas=cita.notas,
++        fecha_hora_solicitud=datetime.now() 
++    )
++    
++    db.add(nueva_cita)
++    db.commit()
++    db.refresh(nueva_cita) 
++    
++    return nueva_cita
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/routers/pacientes.py b/routine4life_mobile/backend/routers/pacientes.py
+index 23fc88e9..2bc3e0d5 100644
+--- a/routine4life_mobile/backend/routers/pacientes.py
++++ b/routine4life_mobile/backend/routers/pacientes.py
+@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
+ from shared.database import get_db
+ from routine4life_mobile.backend.schemas import paciente as schemas
+ from routine4life_mobile.backend.crud import paciente as crud
++from typing import List
+ 
+ router = APIRouter(
+     prefix="/auth-movil", 
+@@ -20,4 +21,52 @@ def crear_cuenta_paciente(registro: schemas.RegistroAppCreate, db: Session = Dep
+         raise HTTPException(
+             status_code=400, 
+             detail="Error de validaci├│n: Verifica que el ID del paciente exista y que el email/tel├®fono no est├®n duplicados."
++        )
++        
++@router.get("/{id_paciente}/diagnostico", response_model=schemas.TipoDiabetesResponse)
++def obtener_tipo_diabetes(id_paciente: int, db: Session = Depends(get_db)):
++    diagnostico = crud.obtener_diagnostico_paciente(db=db, id_paciente=id_paciente)
++    
++    if not diagnostico:
++        raise HTTPException(
++            status_code=404, 
++            detail="No se encontr├│ un diagn├│stico de diabetes para este paciente o el paciente no existe."
++        )
++        
++    return diagnostico
++
++@router.get("/{id_paciente}/medico", response_model=schemas.MedicoAsignadoResponse)
++def obtener_medico_asignado(id_paciente: int, db: Session = Depends(get_db)):
++    medico = crud.obtener_medico_de_paciente(db=db, id_paciente=id_paciente)
++    
++    if not medico:
++        raise HTTPException(
++            status_code=404, 
++            detail="No se encontr├│ un m├®dico asignado para este paciente o el paciente no existe."
++        )
++        
++    return medico
++
++@router.get("/medico/{id_medico}/horarios", response_model=List[schemas.HorarioMedicoResponse])
++def obtener_horarios_disponibles(id_medico: int, db: Session = Depends(get_db)):
++    horarios = crud.obtener_horarios_medico(db=db, id_medico=id_medico)
++    
++    if not horarios:
++        raise HTTPException(
++            status_code=404, 
++            detail="No se encontraron horarios activos disponibles para este m├®dico."
++        )
++        
++    return horarios
++
++@router.post("/citas", response_model=schemas.CitaResponse)
++def agendar_cita(cita: schemas.CitaCreate, db: Session = Depends(get_db)):
++    try:
++        nueva_cita = crud.crear_cita_medica(db=db, cita=cita)
++        return nueva_cita
++    except Exception as e:
++        db.rollback() 
++        raise HTTPException(
++            status_code=400, 
++            detail=f"Error al agendar la cita. Verifica que los IDs existan. Detalle: {str(e)}"
+         )
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/schemas/paciente.py b/routine4life_mobile/backend/schemas/paciente.py
+index 8719bde7..c524a59a 100644
+--- a/routine4life_mobile/backend/schemas/paciente.py
++++ b/routine4life_mobile/backend/schemas/paciente.py
+@@ -1,6 +1,8 @@
+ # routine4life_mobile/backend/schemas/paciente.py
+ from pydantic import BaseModel
+-from datetime import date
++from datetime import date, time, datetime
++from typing import List
++from typing import Optional
+ 
+ class RegistroAppCreate(BaseModel):
+     id_paciente: int  
+@@ -15,5 +17,46 @@ class RegistroAppCreate(BaseModel):
+ class RegistroAppResponse(RegistroAppCreate):
+     fecha_registro: date
+ 
++    class Config:
++        from_attributes = True
++        
++class TipoDiabetesResponse(BaseModel):
++    id_tipo_diabetes: int
++    nombre: str
++
++    class Config:
++        from_attributes = True
++        
++class MedicoAsignadoResponse(BaseModel):
++    id_medico: int
++    nombre_completo: str
++    telefono: str
++
++    class Config:
++        from_attributes = True
++        
++class HorarioMedicoResponse(BaseModel):
++    id_horario: int
++    dia_semana: int
++    hora_inicio: time
++    hora_fin: time
++
++    class Config:
++        from_attributes = True
++        
++class CitaCreate(BaseModel):
++    id_rol: int             
++    id_medico: int          
++    id_paciente: int         
++    id_estatus_cita: int = 1 
++    fecha: date
++    hora: time
++    motivo: Optional[str] = None
++    notas: Optional[str] = None
++
++class CitaResponse(CitaCreate):
++    id_cita: int
++    fecha_hora_solicitud: datetime
++
+     class Config:
+         from_attributes = True
+\ No newline at end of file
+
+commit 4a9552bc6d7147321bceb8a43844c072fa8c8039
+Author: M0chapaprika <yanyan2.0xd@gmail.com>
+Date:   Wed Mar 25 18:44:35 2026 -0600
+
+    Endpoint crear cuenta
+    
+    Creacion de un endpoint para que un usuario que esta registrado en la BD del medico, pueda crear un usuario para la aplicacion mobile
+
+diff --git a/routine4life_mobile/backend/crud/paciente.py b/routine4life_mobile/backend/crud/paciente.py
+index 0779b8c8..186b8382 100644
+--- a/routine4life_mobile/backend/crud/paciente.py
++++ b/routine4life_mobile/backend/crud/paciente.py
+@@ -1,22 +1,22 @@
+ # routine4life_mobile/backend/crud/paciente.py
+ from sqlalchemy.orm import Session
+-from shared import models # Importamos desde la carpeta compartida
++from shared import models 
+ from routine4life_mobile.backend.schemas import paciente as schemas
+-from datetime import datetime
++from datetime import date
+ 
+-def get_paciente(db: Session, paciente_id: int):
+-    return db.query(models.pacientes).filter(models.pacientes.id_paciente == paciente_id).first()
+-
+-def create_paciente(db: Session, paciente: schemas.PacienteCreate):
+-    db_paciente = models.pacientes(
+-        id_sexo=paciente.id_sexo,
+-        id_estatus_usuario=paciente.id_estatus_usuario,
+-        codigo=paciente.codigo,
+-        nombre_completo=paciente.nombre_completo,
+-        fecha_nacimiento=paciente.fecha_nacimiento,
+-        fecha_hora_registro=datetime.now()
++def registrar_cuenta_movil(db: Session, registro: schemas.RegistroAppCreate):
++    db_registro_app = models.pacientes_aplicacion(
++        id_paciente=registro.id_paciente,
++        id_sexo=registro.id_sexo,
++        id_pais=registro.id_pais,
++        id_estatus_usuario=registro.id_estatus_usuario,
++        nombre_completo=registro.nombre_completo,
++        fecha_nacimiento=registro.fecha_nacimiento,
++        email=registro.email,
++        telefono=registro.telefono,
++        fecha_registro=date.today() 
+     )
+-    db.add(db_paciente)
++    db.add(db_registro_app)
+     db.commit()
+-    db.refresh(db_paciente)
+-    return db_paciente
+\ No newline at end of file
++    db.refresh(db_registro_app)
++    return db_registro_app
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/routers/pacientes.py b/routine4life_mobile/backend/routers/pacientes.py
+index 4f6dd7cb..23fc88e9 100644
+--- a/routine4life_mobile/backend/routers/pacientes.py
++++ b/routine4life_mobile/backend/routers/pacientes.py
+@@ -1,22 +1,23 @@
+ # routine4life_mobile/backend/routers/pacientes.py
+ from fastapi import APIRouter, Depends, HTTPException
+ from sqlalchemy.orm import Session
++from sqlalchemy.exc import IntegrityError
+ from shared.database import get_db
+ from routine4life_mobile.backend.schemas import paciente as schemas
+ from routine4life_mobile.backend.crud import paciente as crud
+ 
+ router = APIRouter(
+-    prefix="/pacientes",
+-    tags=["Pacientes (App M├│vil)"]
++    prefix="/auth-movil", 
++    tags=["Registro y Autenticaci├│n (App M├│vil)"]
+ )
+ 
+-@router.post("/", response_model=schemas.PacienteResponse)
+-def registrar_paciente(paciente: schemas.PacienteCreate, db: Session = Depends(get_db)):
+-    return crud.create_paciente(db=db, paciente=paciente)
+-
+-@router.get("/{paciente_id}", response_model=schemas.PacienteResponse)
+-def obtener_paciente(paciente_id: int, db: Session = Depends(get_db)):
+-    db_paciente = crud.get_paciente(db, paciente_id=paciente_id)
+-    if not db_paciente:
+-        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+-    return db_paciente
+\ No newline at end of file
++@router.post("/registro", response_model=schemas.RegistroAppResponse)
++def crear_cuenta_paciente(registro: schemas.RegistroAppCreate, db: Session = Depends(get_db)):
++    try:
++        return crud.registrar_cuenta_movil(db=db, registro=registro)
++    except IntegrityError as e:
++        db.rollback()
++        raise HTTPException(
++            status_code=400, 
++            detail="Error de validaci├│n: Verifica que el ID del paciente exista y que el email/tel├®fono no est├®n duplicados."
++        )
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/schemas/paciente.py b/routine4life_mobile/backend/schemas/paciente.py
+index f728f504..8719bde7 100644
+--- a/routine4life_mobile/backend/schemas/paciente.py
++++ b/routine4life_mobile/backend/schemas/paciente.py
+@@ -2,15 +2,18 @@
+ from pydantic import BaseModel
+ from datetime import date
+ 
+-class PacienteCreate(BaseModel):
++class RegistroAppCreate(BaseModel):
++    id_paciente: int  
+     id_sexo: int
++    id_pais: int
+     id_estatus_usuario: int
+-    codigo: str
+     nombre_completo: str
+     fecha_nacimiento: date
++    email: str
++    telefono: str
+ 
+-class PacienteResponse(PacienteCreate):
+-    id_paciente: int
++class RegistroAppResponse(RegistroAppCreate):
++    fecha_registro: date
+ 
+     class Config:
+         from_attributes = True
+\ No newline at end of file
+
+commit d6213daf25fbb0a454bf9e79d9d256d89742b855
+Author: M0chapaprika <yanyan2.0xd@gmail.com>
+Date:   Wed Mar 25 14:54:11 2026 -0600
+
+    API
+    
+    Funcionalidad de la API
+
+diff --git a/routine4life_mobile/backend/Dockerfile b/routine4life_mobile/backend/Dockerfile
+new file mode 100644
+index 00000000..1a08de35
+--- /dev/null
++++ b/routine4life_mobile/backend/Dockerfile
+@@ -0,0 +1,28 @@
++# Usamos una versi├│n espec├¡fica y estable de Debian (Bookworm)
++FROM python:3.11-slim-bookworm
++
++# Instalar dependencias, la clave de MS con el m├®todo moderno y el driver ODBC
++RUN apt-get update \
++    && apt-get install -y curl gnupg2 apt-transport-https unixodbc-dev \
++    && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
++    && curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list | tee /etc/apt/sources.list.d/mssql-release.list \
++    && apt-get update \
++    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
++    && apt-get clean -y \
++    && rm -rf /var/lib/apt/lists/*
++
++# Establece el directorio de trabajo dentro del contenedor
++WORKDIR /app
++
++# Copia el archivo de requerimientos e instala las librer├¡as
++COPY requirements.txt .
++RUN pip install --no-cache-dir -r requirements.txt
++
++# Copia todo el c├│digo fuente al contenedor
++COPY . .
++
++# Expone el puerto que usar├í FastAPI
++EXPOSE 8000
++
++# Comando para iniciar el servidor
++CMD ["uvicorn", "routine4life_mobile.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/crud/paciente.py b/routine4life_mobile/backend/crud/paciente.py
+new file mode 100644
+index 00000000..0779b8c8
+--- /dev/null
++++ b/routine4life_mobile/backend/crud/paciente.py
+@@ -0,0 +1,22 @@
++# routine4life_mobile/backend/crud/paciente.py
++from sqlalchemy.orm import Session
++from shared import models # Importamos desde la carpeta compartida
++from routine4life_mobile.backend.schemas import paciente as schemas
++from datetime import datetime
++
++def get_paciente(db: Session, paciente_id: int):
++    return db.query(models.pacientes).filter(models.pacientes.id_paciente == paciente_id).first()
++
++def create_paciente(db: Session, paciente: schemas.PacienteCreate):
++    db_paciente = models.pacientes(
++        id_sexo=paciente.id_sexo,
++        id_estatus_usuario=paciente.id_estatus_usuario,
++        codigo=paciente.codigo,
++        nombre_completo=paciente.nombre_completo,
++        fecha_nacimiento=paciente.fecha_nacimiento,
++        fecha_hora_registro=datetime.now()
++    )
++    db.add(db_paciente)
++    db.commit()
++    db.refresh(db_paciente)
++    return db_paciente
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/hola.txt b/routine4life_mobile/backend/hola.txt
+deleted file mode 100644
+index af5a0623..00000000
+--- a/routine4life_mobile/backend/hola.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-Hola
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/main.py b/routine4life_mobile/backend/main.py
+new file mode 100644
+index 00000000..ab25181d
+--- /dev/null
++++ b/routine4life_mobile/backend/main.py
+@@ -0,0 +1,17 @@
++# routine4life_mobile/backend/main.py
++from fastapi import FastAPI
++from shared.database import engine
++from shared import models
++from routine4life_mobile.backend.routers import pacientes
++
++# Crea las tablas si no existen en SQL Server
++models.Base.metadata.create_all(bind=engine)
++
++app = FastAPI(title="Routine4Life - Mobile API")
++
++# Conectamos nuestras rutas
++app.include_router(pacientes.router)
++
++@app.get("/")
++def raiz():
++    return {"status": "API M├│vil en l├¡nea"}
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/routers/pacientes.py b/routine4life_mobile/backend/routers/pacientes.py
+new file mode 100644
+index 00000000..4f6dd7cb
+--- /dev/null
++++ b/routine4life_mobile/backend/routers/pacientes.py
+@@ -0,0 +1,22 @@
++# routine4life_mobile/backend/routers/pacientes.py
++from fastapi import APIRouter, Depends, HTTPException
++from sqlalchemy.orm import Session
++from shared.database import get_db
++from routine4life_mobile.backend.schemas import paciente as schemas
++from routine4life_mobile.backend.crud import paciente as crud
++
++router = APIRouter(
++    prefix="/pacientes",
++    tags=["Pacientes (App M├│vil)"]
++)
++
++@router.post("/", response_model=schemas.PacienteResponse)
++def registrar_paciente(paciente: schemas.PacienteCreate, db: Session = Depends(get_db)):
++    return crud.create_paciente(db=db, paciente=paciente)
++
++@router.get("/{paciente_id}", response_model=schemas.PacienteResponse)
++def obtener_paciente(paciente_id: int, db: Session = Depends(get_db)):
++    db_paciente = crud.get_paciente(db, paciente_id=paciente_id)
++    if not db_paciente:
++        raise HTTPException(status_code=404, detail="Paciente no encontrado")
++    return db_paciente
+\ No newline at end of file
+diff --git a/routine4life_mobile/backend/schemas/paciente.py b/routine4life_mobile/backend/schemas/paciente.py
+new file mode 100644
+index 00000000..f728f504
+--- /dev/null
++++ b/routine4life_mobile/backend/schemas/paciente.py
+@@ -0,0 +1,16 @@
++# routine4life_mobile/backend/schemas/paciente.py
++from pydantic import BaseModel
++from datetime import date
++
++class PacienteCreate(BaseModel):
++    id_sexo: int
++    id_estatus_usuario: int
++    codigo: str
++    nombre_completo: str
++    fecha_nacimiento: date
++
++class PacienteResponse(PacienteCreate):
++    id_paciente: int
++
++    class Config:
++        from_attributes = True
+\ No newline at end of file
+
+commit f7f28470b6cebf01899e266994702f5dc0e252d1
+Author: PolisTP98 <123047038@upq.edu.mx>
+Date:   Fri Mar 20 18:18:54 2026 -0600
+
+    Agregar carpetas para almacenar el proyecto web y m├│vil
+
+diff --git a/routine4life_mobile/backend/hola.txt b/routine4life_mobile/backend/hola.txt
+new file mode 100644
+index 00000000..af5a0623
+--- /dev/null
++++ b/routine4life_mobile/backend/hola.txt
+@@ -0,0 +1 @@
++Hola
+\ No newline at end of file
