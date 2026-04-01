@@ -7,12 +7,13 @@ import {
   ScrollView, 
   Platform 
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; // Para un header dinámico
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
 import FilterModal from '../components/FilterModal';
 
 const HomeScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
   const handleNotImplemented = (feature) => alert(`${feature} próximamente disponible`);
 
@@ -21,17 +22,17 @@ const HomeScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* --- HEADER DINÁMICO --- */}
-      <SafeAreaView edges={['top']} style={styles.safeHeader}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      {/* --- HEADER --- */}
+      <View style={styles.safeHeader}>
         <View style={styles.headerContent}>
-          <TouchableOpacity 
-            onPress={() => navigation.openDrawer()}
+          <TouchableOpacity
+            onPress={() => handleNotImplemented('Menú')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="menu" size={35} color={COLORS.primary} />
           </TouchableOpacity>
-          
+
           <View style={styles.logoContainer}>
             <Text style={styles.logoTextMain}>ROUTINE</Text>
             <Text style={styles.logoTextSub}>4LIFE</Text>
@@ -41,7 +42,7 @@ const HomeScreen = ({ navigation }) => {
             <Ionicons name="person-circle-outline" size={40} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
 
       {/* --- CONTENIDO DESLIZABLE --- */}
       <ScrollView 
@@ -93,7 +94,7 @@ const HomeScreen = ({ navigation }) => {
 
       {/* --- BOTÓN MÉDICO (FAB) --- */}
       <TouchableOpacity 
-        style={styles.fabMedical} 
+        style={[styles.fabMedical, { bottom: Math.max(16, insets.bottom + 8) }]} 
         onPress={() => handleNotImplemented('Agendar cita')}
         activeOpacity={0.8}
       >
@@ -108,7 +109,7 @@ const HomeScreen = ({ navigation }) => {
         onClose={() => setModalVisible(false)} 
         onFilter={handleFilterApply} 
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
