@@ -5,6 +5,8 @@ import logging
 from dotenv import load_dotenv
 import urllib.parse
 
+load_dotenv()
+
 server   = os.getenv("DB_SERVER")
 database = os.getenv("DB_NAME")
 user     = os.getenv("DB_USER")
@@ -16,7 +18,6 @@ DATABASE_URL = (
     f"?driver={driver.replace(' ', '+')}"
 )
 
-load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
