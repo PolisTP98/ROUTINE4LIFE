@@ -11,12 +11,12 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
 import FilterModal from '../components/FilterModal';
+import CustomDrawer from '../componentes/CustomDrawer';
 
 const HomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
   const handleNotImplemented = (feature) => alert(`${feature} próximamente disponible`);
-
   const handleFilterApply = (data) => {
     console.log("Filtros aplicados:", data);
   };
@@ -26,10 +26,8 @@ const HomeScreen = ({ navigation }) => {
       {/* --- HEADER --- */}
       <View style={styles.safeHeader}>
         <View style={styles.headerContent}>
-          <TouchableOpacity
-            onPress={() => handleNotImplemented('Menú')}
+          <TouchableOpacity onPress={() => navigation.openDrawer()}>
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
             <Ionicons name="menu" size={35} color={COLORS.primary} />
           </TouchableOpacity>
 
