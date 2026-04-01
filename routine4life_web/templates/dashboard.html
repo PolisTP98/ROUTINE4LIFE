@@ -164,18 +164,6 @@
                     </a>
                 </div>
 
-                <!-- Gráfica de consultas por mes -->
-                <div class="chart-card">
-                    <div class="chart-title">
-                        <i class="fas fa-chart-bar"></i>
-                        Consultas por Mes
-                        <span class="chart-badge">Últimos 6 meses</span>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="consultasChart"></canvas>
-                    </div>
-                </div>
-
                 <!-- Tabla de todas las citas -->
                 <div class="table-container">
                     <div class="table-header">
@@ -185,36 +173,37 @@
                         {% if proximas_citas %}
                         <table class="modern-table">
                             <thead>
-                                70<tr
+                                <tr>
                                     <th>Fecha</th>
                                     <th>Hora</th>
                                     <th>Paciente</th>
                                     <th>Médico</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
-                                </thead>
+                                </tr>
+                            </thead>
                             <tbody>
                                 {% for cita in proximas_citas %}
-                                <tr
-                                    70<td
+                                <tr>
+                                    <td>
                                         <strong>{{ cita.fecha.strftime('%d/%m/%Y') }}</strong>
                                         <br>
                                         <small class="text-muted">{{ cita.fecha.strftime('%A') }}</small>
                                     </td>
-                                    70<td>{{ cita.hora.strftime('%H:%M') }}</td>
-                                    70<td
+                                    <td>{{ cita.hora.strftime('%H:%M') }}</td>
+                                    <td>
                                         <strong>{{ cita.paciente.nombre_completo if cita.paciente else 'No especificado' }}</strong>
                                         <br>
                                         <span class="patient-code">Código: {{ cita.paciente.codigo if cita.paciente else '-' }}</span>
                                     </td>
-                                    70<td
+                                    <td>
                                         {% if cita.medico and cita.medico.datos_personales %}
                                         <strong>Dr/a. {{ cita.medico.datos_personales.nombre_completo }}</strong>
                                         {% else %}
                                         -
                                         {% endif %}
                                     </td>
-                                    70<td
+                                    <td>
                                         {% if cita.id_estatus_cita == 1 %}
                                         <span class="badge badge-info">
                                             <i class="fas fa-clock"></i> Programada
@@ -229,7 +218,7 @@
                                         </span>
                                         {% endif %}
                                     </td>
-                                    70<td
+                                    <td>
                                         <div class="action-buttons">
                                             <a href="{{ url_for('admin_editar_cita', id=cita.id_cita) }}" class="btn-icon" title="Editar cita">
                                                 <i class="fas fa-edit"></i>
@@ -261,33 +250,34 @@
                         {% if ultimas_consultas %}
                         <table class="modern-table">
                             <thead>
-                                70<tr
+                                <tr>
                                     <th>Fecha</th>
                                     <th>Paciente</th>
                                     <th>Médico</th>
                                     <th>Glucosa Ayunas</th>
                                     <th>HbA1c</th>
                                     <th>Acciones</th>
-                                </thead>
+                                </tr>
+                            </thead>
                             <tbody>
                                 {% for consulta in ultimas_consultas %}
-                                <tr
-                                    70<td>{{ consulta.fecha.strftime('%d/%m/%Y') }}</td>
-                                    70<td
+                                <tr>
+                                    <td>{{ consulta.fecha.strftime('%d/%m/%Y') }}</td>
+                                    <td>
                                         <strong>{{ consulta.paciente.nombre_completo if consulta.paciente else '-' }}</strong>
                                         <br>
                                         <span class="patient-code">Código: {{ consulta.paciente.codigo if consulta.paciente else '-' }}</span>
                                     </td>
-                                    70<td
+                                    <td>
                                         {% if consulta.medico and consulta.medico.datos_personales %}
                                         Dr/a. {{ consulta.medico.datos_personales.nombre_completo }}
                                         {% else %}
                                         -
                                         {% endif %}
                                     </td>
-                                    70<td>{{ consulta.glucosa_ayunas if consulta.glucosa_ayunas else '-' }} mg/dL</td>
-                                    70<td>{{ consulta.hemoglobina_glicosilada if consulta.hemoglobina_glicosilada else '-' }}%</td>
-                                    70<td
+                                    <td>{{ consulta.glucosa_ayunas if consulta.glucosa_ayunas else '-' }} mg/dL</td>
+                                    <td>{{ consulta.hemoglobina_glicosilada if consulta.hemoglobina_glicosilada else '-' }}%</td>
+                                    <td>
                                         <div class="action-buttons">
                                             <a href="{{ url_for('admin_ver_consulta', id=consulta.id_consulta) }}" class="btn-icon" title="Ver consulta">
                                                 <i class="fas fa-eye"></i>
@@ -621,45 +611,6 @@
             transform: translateY(-2px);
         }
 
-        .chart-card {
-            background: white;
-            border-radius: 20px;
-            border: 1px solid #e2e8f0;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .chart-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        .chart-title i {
-            color: #667eea;
-            margin-right: 0.5rem;
-        }
-
-        .chart-badge {
-            font-size: 0.7rem;
-            font-weight: 500;
-            background: #f1f5f9;
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            color: #64748b;
-        }
-
-        .chart-container {
-            height: 300px;
-            position: relative;
-        }
-
         .table-container {
             background: white;
             border-radius: 20px;
@@ -850,46 +801,6 @@
                 }, 4000);
             });
         }, 100);
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Gráfica de consultas por mes - usando la variable que ya existe
-            const ctx1 = document.getElementById('consultasChart').getContext('2d');
-            const consultasData = {{ consultas_por_mes|tojson }};
-            
-            if (consultasData && consultasData.length > 0) {
-                new Chart(ctx1, {
-                    type: 'bar',
-                    data: {
-                        labels: consultasData.map(item => item.mes),
-                        datasets: [{
-                            label: 'Número de Consultas',
-                            data: consultasData.map(item => item.total),
-                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            borderWidth: 2,
-                            borderRadius: 8,
-                            barPercentage: 0.7
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: { position: 'top', labels: { font: { size: 12 } } },
-                            tooltip: { callbacks: { label: function(context) { return `Consultas: ${context.raw}`; } } }
-                        },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#e2e8f0' } },
-                            x: { grid: { display: false } }
-                        }
-                    }
-                });
-            } else {
-                ctx1.canvas.parentElement.innerHTML = '<div class="empty-state-modern"><i class="fas fa-chart-line"></i><p>No hay datos de consultas para mostrar</p></div>';
-            }
-        });
     </script>
 </body>
 

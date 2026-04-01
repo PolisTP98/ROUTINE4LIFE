@@ -196,7 +196,7 @@ def actualizar_medico(
     
     if not cambios:
         return {
-            "mensaje": "ℹNo se realizaron cambios",
+            "mensaje": "No se realizaron cambios",
             "id_medico": medico_id,
             "nombre": medico.datos_personales.nombre_completo
         }
@@ -254,7 +254,7 @@ def activar_medico(
     
     if medico.id_estatus_usuario == 1:
         return {
-            "mensaje": "ℹEl médico ya estaba activo",
+            "mensaje": "El médico ya estaba activo",
             "id_medico": medico_id,
             "nombre": medico.datos_personales.nombre_completo,
             "estado": "activo"
