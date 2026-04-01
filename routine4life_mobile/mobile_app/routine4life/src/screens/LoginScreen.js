@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ScrollView 
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'; // Importante para SDK 54
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
 import SuccessToast from '../components/SuccessToast';
@@ -28,16 +38,25 @@ const LoginScreen = ({ navigation, route }) => {
   const isButtonEnabled = email.trim().length > 0 && password.trim().length > 0;
 
   return (
-    <View style={{ flex: 1 }}>
+    // SafeAreaView asegura que el contenido no choque con la barra de estado
+    <SafeAreaView style={styles.container}>
       <SuccessToast 
         visible={showToast} 
         message={toastMessage} 
         onHide={() => setShowToast(false)} 
       />
 
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined} // En Android suele ser mejor dejarlo undefined o usar 'height'
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled" // Permite tocar botones mientras el teclado está abierto
+        >
           <Text style={styles.title}>Iniciar sesión</Text>
+          
           <View style={styles.formContainer}>
             <TextInput
               style={styles.input}
@@ -48,6 +67,7 @@ const LoginScreen = ({ navigation, route }) => {
               autoCapitalize="none"
               keyboardType="email-address"
             />
+            
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -58,9 +78,14 @@ const LoginScreen = ({ navigation, route }) => {
                 secureTextEntry={secureTextEntry}
               />
               <TouchableOpacity onPress={() => setSecureTextEntry(!secureTextEntry)}>
-                <Ionicons name={secureTextEntry ? 'eye-outline' : 'eye-off-outline'} size={28} color={COLORS.primary} />
+                <Ionicons 
+                  name={secureTextEntry ? 'eye-outline' : 'eye-off-outline'} 
+                  size={24} // Un poco más pequeño para mejor balance visual
+                  color={COLORS.primary} 
+                />
               </TouchableOpacity>
             </View>
+
             <View style={styles.rememberRow}>
                 <View style={styles.checkbox} />
                 <Text style={styles.rememberText}>Recordarme</Text>
@@ -70,43 +95,98 @@ const LoginScreen = ({ navigation, route }) => {
           <View style={styles.actionContainer}>
             <Text style={styles.linkTextBase}>
               ¿Olvidaste tu contraseña?{' '}
-              <Text style={styles.linkTextRed} onPress={() => navigation.navigate('RecoverPasswordStep1')}>Reestablecer</Text>
+              <Text 
+                style={styles.linkTextRed} 
+                onPress={() => navigation.navigate('RecoverPasswordStep1')}
+              >
+                Reestablecer
+              </Text>
             </Text>
+
             <TouchableOpacity
-              style={[styles.loginButton, isButtonEnabled ? styles.loginButtonEnabled : styles.loginButtonDisabled]}
-              // CORRECCIÓN: Usamos replace para destruir la pila de login y que el botón físico "Atrás" no los regrese aquí
+              style={[
+                styles.loginButton, 
+                isButtonEnabled ? styles.loginButtonEnabled : styles.loginButtonDisabled
+              ]}
               onPress={() => navigation.replace('AppDrawer')}
               disabled={!isButtonEnabled}
+              activeOpacity={0.8}
             >
               <Text style={styles.loginButtonText}>Iniciar sesión</Text>
             </TouchableOpacity>
+
             <Text style={styles.linkTextBase}>
               ¿No tienes una cuenta?{' '}
-              <Text style={styles.linkTextRed} onPress={() => navigation.navigate('Register')}>Registrarse</Text>
+              <Text 
+                style={styles.linkTextRed} 
+                onPress={() => navigation.navigate('Register')}
+              >
+                Registrarse
+              </Text>
             </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  scrollContainer: { flexGrow: 1, paddingHorizontal: 35, paddingTop: '35%', alignItems: 'center' },
-  title: { fontSize: 55, fontWeight: 'bold', color: COLORS.primary, textAlign: 'center', marginBottom: 60 },
-  formContainer: { width: '100%', marginBottom: 40 },
-  input: { backgroundColor: COLORS.inputBackground, height: 55, borderRadius: 30, paddingHorizontal: 25, fontSize: 18, marginBottom: 15, color: COLORS.inputText },
-  passwordInputContainer: { flexDirection: 'row', backgroundColor: COLORS.inputBackground, height: 55, borderRadius: 30, alignItems: 'center', paddingHorizontal: 20, marginBottom: 15 },
+  scrollContainer: { 
+    flexGrow: 1, 
+    paddingHorizontal: 35, 
+    paddingTop: '20%', // Reducido un poco para dar aire en pantallas pequeñas
+    alignItems: 'center' 
+  },
+  title: { 
+    fontSize: 48, // Ajustado de 55 para evitar desbordamientos en pantallas medianas
+    fontWeight: 'bold', 
+    color: COLORS.primary, 
+    textAlign: 'center', 
+    marginBottom: 50 
+  },
+  formContainer: { width: '100%', marginBottom: 30 },
+  input: { 
+    backgroundColor: COLORS.inputBackground, 
+    height: 55, 
+    borderRadius: 30, 
+    paddingHorizontal: 25, 
+    fontSize: 18, 
+    marginBottom: 15, 
+    color: COLORS.inputText 
+  },
+  passwordInputContainer: { 
+    flexDirection: 'row', 
+    backgroundColor: COLORS.inputBackground, 
+    height: 55, 
+    borderRadius: 30, 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    marginBottom: 15 
+  },
   passwordInput: { flex: 1, color: COLORS.inputText, fontSize: 18 },
   rememberRow: { flexDirection: 'row', alignItems: 'center', marginLeft: 10 },
-  checkbox: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#D4D4D4', marginRight: 10 },
+  checkbox: { 
+    width: 22, 
+    height: 22, 
+    borderRadius: 11, 
+    backgroundColor: '#D4D4D4', 
+    marginRight: 10 
+  },
   rememberText: { fontSize: 16, color: COLORS.primary, fontWeight: '600' },
   actionContainer: { width: '100%', alignItems: 'center' },
-  loginButton: { width: '100%', height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginVertical: 15 },
+  loginButton: { 
+    width: '100%', 
+    height: 60, 
+    borderRadius: 30, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginVertical: 15 
+  },
   loginButtonDisabled: { backgroundColor: COLORS.disabled },
   loginButtonEnabled: { backgroundColor: COLORS.primary },
-  loginButtonText: { color: COLORS.buttonLight, fontSize: 26, fontWeight: 'bold' },
+  loginButtonText: { color: COLORS.buttonLight, fontSize: 24, fontWeight: 'bold' },
   linkTextBase: { fontSize: 16, color: COLORS.primary, fontWeight: '500' },
   linkTextRed: { color: COLORS.error, fontWeight: 'bold' },
 });

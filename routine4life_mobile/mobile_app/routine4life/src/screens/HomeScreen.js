@@ -1,5 +1,13 @@
-import React, { useState } from 'react'; // Se agregó useState aquí
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  ScrollView, 
+  Platform 
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'; // Para un header dinámico
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
 import FilterModal from '../components/FilterModal';
@@ -14,21 +22,26 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* --- HEADER ESTÁTICO (No se mueve con el scroll) --- */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Ionicons name="menu" size={35} color={COLORS.primary} />
-        </TouchableOpacity>
-        
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoTextMain}>ROUTINE</Text>
-          <Text style={styles.logoTextSub}>4LIFE</Text>
-        </View>
+      {/* --- HEADER DINÁMICO --- */}
+      <SafeAreaView edges={['top']} style={styles.safeHeader}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            onPress={() => navigation.openDrawer()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="menu" size={35} color={COLORS.primary} />
+          </TouchableOpacity>
+          
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoTextMain}>ROUTINE</Text>
+            <Text style={styles.logoTextSub}>4LIFE</Text>
+          </View>
 
-        <TouchableOpacity onPress={() => handleNotImplemented('Perfil')}>
-          <Ionicons name="person-circle-outline" size={40} color={COLORS.primary} />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity onPress={() => handleNotImplemented('Perfil')}>
+            <Ionicons name="person-circle-outline" size={40} color={COLORS.primary} />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
       {/* --- CONTENIDO DESLIZABLE --- */}
       <ScrollView 
@@ -48,7 +61,11 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.toolLabel}>Gráfico</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.addButton} onPress={() => handleNotImplemented('Agregar registro')}>
+          <TouchableOpacity 
+            style={styles.addButton} 
+            onPress={() => handleNotImplemented('Agregar registro')}
+            activeOpacity={0.7}
+          >
             <Ionicons name="add" size={35} color={COLORS.buttonLight} />
           </TouchableOpacity>
         </View>
@@ -59,7 +76,7 @@ const HomeScreen = ({ navigation }) => {
           <Ionicons name="caret-down" size={20} color={COLORS.primary} />
         </TouchableOpacity>
 
-        {/* Gráfico (Simulando la imagen subida) */}
+        {/* Simulación de Gráfico */}
         <View style={styles.chartContainer}>
           <View style={styles.chartPlaceholder}>
              <View style={styles.barContainer}>
@@ -74,10 +91,11 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      {/* --- BOTÓN AZUL FIJO (Maletín Médico) --- */}
+      {/* --- BOTÓN MÉDICO (FAB) --- */}
       <TouchableOpacity 
         style={styles.fabMedical} 
         onPress={() => handleNotImplemented('Agendar cita')}
+        activeOpacity={0.8}
       >
         <MaterialCommunityIcons name="medical-bag" size={35} color={COLORS.buttonLight} />
         <View style={styles.plusBadge}>
@@ -96,49 +114,83 @@ const HomeScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    height: 110,
+  safeHeader: {
     backgroundColor: COLORS.background,
+    // Sombra sutil para separar el header del contenido al hacer scroll
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 2 },
+      android: { elevation: 4 },
+    }),
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 15,
-    zIndex: 10,
+    paddingVertical: 10,
   },
   logoContainer: { flexDirection: 'row', alignItems: 'center' },
-  logoTextMain: { fontSize: 28, fontWeight: 'bold', color: COLORS.primary },
-  logoTextSub: { fontSize: 28, fontWeight: 'bold', color: '#2E7D5E' },
+  logoTextMain: { fontSize: 24, fontWeight: 'bold', color: COLORS.primary },
+  logoTextSub: { fontSize: 24, fontWeight: 'bold', color: '#2E7D5E' },
   scrollContent: { paddingHorizontal: 25, paddingBottom: 120 },
-  mainTitle: { fontSize: 42, fontWeight: 'bold', color: COLORS.primary, textAlign: 'center', marginVertical: 30 },
-  toolsRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 30 },
+  mainTitle: { fontSize: 38, fontWeight: 'bold', color: COLORS.primary, textAlign: 'center', marginVertical: 20 },
+  toolsRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 25 },
   toolItem: { flexDirection: 'row', alignItems: 'center' },
-  toolLabel: { fontSize: 18, color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 },
-  addButton: { backgroundColor: COLORS.primary, width: 55, height: 55, borderRadius: 28, justifyContent: 'center', alignItems: 'center', elevation: 5 },
+  toolLabel: { fontSize: 16, color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 },
+  addButton: { 
+    backgroundColor: COLORS.primary, 
+    width: 50, 
+    height: 50, 
+    borderRadius: 25, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    elevation: 4
+  },
   selectionLabel: { fontSize: 18, color: COLORS.primary, textAlign: 'center', marginBottom: 10 },
-  selectorWrapper: { backgroundColor: COLORS.inputBackground, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 15, borderRadius: 30, marginBottom: 20 },
-  selectorText: { fontSize: 18, color: COLORS.primary, fontWeight: '500', marginRight: 10 },
-  chartContainer: { backgroundColor: '#FFFFFF', height: 320, borderRadius: 15, padding: 15, elevation: 3 },
-  chartPlaceholder: { flex: 1, borderLeftWidth: 2, borderBottomWidth: 2, borderColor: '#444' },
+  selectorWrapper: { 
+    backgroundColor: COLORS.inputBackground, 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    paddingVertical: 12, 
+    borderRadius: 30, 
+    marginBottom: 20 
+  },
+  selectorText: { fontSize: 17, color: COLORS.primary, fontWeight: '500', marginRight: 10 },
+  chartContainer: { 
+    backgroundColor: '#FFFFFF', 
+    height: 300, 
+    borderRadius: 15, 
+    padding: 15, 
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+      android: { elevation: 3 },
+    }),
+  },
+  chartPlaceholder: { flex: 1, borderLeftWidth: 1.5, borderBottomWidth: 1.5, borderColor: '#DDD' },
   barContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: '100%', paddingHorizontal: 5 },
-  bar: { width: '16%', borderTopLeftRadius: 4, borderTopRightRadius: 4, alignItems: 'center' },
-  barVal: { fontSize: 10, color: '#444', position: 'absolute', top: -15, fontWeight: 'bold' },
+  bar: { width: '15%', borderTopLeftRadius: 4, borderTopRightRadius: 4, alignItems: 'center' },
+  barVal: { fontSize: 10, color: '#666', position: 'absolute', top: -18, fontWeight: 'bold' },
   expandIcon: { position: 'absolute', bottom: 15, left: 15 },
   fabMedical: {
     position: 'absolute',
-    bottom: 40,
-    right: 30,
+    bottom: 30,
+    right: 25,
     backgroundColor: COLORS.primary,
-    width: 75,
-    height: 75,
-    borderRadius: 20,
+    width: 70,
+    height: 70,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 4 },
   },
   plusBadge: {
     position: 'absolute',
-    top: 25,
+    top: 22,
     backgroundColor: 'white',
     width: 16,
     height: 16,

@@ -1,11 +1,11 @@
-// App.js
-import React from 'react';
 import 'react-native-gesture-handler';
-import AppNavigator from './src/navigation/AppNavigator';
-
-// Si no estás usando Expo, asegúrate de que la navegación
-// esté configurada correctamente para la plataforma específica.
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AppNavigator from './src/navigation/AppNavigator'; // Tu archivo de rutas
 
 export default function App() {
-  return <AppNavigator />;
+  return (
+    <SafeAreaProvider>
+      <AppNavigator />
+    </SafeAreaProvider>
+  );
 }

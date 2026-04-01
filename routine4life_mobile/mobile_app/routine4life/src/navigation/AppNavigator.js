@@ -15,7 +15,6 @@ import CustomDrawer from '../components/CustomDrawer';
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
 
-// 1. Creamos el Drawer que contendrá el Home y las herramientas internas
 const AppDrawer = () => {
   return (
     <Drawer.Navigator
@@ -28,20 +27,33 @@ const AppDrawer = () => {
           width: '80%',
           borderTopRightRadius: 60,
           borderBottomRightRadius: 60,
+          // Añadimos esto para asegurar que el contenido respete el radio
+          overflow: 'hidden', 
         },
         overlayColor: 'rgba(0,0,0,0.5)',
+        // Importante para el rendimiento en Android/Expo Go
+        drawerHideStatusBarOnOpen: false, 
       }}
     >
-      <Drawer.Screen name="Home" component={HomeScreen} options={{ title: 'Mis registros' }} />
+      <Drawer.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ title: 'Mis registros' }} 
+      />
     </Drawer.Navigator>
   );
 };
 
-// 2. Creamos el Stack Principal que maneja las pantallas "sueltas" y envuelve al Drawer
 const AppNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
+      {/* Usamos detachPreviousScreen en false solo si notas parpadeos, 
+          pero por defecto la config actual es óptima. 
+      */}
+      <Stack.Navigator 
+        screenOptions={{ headerShown: false }} 
+        initialRouteName="Login"
+      >
         {/* Flujo de Autenticación */}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
@@ -49,7 +61,7 @@ const AppNavigator = () => {
         <Stack.Screen name="RecoverPasswordStep1" component={RecoverPasswordStep1Screen} />
         <Stack.Screen name="RecoverPasswordStep2" component={RecoverPasswordStep2Screen} />
         
-        {/* Flujo Interno de la App (Protegido) */}
+        {/* Flujo Interno de la App */}
         <Stack.Screen name="AppDrawer" component={AppDrawer} />
       </Stack.Navigator>
     </NavigationContainer>

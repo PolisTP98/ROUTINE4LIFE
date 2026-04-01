@@ -1,40 +1,56 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Text, StyleSheet, Platform, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../styles/theme';
 
+const { width } = Dimensions.get('window');
+
 const SuccessToast = ({ visible, message, onHide }) => {
-  const slideAnim = useRef(new Animated.Value(-150)).current;
+  const insets = useSafeAreaInsets();
+  const slideAnim = useRef(new Animated.Value(-200)).current;
+  const [shouldRender, setShouldRender] = useState(visible);
+
+  // El Toast aparecerá justo debajo del notch/status bar
+  const TOP_POSITION = Platform.OS === 'ios' ? insets.top + 10 : 20;
 
   useEffect(() => {
     if (visible) {
-      Animated.timing(slideAnim, {
-        toValue: 50,
-        duration: 500,
+      setShouldRender(true);
+      Animated.spring(slideAnim, {
+        toValue: TOP_POSITION,
+        friction: 8,
+        tension: 40,
         useNativeDriver: true,
       }).start();
 
       const timer = setTimeout(() => {
-        hideToast();
-      }, 5000);
+        handleHide();
+      }, 4000); // 4 segundos es el estándar ideal
 
       return () => clearTimeout(timer);
     }
   }, [visible]);
 
-  const hideToast = () => {
+  const handleHide = () => {
     Animated.timing(slideAnim, {
-      toValue: -150,
-      duration: 500,
+      toValue: -200,
+      duration: 400,
       useNativeDriver: true,
     }).start(() => {
+      setShouldRender(false);
       if (onHide) onHide();
     });
   };
 
-  if (!visible && slideAnim._value === -150) return null;
+  if (!shouldRender) return null;
 
   return (
-    <Animated.View style={[styles.toast, { transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View 
+      style={[
+        styles.toast, 
+        { transform: [{ translateY: slideAnim }] }
+      ]}
+    >
       <Text style={styles.text}>{message}</Text>
     </Animated.View>
   );
@@ -43,23 +59,31 @@ const SuccessToast = ({ visible, message, onHide }) => {
 const styles = StyleSheet.create({
   toast: {
     position: 'absolute',
-    top: 0,
-    left: '5%',
-    right: '5%',
-    backgroundColor: COLORS.success, // #2E7D5E
-    paddingVertical: 20,
+    left: width * 0.05,
+    right: width * 0.05,
+    backgroundColor: COLORS.success,
+    paddingVertical: 18,
     paddingHorizontal: 25,
-    borderRadius: 40,
-    zIndex: 999,
+    borderRadius: 35,
+    zIndex: 9999, // Máxima prioridad visual
     elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
-  text: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
+  text: { 
+    color: '#FFFFFF', 
+    fontSize: 17, 
+    fontWeight: 'bold', 
+    textAlign: 'center',
+    letterSpacing: 0.5
+  },
 });
 
 export default SuccessToast;

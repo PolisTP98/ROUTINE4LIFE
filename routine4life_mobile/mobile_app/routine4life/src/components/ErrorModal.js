@@ -1,7 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Modal, 
+  TouchableOpacity, 
+  Dimensions,
+  Platform 
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
+
+const { width } = Dimensions.get('window');
 
 const ErrorModal = ({ visible, message, onClose }) => {
   return (
@@ -10,17 +20,20 @@ const ErrorModal = ({ visible, message, onClose }) => {
       transparent={true} 
       visible={visible}
       onRequestClose={onClose}
+      statusBarTranslucent={true} // Hace que el overlay cubra también la barra de estado en Android
     >
       <View style={styles.overlay}>
         <View style={styles.modalCard}>
-          {/* Icono de advertencia en rojo error */}
-          <Ionicons name="alert-circle" size={65} color={COLORS.error} />
+          {/* Icono de advertencia - Usamos alert-circle para consistencia visual */}
+          <View style={styles.iconContainer}>
+            <Ionicons name="alert-circle" size={80} color={COLORS.error} />
+          </View>
           
           <Text style={styles.title}>Error</Text>
           
           <Text style={styles.message}>{message}</Text>
 
-          {/* Botón Aceptar siempre en rojo error */}
+          {/* Botón Aceptar */}
           <TouchableOpacity 
             style={styles.button} 
             onPress={onClose}
@@ -37,47 +50,65 @@ const ErrorModal = ({ visible, message, onClose }) => {
 const styles = StyleSheet.create({
   overlay: { 
     flex: 1, 
-    backgroundColor: 'rgba(0,0,0,0.6)', 
+    backgroundColor: 'rgba(30, 58, 95, 0.7)', // Usamos tu azul primario con transparencia para el fondo
     justifyContent: 'center', 
-    alignItems: 'center' 
+    alignItems: 'center',
+    paddingHorizontal: 20
   },
   modalCard: { 
-    width: '85%', 
-    backgroundColor: '#FAF7F2', 
-    borderRadius: 45, // Bordes muy redondeados según tus capturas
-    padding: 30, 
+    width: width * 0.85, 
+    backgroundColor: COLORS.buttonLight, // Tu color crema #FAF7F2
+    borderRadius: 45, 
+    paddingTop: 40,
+    paddingBottom: 30,
+    paddingHorizontal: 25, 
     alignItems: 'center', 
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 15,
+      },
+      android: {
+        elevation: 20,
+      },
+    }),
+  },
+  iconContainer: {
+    marginBottom: 10,
   },
   title: { 
-    fontSize: 30, 
+    fontSize: 32, 
     fontWeight: 'bold', 
     color: COLORS.error, 
-    marginVertical: 10 
+    marginBottom: 15 
   },
   message: { 
     fontSize: 18, 
-    color: COLORS.primary, // Azul marino para el texto del mensaje
+    color: COLORS.primary, 
     textAlign: 'center', 
-    marginBottom: 30, 
+    marginBottom: 35, 
     fontWeight: '500',
-    lineHeight: 24
+    lineHeight: 26
   },
   button: { 
     width: '100%', 
-    height: 60, 
+    height: 65, 
     backgroundColor: COLORS.error, 
-    borderRadius: 30, 
+    borderRadius: 35, 
     justifyContent: 'center', 
-    alignItems: 'center' 
+    alignItems: 'center',
+    // Sombra interna o inferior para el botón
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5
   },
   buttonText: { 
     color: 'white', 
-    fontSize: 22, 
+    fontSize: 24, 
     fontWeight: 'bold' 
   },
 });
