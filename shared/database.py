@@ -5,8 +5,19 @@ import logging
 from dotenv import load_dotenv
 import urllib.parse
 
-
 load_dotenv()
+
+server   = os.getenv("DB_SERVER")
+database = os.getenv("DB_NAME")
+user     = os.getenv("DB_USER")
+password = os.getenv("DB_PASSWORD")
+driver   = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
+
+DATABASE_URL = (
+    f"mssql+pyodbc://{user}:{password}@{server}/{database}"
+    f"?driver={driver.replace(' ', '+')}"
+)
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

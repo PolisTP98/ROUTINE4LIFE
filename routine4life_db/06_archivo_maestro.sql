@@ -109,7 +109,40 @@ GO
 ALTER ROLE db_owner ADD MEMBER appuser;
 GO
 
+------------------ nuevas para ejecutar
+
+SELECT name 
+FROM sys.sql_logins 
+WHERE name = 'appuser';
 
 
 SET MULTI_USER;
 GO
+
+USE routine4life;
+GO
+
+CREATE USER appuser FOR LOGIN appuser;
+GO
+
+ALTER ROLE db_owner ADD MEMBER appuser;
+GO
+
+
+SELECT u.id_usuario, m.email, u.contrasena
+FROM r4l.usuarios u
+JOIN r4l.medicos m ON u.id_medico = m.id_medico;
+
+
+
+
+SELECT * FROM r4l.sexos;
+SELECT * FROM r4l.paises;
+SELECT * FROM r4l.roles_usuarios;
+SELECT * FROM r4l.estatus_usuarios;
+SELECT * FROM r4l.especialidades_medicas;
+
+
+SELECT u.id_usuario, m.email, u.contrasena
+FROM r4l.usuarios u
+JOIN r4l.medicos m ON u.id_medico = m.id_medico;
