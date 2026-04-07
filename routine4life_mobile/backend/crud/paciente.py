@@ -135,3 +135,6 @@ def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
     db.refresh(nuevo_usuario)
     
     return nuevo_usuario
+
+def obtener_sexos(db: Session):
+    return db.query(models.sexos).all()

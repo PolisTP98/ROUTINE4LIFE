@@ -7,17 +7,21 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform, 
-  ScrollView 
+  ScrollView,
+  ActivityIndicator
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; // Importante para SDK 54
+import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
 import SuccessToast from '../components/SuccessToast';
+import { API_URL } from '../api/config';
 
 const LoginScreen = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -37,8 +41,44 @@ const LoginScreen = ({ navigation, route }) => {
 
   const isButtonEnabled = email.trim().length > 0 && password.trim().length > 0;
 
+  const handleLogin = async () => {
+    setErrorMessage('');
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setErrorMessage('Por favor, ingresa un correo electrónico válido.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth-movil/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          contrasena: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        navigation.replace('Main', { id_paciente: data.id_paciente }); 
+      } else {
+        const errorMsg = typeof data.detail === 'string' ? data.detail : 'Correo o contraseña incorrectos.';
+        setErrorMessage(errorMsg);
+      }
+    } catch (error) {
+      setErrorMessage('Error de conexión. Verifica tu red o el servidor.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    // SafeAreaView asegura que el contenido no choque con la barra de estado
     <SafeAreaView style={styles.container}>
       <SuccessToast 
         visible={showToast} 
@@ -48,12 +88,12 @@ const LoginScreen = ({ navigation, route }) => {
 
       <KeyboardAvoidingView 
         style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined} // En Android suele ser mejor dejarlo undefined o usar 'height'
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView 
           contentContainerStyle={styles.scrollContainer} 
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled" // Permite tocar botones mientras el teclado está abierto
+          keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>Iniciar sesión</Text>
           
@@ -63,7 +103,10 @@ const LoginScreen = ({ navigation, route }) => {
               placeholder="Correo electrónico"
               placeholderTextColor={COLORS.inputText + '70'}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setErrorMessage('');
+              }}
               autoCapitalize="none"
               keyboardType="email-address"
             />
@@ -74,13 +117,16 @@ const LoginScreen = ({ navigation, route }) => {
                 placeholder="Contraseña"
                 placeholderTextColor={COLORS.inputText + '70'}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrorMessage('');
+                }}
                 secureTextEntry={secureTextEntry}
               />
               <TouchableOpacity onPress={() => setSecureTextEntry(!secureTextEntry)}>
                 <Ionicons 
                   name={secureTextEntry ? 'eye-outline' : 'eye-off-outline'} 
-                  size={24} // Un poco más pequeño para mejor balance visual
+                  size={24} 
                   color={COLORS.primary} 
                 />
               </TouchableOpacity>
@@ -103,16 +149,24 @@ const LoginScreen = ({ navigation, route }) => {
               </Text>
             </Text>
 
+            {errorMessage !== '' && (
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            )}
+
             <TouchableOpacity
               style={[
                 styles.loginButton, 
-                isButtonEnabled ? styles.loginButtonEnabled : styles.loginButtonDisabled
+                isButtonEnabled && !isLoading ? styles.loginButtonEnabled : styles.loginButtonDisabled
               ]}
-              onPress={() => navigation.replace('Main')}
-              disabled={!isButtonEnabled}
+              onPress={handleLogin}
+              disabled={!isButtonEnabled || isLoading}
               activeOpacity={0.8}
             >
-              <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+              {isLoading ? (
+                <ActivityIndicator color={COLORS.buttonLight} size="large" />
+              ) : (
+                <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+              )}
             </TouchableOpacity>
 
             <Text style={styles.linkTextBase}>
@@ -136,11 +190,11 @@ const styles = StyleSheet.create({
   scrollContainer: { 
     flexGrow: 1, 
     paddingHorizontal: 35, 
-    paddingTop: '20%', // Reducido un poco para dar aire en pantallas pequeñas
+    paddingTop: '20%', 
     alignItems: 'center' 
   },
   title: { 
-    fontSize: 48, // Ajustado de 55 para evitar desbordamientos en pantallas medianas
+    fontSize: 48, 
     fontWeight: 'bold', 
     color: COLORS.primary, 
     textAlign: 'center', 
@@ -176,6 +230,14 @@ const styles = StyleSheet.create({
   },
   rememberText: { fontSize: 16, color: COLORS.primary, fontWeight: '600' },
   actionContainer: { width: '100%', alignItems: 'center' },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 15,
+    textAlign: 'center',
+    paddingHorizontal: 10,
+  },
   loginButton: { 
     width: '100%', 
     height: 60, 

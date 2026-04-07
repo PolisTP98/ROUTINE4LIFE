@@ -1,36 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   TouchableOpacity, 
   ScrollView, 
-  Platform 
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
 import FilterModal from '../components/FilterModal';
+import { API_URL } from '../api/config'; 
 
-// NOTA: Ya no necesitas importar CustomDrawer aquí, 
-// el DrawerNavigator se encarga de renderizarlo.
-
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
   
+  const [consultas, setConsultas] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const id_paciente = route.params?.id_paciente || 1; 
+
+  useEffect(() => {
+    obtenerDatosDelPaciente();
+  }, []);
+
+  const obtenerDatosDelPaciente = async () => {
+    try {
+      const response = await fetch(`${API_URL}/auth-movil/${id_paciente}/consultas`);
+      const data = await response.json();
+
+      if (response.ok) {
+        const consultasConPeso = data.filter(c => c.peso != null).slice(0, 5);
+        setConsultas(consultasConPeso);
+      } else {
+        console.log("Error al cargar consultas:", data.detail);
+      }
+    } catch (error) {
+      console.error("Error de red al cargar Home:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleNotImplemented = (feature) => alert(`${feature} próximamente disponible`);
   
   const handleFilterApply = (data) => {
     console.log("Filtros aplicados:", data);
   };
 
+  const renderBars = () => {
+    if (consultas.length === 0) {
+      return <Text style={{textAlign: 'center', marginTop: 100, color: '#666'}}>No hay registros de peso aún.</Text>;
+    }
+
+    const maxPeso = Math.max(...consultas.map(c => parseFloat(c.peso)));
+    const colores = ['#E5B382', '#C44545', '#2E7D5E', '#4DA6A6', '#D68251'];
+
+    return consultas.map((consulta, index) => {
+      // Regla de 3 para que la barra más alta llegue al 90% del contenedor
+      const heightPercent = maxPeso > 0 ? (parseFloat(consulta.peso) / maxPeso) * 90 : 0; 
+      
+      return (
+        <View key={consulta.id_consulta} style={[styles.bar, { height: `${heightPercent}%`, backgroundColor: colores[index % colores.length] }]}>
+          <Text style={styles.barVal}>{consulta.peso}</Text>
+        </View>
+      );
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* --- HEADER --- */}
       <View style={styles.safeHeader}>
         <View style={styles.headerContent}>
-          {/* BOTÓN DEL MENÚ CORREGIDO */}
           <TouchableOpacity 
             onPress={() => navigation.openDrawer()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -43,14 +87,12 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.logoTextSub}>4LIFE</Text>
           </View>
 
-          {/* Puedes hacer que este también abra el menú o vaya a Profile */}
           <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
             <Ionicons name="person-circle-outline" size={40} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* --- CONTENIDO DESLIZABLE --- */}
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -83,22 +125,21 @@ const HomeScreen = ({ navigation }) => {
           <Ionicons name="caret-down" size={20} color={COLORS.primary} />
         </TouchableOpacity>
 
-        {/* Simulación de Gráfico */}
+        {/* Gráfico Dinámico */}
         <View style={styles.chartContainer}>
           <View style={styles.chartPlaceholder}>
-             <View style={styles.barContainer}>
-                <View style={[styles.bar, {height: '80%', backgroundColor: '#E5B382'}]}><Text style={styles.barVal}>100</Text></View>
-                <View style={[styles.bar, {height: '75%', backgroundColor: '#C44545'}]}><Text style={styles.barVal}>96</Text></View>
-                <View style={[styles.bar, {height: '60%', backgroundColor: '#2E7D5E'}]}><Text style={styles.barVal}>80</Text></View>
-                <View style={[styles.bar, {height: '70%', backgroundColor: '#4DA6A6'}]}><Text style={styles.barVal}>93</Text></View>
-                <View style={[styles.bar, {height: '55%', backgroundColor: '#D68251'}]}><Text style={styles.barVal}>77</Text></View>
-             </View>
+             {isLoading ? (
+               <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 100 }} />
+             ) : (
+               <View style={styles.barContainer}>
+                 {renderBars()}
+               </View>
+             )}
           </View>
           <Ionicons name="expand-outline" size={24} color={COLORS.primary} style={styles.expandIcon} />
         </View>
       </ScrollView>
 
-      {/* --- BOTÓN MÉDICO (FAB) --- */}
       <TouchableOpacity 
         style={[styles.fabMedical, { bottom: Math.max(16, insets.bottom + 8) }]} 
         onPress={() => handleNotImplemented('Agendar cita')}
@@ -123,7 +164,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   safeHeader: {
     backgroundColor: COLORS.background,
-    // Sombra sutil para separar el header del contenido al hacer scroll
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 2 },
       android: { elevation: 4 },

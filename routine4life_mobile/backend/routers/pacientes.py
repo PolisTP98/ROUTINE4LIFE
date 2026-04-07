@@ -59,6 +59,18 @@ def obtener_horarios_disponibles(id_medico: int, db: Session = Depends(get_db)):
         
     return horarios
 
+@router.get("/sexos", response_model=List[schemas.SexoResponse])
+def obtener_lista_sexos(db: Session = Depends(get_db)):
+    sexos = crud.obtener_sexos(db=db)
+    
+    if not sexos:
+        raise HTTPException(
+            status_code=404, 
+            detail="No se encontraron registros de sexo en la base de datos."
+        )
+        
+    return sexos
+
 @router.post("/citas", response_model=schemas.CitaResponse)
 def agendar_cita(cita: schemas.CitaCreate, db: Session = Depends(get_db)):
     try:
