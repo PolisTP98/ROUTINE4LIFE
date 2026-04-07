@@ -108,7 +108,7 @@ const LoginScreen = ({ navigation, route }) => {
                 styles.loginButton, 
                 isButtonEnabled ? styles.loginButtonEnabled : styles.loginButtonDisabled
               ]}
-              onPress={() => navigation.replace('Home')}
+              onPress={() => navigation.replace('Main')}
               disabled={!isButtonEnabled}
               activeOpacity={0.8}
             >

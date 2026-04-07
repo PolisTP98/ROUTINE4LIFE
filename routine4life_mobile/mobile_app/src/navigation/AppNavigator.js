@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createDrawerNavigator } from '@react-navigation/drawer'; // 1. Importar Drawer
+import { createDrawerNavigator } from '@react-navigation/drawer';
 
 // Importación de pantallas y componentes
 import HomeScreen from '../screens/HomeScreen';
@@ -11,13 +11,13 @@ import RegisterPasswordScreen from '../screens/RegisterPasswordScreen';
 import RecoverPasswordStep1Screen from '../screens/RecoverPasswordStep1Screen';
 import RecoverPasswordStep2Screen from '../screens/RecoverPasswordStep2Screen';
 
-// 2. Importar tu componente personalizado
+// Importar tu componente personalizado
 import CustomDrawer from '../components/CustomDrawer'; 
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
 
-// --- NUEVO: Navegador Lateral ---
+// --- Navegador Lateral (Drawer) ---
 const DrawerNavigator = () => {
   return (
     <Drawer.Navigator
@@ -27,10 +27,11 @@ const DrawerNavigator = () => {
         drawerStyle: { width: '80%' },
       }}
     >
-      <Drawer.Screen name="HomeScreen" component={HomeScreen} />
-      {/* Aquí puedes agregar más pantallas que deban tener el menú lateral,
-         por ejemplo: Drawer.Screen name="Profile" component={ProfileScreen} 
-      */}
+      {/* 1. HomeScreen DEBE estar aquí adentro para tener acceso al menú */}
+      <Drawer.Screen name="Home" component={HomeScreen} />
+      
+      {/* Si creas ProfileScreen u otras, agrégalas aquí abajo */}
+      {/* <Drawer.Screen name="Profile" component={ProfileScreen} /> */}
     </Drawer.Navigator>
   );
 };
@@ -50,8 +51,11 @@ const AppNavigator = () => {
         <Stack.Screen name="RecoverPasswordStep1" component={RecoverPasswordStep1Screen} />
         <Stack.Screen name="RecoverPasswordStep2" component={RecoverPasswordStep2Screen} />
         
-        {/* 3. Flujo Interno: Reemplazamos HomeScreen por el DrawerNavigator */}
-        <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
+        {/* 2. Reemplazamos el componente de la pantalla por el DrawerNavigator */}
+        {/* Nota: Le cambié el nombre a "Main" en el Stack para evitar conflictos 
+            con el "Home" que ahora vive dentro del Drawer. Al hacer login, 
+            deberás navegar hacia "Main". */}
+        <Stack.Screen name="Main" component={DrawerNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
   );

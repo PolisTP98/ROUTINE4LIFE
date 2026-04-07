@@ -3,7 +3,7 @@
     "name": "routine4life",
     "slug": "routine4life",
     "version": "1.0.0",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "jsEngine": "jsc", 
     "android": {
       "jsEngine": "jsc"

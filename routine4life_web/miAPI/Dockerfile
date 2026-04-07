@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copiamos el requirements que está en la carpeta padre (routine4life_web)
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
 
 # Exponemos el puerto 8080 para que no choque con el 8000 de la app móvil
 EXPOSE 8080

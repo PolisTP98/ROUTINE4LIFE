@@ -110,7 +110,7 @@ def crear_registro_paciente(db: Session, registro: schemas.RegistroPacienteCreat
     
     db.add(nuevo_registro)
     db.commit()
-    db.refresh(nuevo_registro) # SQL Server nos devuelve el id_registro generado
+    db.refresh(nuevo_registro) 
     
     return nuevo_registro
 
@@ -126,8 +126,8 @@ def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
         id_rol=usuario.id_rol,
         id_medico=usuario.id_medico,
         id_paciente=usuario.id_paciente,
-        contrasena=obtener_hash_contrasena(usuario.contrasena), # Encriptamos antes de guardar
-        fecha_registro=date.today() # Generamos la fecha del servidor
+        contrasena=obtener_hash_contrasena(usuario.contrasena), 
+        fecha_registro=date.today() 
     )
     
     db.add(nuevo_usuario)

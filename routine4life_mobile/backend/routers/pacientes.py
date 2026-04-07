@@ -137,7 +137,7 @@ def guardar_registro_medico(registro: schemas.RegistroPacienteCreate, db: Sessio
         nuevo_registro = crud.crear_registro_paciente(db=db, registro=registro)
         return nuevo_registro
     except Exception as e:
-        db.rollback() # Protegemos la base de datos si algo sale mal
+        db.rollback() 
         raise HTTPException(
             status_code=400, 
             detail=f"Error al guardar el registro. Verifica que el paciente y el tipo de registro existan. Detalle: {str(e)}"
@@ -145,7 +145,6 @@ def guardar_registro_medico(registro: schemas.RegistroPacienteCreate, db: Sessio
         
 @router.post("/crear-cuenta", response_model=schemas.UsuarioResponse)
 def registrar_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
-    # 1. Validar que no manden todo vacío
     if not usuario.id_paciente and not usuario.id_medico:
         raise HTTPException(
             status_code=400, 
