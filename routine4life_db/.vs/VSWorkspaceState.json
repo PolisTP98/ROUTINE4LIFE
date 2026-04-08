@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\01_base_de_datos"
   ],
-  "SelectedNode": "\\06_archivo_maestro.sql",
+  "SelectedNode": "\\01_base_de_datos\\01_eliminar.sql",
   "PreviewInSolutionExplorer": false
 }

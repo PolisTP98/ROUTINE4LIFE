@@ -20,22 +20,48 @@ services:
     restart: unless-stopped
 
   # ----------------------------
+  # | BASE DE DATOS (SQL SERVER)|
+  # ----------------------------
+  sql_server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: db_r4life
+    ports:
+      - "14333:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Routine4Life_2026!
+    networks:
+      - app_network
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: unless-stopped
+
+  # ----------------------------
   # | BACKEND WEB (FLASK)      |
   # ----------------------------
   flask_api:
     build:
-      context: "./routine4life_web" 
-      dockerfile: dockerfile 
+      context: .
+      dockerfile: routine4life_web/dockerfile
     container_name: api_r4life
     ports:
-      - "5050:5000" 
-    env_file:               
-      - .env                 
+      - "5050:5000"
+    env_file:
+      - .env
     networks:
       - app_network
     volumes:
-      - "./routine4life_web:/app" 
-      - "./shared:/app/shared"
+      - ./routine4life_web:/app
+      - ./shared:/app/shared
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - sql_server
 
   # ----------------------------
   # | API DE LA WEB (miAPI)    |
@@ -53,10 +79,11 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - app_network
-    # --- CAMBIO AQUÍ ---
     volumes:
       - "./routine4life_web:/app" 
       - "./shared:/app/shared"
+    depends_on:
+      - sql_server
 
   # ----------------------------
   # | BACKEND MÓVIL (FASTAPI)  |
@@ -75,6 +102,8 @@ services:
     networks:
       - app_network
     restart: unless-stopped
+    depends_on:
+      - sql_server
 
 networks:
   app_network:

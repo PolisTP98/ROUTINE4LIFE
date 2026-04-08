@@ -1,8 +1,6 @@
-# miAPI/main.py
 import sys
 import os
 
-# Agregar la carpeta ROUTINE4LIFE al path
 project_folder = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if project_folder not in sys.path:
     sys.path.insert(0, project_folder)

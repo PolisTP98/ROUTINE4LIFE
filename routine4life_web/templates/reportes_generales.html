@@ -2,73 +2,240 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reportes Generales - Routine4Life</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
-        h1 { color: #2c3e50; margin-bottom: 20px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 20px 0; }
-        .card { background: #f8f9fa; padding: 20px; text-align: center; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .card h3 { color: #2c3e50; margin-bottom: 10px; }
-        .number { font-size: 36px; font-weight: bold; color: #3498db; }
-        .btn { display: inline-block; padding: 8px 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; margin-bottom: 20px; }
-        .consultas-list { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; }
-        .consultas-list h3 { margin-bottom: 10px; }
-        .consultas-list ul { list-style: none; padding: 0; }
-        .consultas-list li { padding: 8px 0; border-bottom: 1px solid #ddd; }
-        .flash { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
-        .flash-success { background: #d4edda; color: #155724; }
-        .flash-danger { background: #f8d7da; color: #721c24; }
-        .flash-info { background: #d1ecf1; color: #0c5460; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes Generales | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-    <div class="container">
-        <h1>Reportes Generales</h1>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn">← Volver al Dashboard</a>
+<body class="dashboard-body">
+    <!-- Header (igual que el resto del sistema) -->
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clínico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas fa-chart-line"></i> Reportes</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </header>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <div class="dashboard-container">
+        <!-- Botón volver -->
+        <div style="margin-bottom: 1.5rem;">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
 
-        <div class="stats-grid">
-            <div class="card">
-                <h3>Medicos</h3>
-                <div class="number">{{ total_medicos }}</div>
+        <!-- Título -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h1 style="font-size: 1.8rem; color: #1e293b;">
+                <i class="fas fa-chart-line" style="color: #667eea;"></i> Reportes Generales
+            </h1>
+        </div>
+
+        <!-- Tarjetas de estadísticas -->
+        <div class="stats-cards">
+            <div class="stat-card-white">
+                <div class="stat-header">
+                    <span class="stat-title">Médicos</span>
+                    <div class="stat-icon"><i class="fas fa-user-md"></i></div>
+                </div>
+                <div class="stat-value">{{ total_medicos }}</div>
+                <div class="stat-change">Activos en el sistema</div>
             </div>
-            <div class="card">
-                <h3>Enfermeros</h3>
-                <div class="number">{{ total_enfermeros }}</div>
+            <div class="stat-card-white">
+                <div class="stat-header">
+                    <span class="stat-title">Pacientes</span>
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                </div>
+                <div class="stat-value">{{ total_pacientes }}</div>
+                <div class="stat-change">Registrados totales</div>
             </div>
-            <div class="card">
-                <h3>Recepcionistas</h3>
-                <div class="number">{{ total_recepcionistas }}</div>
+            <div class="stat-card-white">
+                <div class="stat-header">
+                    <span class="stat-title">Consultas</span>
+                    <div class="stat-icon"><i class="fas fa-stethoscope"></i></div>
+                </div>
+                <div class="stat-value">{{ total_consultas }}</div>
+                <div class="stat-change">Histórico de atenciones</div>
             </div>
-            <div class="card">
-                <h3>Pacientes</h3>
-                <div class="number">{{ total_pacientes }}</div>
+            <div class="stat-card-white">
+                <div class="stat-header">
+                    <span class="stat-title">Reportes PDF</span>
+                    <div class="stat-icon"><i class="fas fa-file-pdf"></i></div>
+                </div>
+                <div class="stat-value"></div>
+                <div class="stat-change">Usa el formulario para generar</div>
             </div>
         </div>
 
-        <div class="card" style="margin-top: 20px;">
-            <h3>Total de Consultas</h3>
-            <div class="number">{{ total_consultas }}</div>
+        <!-- Formulario de generación de reporte PDF -->
+        <div class="form-container" style="margin-bottom: 2rem;">
+            <h3><i class="fas fa-filter"></i> Generar Reporte Imprimible</h3>
+            <form method="GET" action="{{ url_for('generar_reporte') }}" class="form-row" style="gap: 1rem; align-items: flex-end;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Tipo de reporte</label>
+                    <select name="tipo_reporte" required class="input">
+                        <option value="">Seleccione...</option>
+                        <option value="pacientes_medico">Pacientes por Médico</option>
+                        <option value="consultas_fecha">Consultas por Fecha</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Médico (opcional)</label>
+                    <select name="medico_id" class="input">
+                        <option value="">Todos</option>
+                        {% for medico in medicos %}
+                        <option value="{{ medico.id_medico }}">{{ medico.datos_personales.nombre_completo if medico.datos_personales else medico.email }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Fecha inicio</label>
+                    <input type="date" name="fecha_inicio" class="input">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Fecha fin</label>
+                    <input type="date" name="fecha_fin" class="input">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" style="background: #ef4444;">
+                        <i class="fas fa-file-pdf"></i> Generar PDF
+                    </button>
+                </div>
+            </form>
+            <small class="help-text"><i class="fas fa-info-circle"></i> El PDF se abrirá en una nueva ventana lista para imprimir (sin elementos del dashboard).</small>
         </div>
 
-        {% if consultas_por_mes %}
-        <div class="consultas-list">
-            <h3>Consultas por Mes</h3>
-            <ul>
-                {% for mes in consultas_por_mes %}
-                <li>{{ mes.mes }}: {{ mes.total }} consultas</li>
-                {% endfor %}
-            </ul>
+        <!-- Gráficas -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-chart-line"></i> Consultas por Mes
+                </div>
+                <div class="chart-container">
+                    <canvas id="consultasChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-chart-pie"></i> Pacientes por Tipo de Diabetes
+                </div>
+                <div class="chart-container">
+                    <canvas id="diabetesChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-venus-mars"></i> Distribución por Sexo
+                </div>
+                <div class="chart-container">
+                    <canvas id="sexoChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="fas fa-trophy"></i> Top 5 Médicos con más Consultas
+                </div>
+                <div class="table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr><th>Médico</th><th>Consultas</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for medico in top_medicos %}
+                            <tr><td>{{ medico[1] }}</td><td>{{ medico[2] }}</td></tr>
+                            {% else %}
+                            <tr><td colspan="2">Sin datos</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-        {% endif %}
+
+        <!-- Tabla de consultas por mes (ya existente) -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="fas fa-calendar-alt"></i> Resumen mensual de consultas</h3>
+            </div>
+            <div class="table-wrapper">
+                <table class="modern-table">
+                    <thead>
+                        <tr><th>Mes</th><th>Total consultas</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for mes in consultas_por_mes %}
+                        <tr><td>{{ mes.mes }}</td><td>{{ mes.total }}</td></tr>
+                        {% else %}
+                        <tr><td colspan="2">No hay datos</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clínico para Diabetes</p>
+        <p>&copy; 2026 - Todos los derechos reservados</p>
+    </footer>
+
+    <script>
+        // Gráfica de consultas por mes
+        const ctx1 = document.getElementById('consultasChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: {{ consultas_por_mes | map(attribute='mes') | list | tojson }},
+                datasets: [{
+                    label: 'Consultas',
+                    data: {{ consultas_por_mes | map(attribute='total') | list | tojson }},
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102,126,234,0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+
+        // Gráfica de diabetes
+        const ctx2 = document.getElementById('diabetesChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'pie',
+            data: {
+                labels: {{ labels_diabetes | tojson }},
+                datasets: [{
+                    data: {{ data_diabetes | tojson }},
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        // Gráfica de sexo
+        const ctx3 = document.getElementById('sexoChart').getContext('2d');
+        new Chart(ctx3, {
+            type: 'doughnut',
+            data: {
+                labels: {{ labels_sexo | tojson }},
+                datasets: [{
+                    data: {{ data_sexo | tojson }},
+                    backgroundColor: ['#ec489a', '#3b82f6']
+                }]
+            }
+        });
+    </script>
 </body>
 </html>

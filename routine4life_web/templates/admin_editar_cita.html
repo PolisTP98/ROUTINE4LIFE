@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Cita | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="dashboard-body">
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clínico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas fa-shield-alt"></i> Administrador</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <div class="form-container" style="max-width: 600px;">
+            <h1><i class="fas fa-edit"></i> Editar Cita</h1>
+            <p class="form-subtitle">Modifica la información de la cita seleccionada</p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Tarjeta de información del paciente y médico -->
+            <div class="info-card" style="background: #f8fafc; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border-left: 4px solid #3b82f6;">
+                <p style="margin-bottom: 0.5rem;"><strong><i class="fas fa-user"></i> Paciente:</strong> {{ cita.paciente_nombre }}</p>
+                <p><strong><i class="fas fa-user-md"></i> Médico:</strong> {{ cita.medico_nombre }}</p>
+            </div>
+            
+            <form method="POST" id="citaForm" novalidate>
+                <div class="form-row">
+                    <div class="form-group" id="fechaGroup">
+                        <label>Fecha <span class="required-star">*</span></label>
+                        <input type="date" name="fecha" id="fecha" value="{{ cita.fecha.strftime('%Y-%m-%d') if cita.fecha else '' }}" min="{{ now_date.strftime('%Y-%m-%d') }}">
+                        <div class="field-message" id="fechaMessage"></div>
+                    </div>
+                    <div class="form-group" id="horaGroup">
+                        <label>Hora <span class="required-star">*</span></label>
+                        <input type="time" name="hora" id="hora" value="{{ cita.hora.strftime('%H:%M') if cita.hora else '' }}">
+                        <div class="field-message" id="horaMessage"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Estado de la cita</label>
+                    <select name="id_estatus_cita" id="id_estatus_cita">
+                        {% for estatus in estatus_citas %}
+                        <option value="{{ estatus.id }}" {% if cita.id_estatus_cita == estatus.id %}selected{% endif %}>{{ estatus.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="help-text"><i class="fas fa-info-circle"></i> </small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Motivo de la consulta</label>
+                    <textarea name="motivo" id="motivo" rows="3" placeholder="Ejemplo: Control de glucosa, revisión trimestral, síntomas nuevos...">{{ cita.motivo or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Notas adicionales</label>
+                    <textarea name="notas" id="notas" rows="2" placeholder="Información adicional para el médico...">{{ cita.notas or '' }}</textarea>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Guardar Cambios</button>
+                    <a href="{{ url_for('admin_gestionar_citas') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clínico para Diabetes</p>
+        <p>© 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <script>
+        const form = document.getElementById('citaForm');
+        const fechaInput = document.getElementById('fecha');
+        const horaInput = document.getElementById('hora');
+        const submitBtn = document.getElementById('submitBtn');
+        const fechaMessage = document.getElementById('fechaMessage');
+        const horaMessage = document.getElementById('horaMessage');
+        
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        function showFieldError(inputElement, messageElement, message) {
+            messageElement.innerHTML = message;
+            messageElement.className = 'field-message error';
+            inputElement.classList.add('field-error');
+            inputElement.classList.remove('field-success');
+        }
+        
+        function clearFieldError(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error');
+            inputElement.classList.add('field-success');
+        }
+        
+        function validateFecha() {
+            const fecha = fechaInput.value;
+            if (fecha === '') {
+                showFieldError(fechaInput, fechaMessage, 'Por favor, selecciona una fecha');
+                return false;
+            }
+            if (fecha < hoy) {
+                showFieldError(fechaInput, fechaMessage, 'No se pueden programar citas en fechas pasadas');
+                return false;
+            }
+            clearFieldError(fechaInput, fechaMessage);
+            return true;
+        }
+        
+        function validateHora() {
+            const hora = horaInput.value;
+            if (hora === '') {
+                showFieldError(horaInput, horaMessage, 'Por favor, selecciona una hora');
+                return false;
+            }
+            clearFieldError(horaInput, horaMessage);
+            return true;
+        }
+        
+        fechaInput.addEventListener('input', validateFecha);
+        horaInput.addEventListener('input', validateHora);
+        
+        fechaInput.addEventListener('blur', validateFecha);
+        horaInput.addEventListener('blur', validateHora);
+        
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const isFechaValid = validateFecha();
+            const isHoraValid = validateHora();
+            
+            if (!isFechaValid || !isHoraValid) {
+                return false;
+            }
+            
+            submitBtn.classList.add('loading');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando cambios...';
+            submitBtn.disabled = true;
+            
+            this.submit();
+        });
+        
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { 
+                            if(flash && flash.parentElement) flash.remove(); 
+                        }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
+</body>
+</html>

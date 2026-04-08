@@ -2,120 +2,360 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registrar Paciente - Routine4Life</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Paciente | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="dashboard-body">
+    <!-- Header Moderno sin boton de salir -->
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas {{ 'fa-shield-alt' if current_user.id_rol == 1 else 'fa-stethoscope' }}"></i> {{ 'Administrador' if current_user.id_rol == 1 else 'Medico Especialista' }}</div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <div class="form-container">
+            <h1><i class="fas fa-user-plus"></i> Registrar Nuevo Paciente</h1>
+            <p class="form-subtitle">Los campos marcados con <span class="required-star">*</span> son obligatorios</p>
+            
+            <!-- Mensajes Flash -->
+            <div class="flash-messages" id="flashMessagesContainer">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% elif category == 'warning' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+            
+            <form method="POST" id="pacienteForm" novalidate>
+                <div class="form-group" id="nombreGroup">
+                    <label>Nombre completo <span class="required-star">*</span></label>
+                    <input type="text" name="nombre_completo" id="nombre_completo" placeholder="Ejemplo: Maria Gonzalez Lopez" value="{{ request.form.get('nombre_completo', '') }}">
+                    <div class="field-message" id="nombreMessage"></div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" id="fechaGroup">
+                        <label>Fecha de nacimiento <span class="required-star">*</span></label>
+                        <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" value="{{ request.form.get('fecha_nacimiento', '') }}">
+                        <div class="field-message" id="fechaMessage"></div>
+                        <small class="help-text"><i class="fas fa-info-circle"></i> Fecha de nacimiento del paciente</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Edad calculada</label>
+                        <input type="text" id="edad_calculada" readonly placeholder="-- anos" class="bg-light">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" id="sexoGroup">
+                        <label>Sexo <span class="required-star">*</span></label>
+                        <select name="id_sexo" id="id_sexo">
+                            <option value="">Seleccione...</option>
+                            {% for sexo in sexos %}
+                            <option value="{{ sexo.id_sexo }}" {% if request.form.get('id_sexo')|int == sexo.id_sexo %}selected{% endif %}>{{ sexo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="field-message" id="sexoMessage"></div>
+                    </div>
+                    <div class="form-group" id="diabetesGroup">
+                        <label>Tipo de diabetes</label>
+                        <select name="id_tipo_diabetes" id="id_tipo_diabetes">
+                            <option value="">No especificado / En diagnostico</option>
+                            {% for tipo in tipos_diabetes %}
+                            <option value="{{ tipo.id_tipo_diabetes }}" {% if request.form.get('id_tipo_diabetes')|int == tipo.id_tipo_diabetes %}selected{% endif %}>{{ tipo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="help-text"><i class="fas fa-syringe"></i> Seleccione si ya tiene diagnostico</small>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Registrar Paciente</button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2025 - Todos los derechos reservados</p>
+    </footer>
+    
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
+        .bg-light {
+            background-color: #f8fafc;
         }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        label {
+        
+        .field-message {
+            font-size: 0.7rem;
+            margin-top: 0.25rem;
             display: block;
-            margin-top: 15px;
-            font-weight: bold;
-            color: #34495e;
         }
-        input, select {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
+        
+        .field-message.error {
+            color: #ef4444;
         }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            margin-top: 20px;
-            margin-right: 10px;
-            text-decoration: none;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
+        
+        .field-error {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2;
         }
-        .btn-guardar {
-            background: #27ae60;
-            color: white;
+        
+        .field-success {
+            border-color: #10b981 !important;
+            background-color: #ecfdf5;
         }
-        .btn-cancelar {
-            background: #e74c3c;
-            color: white;
+        
+        .btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
-        .flash {
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-        }
-        .flash-success {
-            background: #d4edda;
-            color: #155724;
-        }
-        .flash-danger {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .help-text {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
+        
+        .help-text i {
+            margin-right: 0.25rem;
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Registrar Nuevo Paciente</h1>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form method="POST">
-            <label>Nombre completo:</label>
-            <input type="text" name="nombre_completo" placeholder="Ingrese nombre completo" required>
-
-            <label>Fecha de nacimiento:</label>
-            <input type="date" name="fecha_nacimiento" required>
-
-            <label>Sexo:</label>
-            <select name="id_sexo" required>
-                <option value="">Seleccione...</option>
-                {% for sexo in sexos %}
-                <option value="{{ sexo.id_sexo }}">{{ sexo.nombre }}</option>
-                {% endfor %}
-            </select>
-
-            <label>Tipo de diabetes:</label>
-            <select name="id_tipo_diabetes">
-                <option value="">Seleccione...</option>
-                {% for tipo in tipos_diabetes %}
-                <option value="{{ tipo.id_tipo_diabetes }}">{{ tipo.nombre }}</option>
-                {% endfor %}
-            </select>
-
-            <div class="help-text">El codigo del paciente se generara automaticamente.</div>
-
-            <div>
-                <button type="submit" class="btn btn-guardar">Registrar Paciente</button>
-                <a href="{{ url_for('medico_dashboard') }}" class="btn btn-cancelar">Cancelar</a>
-            </div>
-        </form>
-    </div>
+    
+    <script>
+        // Obtener elementos del DOM
+        const form = document.getElementById('pacienteForm');
+        const nombreInput = document.getElementById('nombre_completo');
+        const fechaInput = document.getElementById('fecha_nacimiento');
+        const sexoSelect = document.getElementById('id_sexo');
+        const edadInput = document.getElementById('edad_calculada');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        const nombreMessage = document.getElementById('nombreMessage');
+        const fechaMessage = document.getElementById('fechaMessage');
+        const sexoMessage = document.getElementById('sexoMessage');
+        
+        // Funciones de utilidad
+        function showFieldError(inputElement, messageElement, message) {
+            messageElement.innerHTML = message;
+            messageElement.className = 'field-message error';
+            inputElement.classList.add('field-error');
+            inputElement.classList.remove('field-success');
+        }
+        
+        function clearFieldError(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error');
+            inputElement.classList.add('field-success');
+        }
+        
+        function resetField(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error', 'field-success');
+        }
+        
+        // Calcular edad
+        function calcularEdad(fecha) {
+            if (!fecha) return null;
+            const hoy = new Date();
+            const nacimiento = new Date(fecha);
+            let edad = hoy.getFullYear() - nacimiento.getFullYear();
+            const mes = hoy.getMonth() - nacimiento.getMonth();
+            if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+                edad--;
+            }
+            return edad;
+        }
+        
+        // Validar nombre
+        function validateNombre() {
+            const nombre = nombreInput.value.trim();
+            
+            if (nombre === '') {
+                showFieldError(nombreInput, nombreMessage, 'Por favor, ingresa el nombre completo del paciente');
+                return false;
+            }
+            
+            if (nombre.length < 3) {
+                showFieldError(nombreInput, nombreMessage, 'El nombre debe tener al menos 3 caracteres');
+                return false;
+            }
+            
+            clearFieldError(nombreInput, nombreMessage);
+            return true;
+        }
+        
+        // Validar fecha de nacimiento (sin limite de edad)
+        function validateFecha() {
+            const fecha = fechaInput.value;
+            
+            if (fecha === '') {
+                showFieldError(fechaInput, fechaMessage, 'Por favor, selecciona la fecha de nacimiento');
+                return false;
+            }
+            
+            const edad = calcularEdad(fecha);
+            if (edad === null) {
+                showFieldError(fechaInput, fechaMessage, 'Fecha de nacimiento invalida');
+                return false;
+            }
+            
+            const hoy = new Date();
+            const fechaNac = new Date(fecha);
+            if (fechaNac > hoy) {
+                showFieldError(fechaInput, fechaMessage, 'La fecha de nacimiento no puede ser futura');
+                return false;
+            }
+            
+            edadInput.value = edad + ' anos';
+            clearFieldError(fechaInput, fechaMessage);
+            return true;
+        }
+        
+        // Validar sexo
+        function validateSexo() {
+            const sexo = sexoSelect.value;
+            
+            if (sexo === '') {
+                showFieldError(sexoSelect, sexoMessage, 'Por favor, selecciona el sexo del paciente');
+                return false;
+            }
+            
+            clearFieldError(sexoSelect, sexoMessage);
+            return true;
+        }
+        
+        // Eventos en tiempo real
+        nombreInput.addEventListener('input', function() {
+            const nombre = this.value.trim();
+            if (nombre === '') {
+                showFieldError(this, nombreMessage, 'Por favor, ingresa el nombre completo del paciente');
+            } else if (nombre.length < 3) {
+                showFieldError(this, nombreMessage, 'El nombre debe tener al menos 3 caracteres');
+            } else {
+                clearFieldError(this, nombreMessage);
+            }
+        });
+        
+        fechaInput.addEventListener('input', function() {
+            const fecha = this.value;
+            if (fecha === '') {
+                showFieldError(this, fechaMessage, 'Por favor, selecciona la fecha de nacimiento');
+                edadInput.value = '-- anos';
+            } else {
+                const edad = calcularEdad(fecha);
+                if (edad !== null) {
+                    edadInput.value = edad + ' anos';
+                    const hoy = new Date();
+                    const fechaNac = new Date(fecha);
+                    
+                    if (fechaNac > hoy) {
+                        showFieldError(this, fechaMessage, 'La fecha de nacimiento no puede ser futura');
+                    } else {
+                        clearFieldError(this, fechaMessage);
+                    }
+                }
+            }
+        });
+        
+        sexoSelect.addEventListener('change', function() {
+            if (this.value === '') {
+                showFieldError(this, sexoMessage, 'Por favor, selecciona el sexo del paciente');
+            } else {
+                clearFieldError(this, sexoMessage);
+            }
+        });
+        
+        // Validacion al perder el foco
+        nombreInput.addEventListener('blur', validateNombre);
+        fechaInput.addEventListener('blur', validateFecha);
+        sexoSelect.addEventListener('blur', validateSexo);
+        
+        // Validacion al hacer focus
+        nombreInput.addEventListener('focus', function() {
+            if (this.value.trim() === '') {
+                resetField(this, nombreMessage);
+            }
+        });
+        
+        fechaInput.addEventListener('focus', function() {
+            if (this.value === '') {
+                resetField(this, fechaMessage);
+            }
+        });
+        
+        sexoSelect.addEventListener('focus', function() {
+            if (this.value === '') {
+                resetField(this, sexoMessage);
+            }
+        });
+        
+        // Validacion inicial
+        window.addEventListener('DOMContentLoaded', function() {
+            if (nombreInput.value.trim() !== '') validateNombre();
+            if (fechaInput.value !== '') validateFecha();
+            if (sexoSelect.value !== '') validateSexo();
+        });
+        
+        // Envio del formulario
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const isNombreValid = validateNombre();
+            const isFechaValid = validateFecha();
+            const isSexoValid = validateSexo();
+            
+            if (!isNombreValid || !isFechaValid || !isSexoValid) {
+                let firstError = null;
+                if (!isNombreValid) firstError = nombreInput;
+                else if (!isFechaValid) firstError = fechaInput;
+                else if (!isSexoValid) firstError = sexoSelect;
+                
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+                return false;
+            }
+            
+            submitBtn.classList.add('loading');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando paciente...';
+            submitBtn.disabled = true;
+            
+            this.submit();
+        });
+        
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { 
+                            if(flash && flash.parentElement) flash.remove(); 
+                        }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

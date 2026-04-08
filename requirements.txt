@@ -5,3 +5,6 @@ pydantic
 pyodbc
 python-dotenv
 passlib[bcrypt]
+flask
+flask-cors
+flask-login

@@ -1,67 +1,534 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <title>Login - Sistema Médico</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <title>Login - ROUTINE4LIFE</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilos adicionales solo para mensajes personalizados */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        
+        .flash {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .flash-success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        
+        .flash-error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .flash-warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        
+        .flash-info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+        
+        /* Estilos para mensajes de validación por campo */
+        .field-error {
+            border-color: #dc3545 !important;
+            background-color: #fff8f8;
+        }
+        
+        .field-success {
+            border-color: #28a745 !important;
+            background-color: #f0fff4;
+        }
+        
+        .field-message {
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .field-message.error {
+            color: #dc3545;
+        }
+        
+        /* Estado de carga del botón */
+        .btn-login.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+            position: relative;
+        }
+        
+        .btn-login.loading::after {
+            content: "";
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-left: 8px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* Mejoras visuales */
+        .login-card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Mejora en el botón */
+        .btn-login {
+            transition: all 0.3s ease;
+        }
+        
+        .btn-login:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Enlaces */
+        .login-links a, .register-link a {
+            transition: color 0.2s ease;
+        }
+        
+        .login-links a:hover, .register-link a:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+        
+        /* Prevenir autocompletado visual */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px white inset !important;
+            box-shadow: 0 0 0 30px white inset !important;
+        }
+
+        body.login-page {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                        url('{{ url_for('static', filename='img/fondo_login.avif') }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Tarjeta de login más elegante y con fondo blanco translúcido */
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 24px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s;
+        }
+
+        .login-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Ajuste del área del logo para que combine con el fondo */
+        .login-logo-area {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 35px 30px;
+            text-align: center;
+            color: white;
+        }
+
+        /* Opcional: si quieres que el logo tenga sombra */
+        .logo-container img {
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+
+        /* Pequeña mejora en los inputs */
+        .input-group input {
+            background: rgba(255,255,255,0.9);
+            border: 1px solid #cbd5e1;
+        }
+
+        .input-group input:focus {
+            background: white;
+            border-color: #667eea;
+        }
+    </style>
 </head>
 
-<body>
+<body class="login-page">
 
-    <center>
+    <div class="login-card">
 
-        <h1>Sistema Médico</h1>
+        <!-- HEADER -->
+        <div class="login-logo-area">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Routine4Life">
+            </div>
 
-        <h2>Iniciar Sesión</h2>
+            <h1 class="system-title">
+                Routine4Life
+            </h1>
 
-        <!-- Mostrar mensajes flash (errores, éxito) -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}" style="padding: 10px; margin: 10px; border-radius: 5px; 
-                        {% if category == 'success' %}background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;
-                        {% elif category == 'danger' %}background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
-                        {% elif category == 'warning' %}background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
-                        {% else %}background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;
-                        {% endif %}">
-                        {{ message }}
+            <div class="system-subtitle">
+                Sistema de Control Clínico para Diabetes
+            </div>
+
+        </div>
+
+        <!-- BODY -->
+        <div class="login-body">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                {% endif %}
+            {% endwith %}
 
-        <!-- FORMULARIO DE LOGIN - CON METHOD POST -->
-        <form method="POST" action="{{ url_for('login') }}">
-            <table>
-                <tr>
-                    <td>Usuario o correo:</td>
-                    <td><input type="email" name="email" placeholder="Ingrese su correo electrónico" required></td>
-                </tr>
+            <form method="POST" action="{{ url_for('login') }}" class="login-form" id="loginForm" novalidate autocomplete="off">
+                <div class="input-group" id="emailGroup">
+                    <label>Correo electrónico</label>
+                    <input type="email" name="email" id="email" placeholder="tu@correo.com" autocomplete="off" value="">
+                    <div class="field-message" id="emailMessage"></div>
+                </div>
 
-                <tr>
-                    <td>Contraseña:</td>
-                    <td><input type="password" name="password" placeholder="Ingrese su contraseña" required></td>
-                </tr>
+                <div class="input-group" id="passwordGroup">
+                    <label>Contraseña</label>
+                    <input type="password" name="password" id="password" placeholder="••••••••" autocomplete="off">
+                    <div class="field-message" id="passwordMessage"></div>
+                </div>
 
-            </table>
+                <button type="submit" class="btn-login" id="loginBtn">
+                    Iniciar Sesión
+                </button>
+            </form>
 
-            <br>
+            <div class="login-links">
+                <a href="{{ url_for('recuperar_contrasena') }}">¿Olvidaste tu contraseña?</a>
+            </div>
 
-            <button type="submit">Iniciar Sesión</button>
+            <div class="register-link">
+                ¿No tienes cuenta? <a href="#" id="contactAdmin">Contacta al administrador</a>
+            </div>
 
-        </form>
+        </div>
 
-        <br>
+    </div>
 
-        <a href="{{ url_for('recuperar_contrasena') }}">¿Olvidaste tu contraseña?</a>
-
-        <br><br>
-
-        <p>¿No tienes cuenta?Contacta al administrador para que te registre.</p>
-
-    </center>
-
+    <script>
+        // Limpiar campos automáticamente al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Limpiar los campos de forma explícita
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            
+            if (emailInput) emailInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+            
+            // También limpiar cualquier mensaje flash después de un tiempo
+            setTimeout(() => {
+                const flashes = document.querySelectorAll('.flash');
+                flashes.forEach(flash => {
+                    setTimeout(() => {
+                        if (flash && flash.remove) flash.remove();
+                    }, 5000);
+                });
+            }, 100);
+        });
+        
+        // Obtener elementos del DOM
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const emailMessage = document.getElementById('emailMessage');
+        const passwordMessage = document.getElementById('passwordMessage');
+        
+        // Función para validar email
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        // Función para mostrar mensaje de error en campo
+        function showFieldError(inputElement, messageElement, message) {
+            messageElement.innerHTML = message;
+            messageElement.className = 'field-message error';
+            inputElement.classList.add('field-error');
+            inputElement.classList.remove('field-success');
+        }
+        
+        // Función para limpiar mensajes de error y mostrar éxito (solo borde verde)
+        function clearFieldError(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error');
+            inputElement.classList.add('field-success');
+        }
+        
+        // Función para resetear campo (sin éxito ni error)
+        function resetField(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error', 'field-success');
+        }
+        
+        // Validar campo email
+        function validateEmailField() {
+            const email = emailInput.value.trim();
+            
+            if (email === '') {
+                showFieldError(emailInput, emailMessage, 'Por favor, ingresa tu correo electrónico');
+                return false;
+            }
+            
+            if (!isValidEmail(email)) {
+                showFieldError(emailInput, emailMessage, 'El correo electrónico no es válido. Ejemplo: usuario@dominio.com');
+                return false;
+            }
+            
+            // Campo válido - solo borde verde, sin mensaje
+            clearFieldError(emailInput, emailMessage);
+            return true;
+        }
+        
+        // Validar campo contraseña
+        function validatePasswordField() {
+            const password = passwordInput.value;
+            
+            if (password === '') {
+                showFieldError(passwordInput, passwordMessage, 'Por favor, ingresa tu contraseña');
+                return false;
+            }
+            
+            if (password.length < 6) {
+                showFieldError(passwordInput, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
+                return false;
+            }
+            
+            // Campo válido - solo borde verde, sin mensaje
+            clearFieldError(passwordInput, passwordMessage);
+            return true;
+        }
+        
+        // Validación en tiempo real para el campo email
+        emailInput.addEventListener('input', function() {
+            const email = this.value.trim();
+            
+            if (email === '') {
+                showFieldError(this, emailMessage, 'Por favor, ingresa tu correo electrónico');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                showFieldError(this, emailMessage, 'Por favor, ingresa un correo electrónico válido (ejemplo: usuario@dominio.com)');
+            } else {
+                // Formato válido - solo borde verde, sin mensaje
+                clearFieldError(this, emailMessage);
+            }
+        });
+        
+        // Validación en tiempo real para la contraseña
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            
+            if (password === '') {
+                showFieldError(this, passwordMessage, 'Por favor, ingresa tu contraseña');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showFieldError(this, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
+            } else {
+                // Contraseña válida - solo borde verde, sin mensaje
+                clearFieldError(this, passwordMessage);
+            }
+        });
+        
+        // Validación al perder el foco
+        emailInput.addEventListener('blur', function() {
+            const email = this.value.trim();
+            if (email === '') {
+                showFieldError(this, emailMessage, 'Por favor, ingresa tu correo electrónico');
+            } else if (!isValidEmail(email)) {
+                showFieldError(this, emailMessage, 'El correo electrónico no es válido. Ejemplo: usuario@dominio.com');
+            } else if (email !== '') {
+                clearFieldError(this, emailMessage);
+            }
+        });
+        
+        passwordInput.addEventListener('blur', function() {
+            const password = this.value;
+            if (password === '') {
+                showFieldError(this, passwordMessage, 'Por favor, ingresa tu contraseña');
+            } else if (password.length < 6) {
+                showFieldError(this, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
+            } else if (password !== '') {
+                clearFieldError(this, passwordMessage);
+            }
+        });
+        
+        // Validación al hacer focus (resetear visualización pero mantener validación si hay valor)
+        emailInput.addEventListener('focus', function() {
+            if (this.value.trim() !== '') {
+                // Si ya tiene valor, validar nuevamente
+                const email = this.value.trim();
+                if (!isValidEmail(email)) {
+                    showFieldError(this, emailMessage, 'El correo electrónico no es válido. Ejemplo: usuario@dominio.com');
+                } else {
+                    clearFieldError(this, emailMessage);
+                }
+            } else {
+                resetField(this, emailMessage);
+            }
+        });
+        
+        passwordInput.addEventListener('focus', function() {
+            if (this.value !== '') {
+                const password = this.value;
+                if (password.length < 6) {
+                    showFieldError(this, passwordMessage, 'La contraseña debe tener al menos 6 caracteres');
+                } else {
+                    clearFieldError(this, passwordMessage);
+                }
+            } else {
+                resetField(this, passwordMessage);
+            }
+        });
+        
+        // Validación antes de enviar el formulario
+        form.addEventListener('submit', function(e) {
+            // Validar ambos campos
+            const isEmailValid = validateEmailField();
+            const isPasswordValid = validatePasswordField();
+            
+            // Si hay errores, prevenir envío
+            if (!isEmailValid || !isPasswordValid) {
+                e.preventDefault();
+                // Enfocar el primer campo con error
+                if (!isEmailValid) {
+                    emailInput.focus();
+                } else if (!isPasswordValid) {
+                    passwordInput.focus();
+                }
+                return false;
+            }
+            
+            // Si todo está bien, mostrar estado de carga
+            loginBtn.classList.add('loading');
+            loginBtn.textContent = 'Verificando credenciales...';
+            loginBtn.disabled = true;
+            
+            // El formulario se enviará normalmente
+            return true;
+        });
+        
+        // Contacto con administrador
+        const contactLink = document.getElementById('contactAdmin');
+        if (contactLink) {
+            contactLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Mostrar mensaje de contacto en el área de flash messages
+                const contactMsg = document.createElement('div');
+                contactMsg.className = 'flash flash-info';
+                contactMsg.innerHTML = `
+                    <strong>Contacto Administrador:</strong><br>
+                    Email: administracion@routine4life.com<br>
+                `;
+                
+                // Insertar al inicio del contenedor de flash messages
+                const flashContainer = document.querySelector('.flash-messages');
+                if (flashContainer) {
+                    flashContainer.insertBefore(contactMsg, flashContainer.firstChild);
+                } else {
+                    const loginBody = document.querySelector('.login-body');
+                    loginBody.insertBefore(contactMsg, loginBody.firstChild);
+                }
+                
+                // Auto-eliminar después de 8 segundos
+                setTimeout(() => {
+                    if (contactMsg && contactMsg.remove) contactMsg.remove();
+                }, 8000);
+            });
+        }
+        
+        // Prevenir envío doble del formulario
+        let submitted = false;
+        form.addEventListener('submit', function() {
+            if (submitted) {
+                return false;
+            }
+            submitted = true;
+            return true;
+        });
+    </script>
 </body>
-
 </html>

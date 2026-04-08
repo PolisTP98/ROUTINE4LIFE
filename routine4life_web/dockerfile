@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Instalar dependencias del sistema y el driver de SQL Server (ODBC 18)
+# Instalar dependencias del sistema y el driver de SQL Server (ODBC 17)
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg2 \
@@ -17,9 +17,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
 
 EXPOSE 5000

@@ -2,188 +2,444 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nueva Consulta - Routine4Life</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Consulta | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="dashboard-body">
+    <!-- Header sin boton de salir -->
+    <header class="dashboard-header">
+        <div class="dashboard-logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clinico para Diabetes</p>
+            </div>
+        </div>
+        <div class="dashboard-user">
+            <div class="user-welcome">
+                <div class="user-name">{{ current_user.nombre_completo or current_user.email }}</div>
+                <div class="user-role-badge"><i class="fas fa-stethoscope"></i> Medico Especialista</div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="dashboard-container">
+        <div class="form-container" style="max-width: 800px;">
+            <h1><i class="fas fa-notes-medical"></i> Nueva Consulta Medica</h1>
+            <p class="form-subtitle"><strong>Paciente:</strong> {{ paciente.nombre_completo }} <span class="help-text">(Codigo: {{ paciente.codigo }})</span></p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" id="consultaForm" novalidate>
+                <h3 class="section-title" style="font-size: 18px; margin-bottom: 20px;"><i class="fas fa-heartbeat"></i> Signos Vitales</h3>
+                <div class="form-row">
+                    <div class="form-group" id="pesoGroup">
+                        <label>Peso (kg) <span class="required-star">*</span></label>
+                        <input type="number" step="0.1" name="peso" id="peso" placeholder="Ej: 70.5" value="{{ request.form.get('peso', '') }}">
+                        <div class="field-message" id="pesoMessage"></div>
+                    </div>
+                    <div class="form-group" id="alturaGroup">
+                        <label>Altura (cm) <span class="required-star">*</span></label>
+                        <input type="number" name="altura" id="altura" placeholder="Ej: 170" value="{{ request.form.get('altura', '') }}">
+                        <div class="field-message" id="alturaMessage"></div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" id="sistolicaGroup">
+                        <label>Presion sistolica (mmHg) <span class="required-star">*</span></label>
+                        <input type="number" name="presion_sistolica" id="presion_sistolica" placeholder="Ej: 120" value="{{ request.form.get('presion_sistolica', '') }}">
+                        <div class="field-message" id="sistolicaMessage"></div>
+                    </div>
+                    <div class="form-group" id="diastolicaGroup">
+                        <label>Presion diastolica (mmHg) <span class="required-star">*</span></label>
+                        <input type="number" name="presion_diastolica" id="presion_diastolica" placeholder="Ej: 80" value="{{ request.form.get('presion_diastolica', '') }}">
+                        <div class="field-message" id="diastolicaMessage"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group" id="frecuenciaGroup">
+                    <label>Frecuencia cardiaca (lpm)</label>
+                    <input type="number" name="frecuencia_cardiaca" id="frecuencia_cardiaca" placeholder="Ej: 72" value="{{ request.form.get('frecuencia_cardiaca', '') }}">
+                    <div class="field-message" id="frecuenciaMessage"></div>
+                    <small class="help-text">Latidos por minuto (opcional)</small>
+                </div>
+                
+                <h3 class="section-title" style="font-size: 18px; margin: 24px 0 20px;"><i class="fas fa-tint"></i> Niveles de Glucosa</h3>
+                <div class="form-row">
+                    <div class="form-group" id="glucosaAyunasGroup">
+                        <label>Glucosa en ayunas (mg/dL) <span class="required-star">*</span></label>
+                        <input type="number" step="0.1" name="glucosa_ayunas" id="glucosa_ayunas" placeholder="Ej: 95" value="{{ request.form.get('glucosa_ayunas', '') }}">
+                        <div class="field-message" id="glucosaAyunasMessage"></div>
+                    </div>
+                    <div class="form-group" id="glucosaPostGroup">
+                        <label>Glucosa postprandial (mg/dL)</label>
+                        <input type="number" step="0.1" name="glucosa_postprandial" id="glucosa_postprandial" placeholder="Ej: 140" value="{{ request.form.get('glucosa_postprandial', '') }}">
+                        <div class="field-message" id="glucosaPostMessage"></div>
+                        <small class="help-text">Opcional</small>
+                    </div>
+                </div>
+                
+                <div class="form-group" id="hbGroup">
+                    <label>Hemoglobina glicosilada (%) <span class="required-star">*</span></label>
+                    <input type="number" step="0.1" name="hemoglobina_glicosilada" id="hemoglobina_glicosilada" placeholder="Ej: 5.7" value="{{ request.form.get('hemoglobina_glicosilada', '') }}">
+                    <div class="field-message" id="hbMessage"></div>
+                    <small class="help-text">Valor objetivo: menor a 7%</small>
+                </div>
+                
+                <h3 class="section-title" style="font-size: 18px; margin: 24px 0 20px;"><i class="fas fa-flask"></i> Estudios de Laboratorio (Opcional)</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Colesterol total (mg/dL)</label>
+                        <input type="number" step="0.1" name="colesterol_total" placeholder="Ej: 180" value="{{ request.form.get('colesterol_total', '') }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Trigliceridos (mg/dL)</label>
+                        <input type="number" step="0.1" name="trigliceridos" placeholder="Ej: 150" value="{{ request.form.get('trigliceridos', '') }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Nivel de insulina (µU/mL)</label>
+                    <input type="number" step="0.1" name="nivel_insulina" placeholder="Ej: 10.5" value="{{ request.form.get('nivel_insulina', '') }}">
+                </div>
+                
+                <h3 class="section-title" style="font-size: 18px; margin: 24px 0 20px;"><i class="fas fa-head-side-medical"></i> Sintomas</h3>
+                <div class="sintomas-grid">
+                    {% for sintoma in sintomas %}
+                    <div class="sintoma-item">
+                        <input type="checkbox" name="sintomas" value="{{ sintoma.id_sintoma_diabetes }}" id="sintoma_{{ sintoma.id_sintoma_diabetes }}">
+                        <label for="sintoma_{{ sintoma.id_sintoma_diabetes }}">{{ sintoma.nombre }}</label>
+                        <input type="number" name="intensidad_{{ sintoma.id_sintoma_diabetes }}" placeholder="Intensidad 1-10" min="1" max="10" style="width: 100px;">
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="form-group">
+                    <label>Notas adicionales</label>
+                    <textarea name="notas" rows="3" placeholder="Observaciones de la consulta...">{{ request.form.get('notas', '') }}</textarea>
+                </div>
+                
+                <div class="form-group" id="tratamientoGroup">
+                    <label>Plan de tratamiento <span class="required-star">*</span></label>
+                    <textarea name="plan_tratamiento" id="plan_tratamiento" rows="3" placeholder="Indicaciones, medicamentos, cambios en el estilo de vida...">{{ request.form.get('plan_tratamiento', '') }}</textarea>
+                    <div class="field-message" id="tratamientoMessage"></div>
+                    <small class="help-text">Especifique el tratamiento recomendado</small>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Guardar Consulta</button>
+                    <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="dashboard-footer">
+        <p>Routine4Life - Sistema de Control Clinico para Diabetes</p>
+        <p>&copy; 2026 - Todos los derechos reservados</p>
+    </footer>
+    
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        h2 {
-            color: #3498db;
-            margin: 20px 0 15px 0;
-            font-size: 18px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-            color: #34495e;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 10px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            margin-top: 20px;
-            margin-right: 10px;
-            text-decoration: none;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-guardar {
-            background: #27ae60;
-            color: white;
-        }
-        .btn-cancelar {
-            background: #e74c3c;
-            color: white;
-        }
-        .flash {
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-        }
-        .flash-success {
-            background: #d4edda;
-            color: #155724;
-        }
-        .flash-danger {
-            background: #f8d7da;
-            color: #721c24;
-        }
         .sintomas-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
+        
         .sintoma-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 0.8rem;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border-radius: 10px;
         }
+        
         .sintoma-item input[type="checkbox"] {
-            width: auto;
-            margin: 0;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
+        
         .sintoma-item label {
+            flex: 1;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.85rem;
             margin: 0;
-            font-weight: normal;
         }
-        hr {
-            margin: 20px 0;
+        
+        .sintoma-item input[type="number"] {
+            width: 90px;
+            padding: 0.3rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .sintomas-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Nueva Consulta Médica</h1>
-        <p><strong>Paciente:</strong> {{ paciente.nombre_completo }}</p>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form method="POST">
-            <h2>Signos Vitales</h2>
-            <div class="form-row">
-                <div>
-                    <label>Peso (kg):</label>
-                    <input type="number" step="0.1" name="peso" placeholder="Ej: 70.5">
-                </div>
-                <div>
-                    <label>Altura (cm):</label>
-                    <input type="number" name="altura" placeholder="Ej: 170">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div>
-                    <label>Presión sistólica (mmHg):</label>
-                    <input type="number" name="presion_sistolica" placeholder="Ej: 120">
-                </div>
-                <div>
-                    <label>Presión diastólica (mmHg):</label>
-                    <input type="number" name="presion_diastolica" placeholder="Ej: 80">
-                </div>
-            </div>
-
-            <h2>Niveles de Glucosa</h2>
-            <div class="form-row">
-                <div>
-                    <label>Glucosa en ayunas (mg/dL):</label>
-                    <input type="number" step="0.1" name="glucosa_ayunas" placeholder="Ej: 95">
-                </div>
-                <div>
-                    <label>Glucosa postprandial (mg/dL):</label>
-                    <input type="number" step="0.1" name="glucosa_postprandial" placeholder="Ej: 140">
-                </div>
-            </div>
-
-            <div>
-                <label>Hemoglobina glicosilada (%):</label>
-                <input type="number" step="0.1" name="hemoglobina_glicosilada" placeholder="Ej: 5.7">
-            </div>
-
-            <h2>Síntomas</h2>
-            <div class="sintomas-grid">
-                {% for sintoma in sintomas %}
-                <div class="sintoma-item">
-                    <input type="checkbox" name="sintomas" value="{{ sintoma.id_sintoma_diabetes }}" id="sintoma_{{ sintoma.id_sintoma_diabetes }}">
-                    <label for="sintoma_{{ sintoma.id_sintoma_diabetes }}">{{ sintoma.nombre }}</label>
-                    <input type="number" name="intensidad_{{ sintoma.id_sintoma_diabetes }}" placeholder="Intensidad (1-10)" style="width: 80px;">
-                </div>
-                {% endfor %}
-            </div>
-
-            <div>
-                <label>Notas adicionales:</label>
-                <textarea name="notas" rows="3" placeholder="Observaciones de la consulta..."></textarea>
-            </div>
-
-            <div>
-                <label>Plan de tratamiento:</label>
-                <textarea name="plan_tratamiento" rows="3" placeholder="Indicaciones, medicamentos, etc..."></textarea>
-            </div>
-
-            <div>
-                <button type="submit" class="btn btn-guardar">Guardar Consulta</button>
-                <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="btn btn-cancelar">Cancelar</a>
-            </div>
-        </form>
-    </div>
+    
+    <script>
+        // Obtener elementos del DOM
+        const form = document.getElementById('consultaForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Campos obligatorios
+        const pesoInput = document.getElementById('peso');
+        const alturaInput = document.getElementById('altura');
+        const sistolicaInput = document.getElementById('presion_sistolica');
+        const diastolicaInput = document.getElementById('presion_diastolica');
+        const glucosaAyunasInput = document.getElementById('glucosa_ayunas');
+        const hbInput = document.getElementById('hemoglobina_glicosilada');
+        const tratamientoInput = document.getElementById('plan_tratamiento');
+        
+        // Elementos de mensajes
+        const pesoMessage = document.getElementById('pesoMessage');
+        const alturaMessage = document.getElementById('alturaMessage');
+        const sistolicaMessage = document.getElementById('sistolicaMessage');
+        const diastolicaMessage = document.getElementById('diastolicaMessage');
+        const frecuenciaMessage = document.getElementById('frecuenciaMessage');
+        const glucosaAyunasMessage = document.getElementById('glucosaAyunasMessage');
+        const glucosaPostMessage = document.getElementById('glucosaPostMessage');
+        const hbMessage = document.getElementById('hbMessage');
+        const tratamientoMessage = document.getElementById('tratamientoMessage');
+        
+        // Funciones de validacion
+        function showFieldError(inputElement, messageElement, message) {
+            messageElement.innerHTML = message;
+            messageElement.className = 'field-message error';
+            inputElement.classList.add('field-error');
+            inputElement.classList.remove('field-success');
+        }
+        
+        function clearFieldError(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error');
+            inputElement.classList.add('field-success');
+        }
+        
+        function resetField(inputElement, messageElement) {
+            messageElement.innerHTML = '';
+            messageElement.className = 'field-message';
+            inputElement.classList.remove('field-error', 'field-success');
+        }
+        
+        // Validar peso
+        function validatePeso() {
+            const peso = pesoInput.value;
+            if (peso === '') {
+                showFieldError(pesoInput, pesoMessage, 'Por favor, ingresa el peso del paciente');
+                return false;
+            }
+            if (peso < 10 || peso > 300) {
+                showFieldError(pesoInput, pesoMessage, 'Peso invalido (debe estar entre 10 y 300 kg)');
+                return false;
+            }
+            clearFieldError(pesoInput, pesoMessage);
+            return true;
+        }
+        
+        // Validar altura
+        function validateAltura() {
+            const altura = alturaInput.value;
+            if (altura === '') {
+                showFieldError(alturaInput, alturaMessage, 'Por favor, ingresa la altura del paciente');
+                return false;
+            }
+            if (altura < 50 || altura > 250) {
+                showFieldError(alturaInput, alturaMessage, 'Altura invalida (debe estar entre 50 y 250 cm)');
+                return false;
+            }
+            clearFieldError(alturaInput, alturaMessage);
+            return true;
+        }
+        
+        // Validar presion sistolica
+        function validateSistolica() {
+            const sistolica = sistolicaInput.value;
+            if (sistolica === '') {
+                showFieldError(sistolicaInput, sistolicaMessage, 'Por favor, ingresa la presion sistolica');
+                return false;
+            }
+            if (sistolica < 60 || sistolica > 250) {
+                showFieldError(sistolicaInput, sistolicaMessage, 'Presion sistolica invalida (60-250 mmHg)');
+                return false;
+            }
+            clearFieldError(sistolicaInput, sistolicaMessage);
+            return true;
+        }
+        
+        // Validar presion diastolica
+        function validateDiastolica() {
+            const diastolica = diastolicaInput.value;
+            if (diastolica === '') {
+                showFieldError(diastolicaInput, diastolicaMessage, 'Por favor, ingresa la presion diastolica');
+                return false;
+            }
+            if (diastolica < 40 || diastolica > 150) {
+                showFieldError(diastolicaInput, diastolicaMessage, 'Presion diastolica invalida (40-150 mmHg)');
+                return false;
+            }
+            clearFieldError(diastolicaInput, diastolicaMessage);
+            return true;
+        }
+        
+        // Validar frecuencia cardiaca
+        function validateFrecuencia() {
+            const frecuencia = document.getElementById('frecuencia_cardiaca').value;
+            if (frecuencia !== '') {
+                if (frecuencia < 30 || frecuencia > 200) {
+                    showFieldError(document.getElementById('frecuencia_cardiaca'), frecuenciaMessage, 'Frecuencia cardiaca invalida (30-200 lpm)');
+                    return false;
+                }
+                clearFieldError(document.getElementById('frecuencia_cardiaca'), frecuenciaMessage);
+            } else {
+                resetField(document.getElementById('frecuencia_cardiaca'), frecuenciaMessage);
+            }
+            return true;
+        }
+        
+        // Validar glucosa en ayunas
+        function validateGlucosaAyunas() {
+            const glucosa = glucosaAyunasInput.value;
+            if (glucosa === '') {
+                showFieldError(glucosaAyunasInput, glucosaAyunasMessage, 'Por favor, ingresa la glucosa en ayunas');
+                return false;
+            }
+            if (glucosa < 30 || glucosa > 600) {
+                showFieldError(glucosaAyunasInput, glucosaAyunasMessage, 'Glucosa invalida (30-600 mg/dL)');
+                return false;
+            }
+            clearFieldError(glucosaAyunasInput, glucosaAyunasMessage);
+            return true;
+        }
+        
+        // Validar glucosa postprandial
+        function validateGlucosaPost() {
+            const glucosa = document.getElementById('glucosa_postprandial').value;
+            if (glucosa !== '') {
+                if (glucosa < 30 || glucosa > 600) {
+                    showFieldError(document.getElementById('glucosa_postprandial'), glucosaPostMessage, 'Glucosa invalida (30-600 mg/dL)');
+                    return false;
+                }
+                clearFieldError(document.getElementById('glucosa_postprandial'), glucosaPostMessage);
+            } else {
+                resetField(document.getElementById('glucosa_postprandial'), glucosaPostMessage);
+            }
+            return true;
+        }
+        
+        // Validar hemoglobina glicosilada
+        function validateHb() {
+            const hb = hbInput.value;
+            if (hb === '') {
+                showFieldError(hbInput, hbMessage, 'Por favor, ingresa la hemoglobina glicosilada');
+                return false;
+            }
+            if (hb < 3 || hb > 20) {
+                showFieldError(hbInput, hbMessage, 'Hemoglobina glicosilada invalida (3-20%)');
+                return false;
+            }
+            clearFieldError(hbInput, hbMessage);
+            return true;
+        }
+        
+        // Validar plan de tratamiento
+        function validateTratamiento() {
+            const tratamiento = tratamientoInput.value.trim();
+            if (tratamiento === '') {
+                showFieldError(tratamientoInput, tratamientoMessage, 'Por favor, ingresa el plan de tratamiento');
+                return false;
+            }
+            if (tratamiento.length < 10) {
+                showFieldError(tratamientoInput, tratamientoMessage, 'El plan de tratamiento debe tener al menos 10 caracteres');
+                return false;
+            }
+            clearFieldError(tratamientoInput, tratamientoMessage);
+            return true;
+        }
+        
+        // Eventos en tiempo real
+        pesoInput.addEventListener('input', validatePeso);
+        alturaInput.addEventListener('input', validateAltura);
+        sistolicaInput.addEventListener('input', validateSistolica);
+        diastolicaInput.addEventListener('input', validateDiastolica);
+        document.getElementById('frecuencia_cardiaca').addEventListener('input', validateFrecuencia);
+        glucosaAyunasInput.addEventListener('input', validateGlucosaAyunas);
+        document.getElementById('glucosa_postprandial').addEventListener('input', validateGlucosaPost);
+        hbInput.addEventListener('input', validateHb);
+        tratamientoInput.addEventListener('input', validateTratamiento);
+        
+        // Eventos blur
+        pesoInput.addEventListener('blur', validatePeso);
+        alturaInput.addEventListener('blur', validateAltura);
+        sistolicaInput.addEventListener('blur', validateSistolica);
+        diastolicaInput.addEventListener('blur', validateDiastolica);
+        document.getElementById('frecuencia_cardiaca').addEventListener('blur', validateFrecuencia);
+        glucosaAyunasInput.addEventListener('blur', validateGlucosaAyunas);
+        document.getElementById('glucosa_postprandial').addEventListener('blur', validateGlucosaPost);
+        hbInput.addEventListener('blur', validateHb);
+        tratamientoInput.addEventListener('blur', validateTratamiento);
+        
+        // Validacion al enviar
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const isValid = validatePeso() && validateAltura() && 
+                           validateSistolica() && validateDiastolica() &&
+                           validateFrecuencia() && validateGlucosaAyunas() &&
+                           validateGlucosaPost() && validateHb() && 
+                           validateTratamiento();
+            
+            if (!isValid) {
+                let firstError = document.querySelector('.field-error');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+                return false;
+            }
+            
+            submitBtn.classList.add('loading');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando consulta...';
+            submitBtn.disabled = true;
+            
+            this.submit();
+        });
+        
+        // Auto-eliminar mensajes flash
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { if(flash && flash.parentElement) flash.remove(); }, 300);
+                    }
+                }, 4000);
+            });
+        }, 100);
+    </script>
 </body>
 </html>

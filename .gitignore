@@ -25,6 +25,22 @@ dist/
 # C extensions
 *.so
 
+# Dependencias de Node
+node_modules/
+
+# Android
+android/build/
+android/.gradle/
+app/*.apk
+app/*.bundle
+
+# iOS
+ios/Pods/
+ios/build/
+
+# Archivos de sistema
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/
@@ -198,3 +214,11 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Cache y temporales
+.cache/

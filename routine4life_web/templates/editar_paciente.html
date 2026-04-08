@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Paciente | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="editar-form">
+    <header class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clínico para Diabetes</p>
+            </div>
+        </div>
+        <div class="user-info">
+            <div>
+                <span><i class="fas {{ 'fa-user-cog' if current_user.id_rol == 1 else 'fa-user-md' }}"></i> {{ current_user.nombre_completo or current_user.email }}</span>
+                <div class="user-role">{{ 'Administrador' if current_user.id_rol == 1 else 'Médico Especialista' }}</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="form-container">
+            <h1><i class="fas fa-user-edit"></i> Editar Paciente</h1>
+            <p class="form-subtitle">Actualice la información del paciente</p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label>Nombre completo <span class="required-star">*</span></label>
+                    <input type="text" name="nombre_completo" value="{{ paciente.nombre_completo }}" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fecha de nacimiento <span class="required-star">*</span></label>
+                        <input type="date" name="fecha_nacimiento" value="{{ paciente.fecha_nacimiento }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Edad</label>
+                        <input type="text" value="{{ (now_date.year - paciente.fecha_nacimiento.year) }} años" readonly disabled>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Sexo <span class="required-star">*</span></label>
+                        <select name="id_sexo" required>
+                            <option value="">Seleccione...</option>
+                            {% for sexo in sexos %}
+                            <option value="{{ sexo.id_sexo }}" {% if paciente.id_sexo == sexo.id_sexo %}selected{% endif %}>{{ sexo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de diabetes</label>
+                        <select name="id_tipo_diabetes">
+                            <option value="">Seleccione...</option>
+                            {% for tipo in tipos_diabetes %}
+                            <option value="{{ tipo.id_tipo_diabetes }}" {% if paciente.id_tipo_diabetes == tipo.id_tipo_diabetes %}selected{% endif %}>{{ tipo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar cambios</button>
+                    <a href="{{ url_for('detalle_paciente', id=paciente.id_paciente) }}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>Routine4Life - Sistema de Control Clínico para Diabetes</p>
+        <p>© 2025 - Todos los derechos reservados</p>
+    </footer>
+    
+    <script>
+        setTimeout(function() {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(function(flash) {
+                setTimeout(function() {
+                    flash.style.transition = 'opacity 0.3s';
+                    flash.style.opacity = '0';
+                    setTimeout(function() { if(flash && flash.parentElement) flash.remove(); }, 300);
+                }, 4000);
+            });
+        }, 100);
+    </script>
+</body>
+</html>

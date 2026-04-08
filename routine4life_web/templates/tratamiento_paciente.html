@@ -2,77 +2,116 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Diagnóstico y Tratamiento</title>
-    <link rel="stylesheet" href="/static/tratamiento_paciente.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico y Tratamiento | Routine4Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
-
-    <header>
-        <h2>ROUTINE4LIFE</h2>
-        <nav>
-            <a href="#">Inicio</a> |
-            <a href="#">Médicos</a> |
-            <a href="#">Pacientes</a>
-        </nav>
+<body class="tratamiento-paciente">
+    <header class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+            <div>
+                <h1>Routine4Life</h1>
+                <p>Sistema de Control Clínico para Diabetes</p>
+            </div>
+        </div>
+        <div class="user-info">
+            <div>
+                <span><i class="fas fa-user-md"></i> {{ current_user.nombre_completo or current_user.email }}</span>
+                <div class="user-role">Médico Especialista</div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+        </div>
     </header>
-
-    <hr>
-
-    <h1>DIAGNÓSTICO Y TRATAMIENTO</h1>
-
-    <form>
-
-        <h3>Información del Paciente</h3>
-
-        <label for="nombre">Nombre del paciente:</label><br>
-        <input type="text" id="nombre" name="nombre"><br><br>
-
-        <h3>DIAGNÓSTICO</h3>
-
-        <label for="diagnosticoActual">Diagnóstico actual:</label><br>
-        <input type="text" id="diagnosticoActual" name="diagnosticoActual"><br><br>
-
-        <label for="observaciones">Observaciones clínicas:</label><br>
-        <textarea id="observaciones" name="observaciones" rows="3" cols="40"></textarea><br><br>
-
-        <label for="riesgo">Riesgo estimado:</label><br>
-        <select id="riesgo" name="riesgo">
-            <option value="">Seleccione</option>
-            <option value="bajo">Bajo</option>
-            <option value="medio">Medio</option>
-            <option value="alto">Alto</option>
-        </select><br><br>
-
-        <label for="recomendaciones">Recomendaciones médicas:</label><br>
-        <textarea id="recomendaciones" name="recomendaciones" rows="3" cols="40"></textarea><br><br>
-
-        <h3>TRATAMIENTO</h3>
-
-        <label for="cambiosMedicacion">Cambios en medicación:</label><br>
-        <input type="text" id="cambiosMedicacion" name="cambiosMedicacion"><br><br>
-
-        <label for="planAlimenticio">Plan alimenticio recomendado:</label><br>
-        <textarea id="planAlimenticio" name="planAlimenticio" rows="3" cols="40"></textarea><br><br>
-
-        <label for="rutinaEjercicio">Rutina de ejercicio sugerida:</label><br>
-        <textarea id="rutinaEjercicio" name="rutinaEjercicio" rows="3" cols="40"></textarea><br><br>
-
-        <label for="analisis">Análisis solicitados:</label><br>
-        <select id="analisis" name="analisis">
-            <option value="">Seleccione</option>
-            <option value="sangre">Análisis de sangre</option>
-            <option value="orina">Análisis de orina</option>
-            <option value="glucosa">Perfil de glucosa</option>
-        </select><br><br>
-
-        <label for="proximaConsulta">Fecha de próxima consulta:</label><br>
-        <input type="date" id="proximaConsulta" name="proximaConsulta"><br><br>
-
-        <button type="submit">Aceptar</button>
-        <button type="reset">Cancelar</button>
-        <button type="button">Siguiente</button>
-
-    </form>
-
+    
+    <div class="container">
+        <div class="form-container">
+            <h1><i class="fas fa-prescription-bottle"></i> DIAGNÓSTICO Y TRATAMIENTO</h1>
+            <p class="form-subtitle">Plan de manejo integral para el paciente</p>
+            
+            <form>
+                <h2 style="font-size: 20px; margin: 24px 0 16px;"><i class="fas fa-user"></i> Información del Paciente</h2>
+                <div class="form-group">
+                    <label>Nombre del paciente:</label>
+                    <input type="text" id="nombre" name="nombre" placeholder="Ejemplo: María González López">
+                </div>
+                
+                <h2 style="font-size: 20px; margin: 24px 0 16px;"><i class="fas fa-stethoscope"></i> DIAGNÓSTICO</h2>
+                
+                <div class="form-group">
+                    <label>Diagnóstico actual:</label>
+                    <input type="text" id="diagnosticoActual" name="diagnosticoActual" placeholder="Ej: Diabetes Tipo 2, control inadecuado">
+                </div>
+                
+                <div class="form-group">
+                    <label>Observaciones clínicas:</label>
+                    <textarea id="observaciones" name="observaciones" rows="3" placeholder="Hallazgos relevantes de la consulta..."></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Riesgo estimado:</label>
+                        <select id="riesgo" name="riesgo">
+                            <option value="">Seleccione</option>
+                            <option value="bajo">Bajo</option>
+                            <option value="medio">Medio</option>
+                            <option value="alto">Alto</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Próxima consulta:</label>
+                        <input type="date" id="proximaConsulta" name="proximaConsulta">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Recomendaciones médicas:</label>
+                    <textarea id="recomendaciones" name="recomendaciones" rows="3" placeholder="Consejos sobre estilo de vida, alimentación, ejercicio..."></textarea>
+                </div>
+                
+                <h2 style="font-size: 20px; margin: 24px 0 16px;"><i class="fas fa-pills"></i> TRATAMIENTO</h2>
+                
+                <div class="form-group">
+                    <label>Cambios en medicación:</label>
+                    <input type="text" id="cambiosMedicacion" name="cambiosMedicacion" placeholder="Ej: Metformina 500mg cada 12 horas">
+                </div>
+                
+                <div class="form-group">
+                    <label>Plan alimenticio recomendado:</label>
+                    <textarea id="planAlimenticio" name="planAlimenticio" rows="3" placeholder="Recomendaciones nutricionales..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Rutina de ejercicio sugerida:</label>
+                    <textarea id="rutinaEjercicio" name="rutinaEjercicio" rows="3" placeholder="Tipo, frecuencia y duración del ejercicio..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Análisis solicitados:</label>
+                    <select id="analisis" name="analisis">
+                        <option value="">Seleccione</option>
+                        <option value="sangre">Análisis de sangre completo</option>
+                        <option value="orina">Análisis de orina</option>
+                        <option value="glucosa">Perfil de glucosa</option>
+                        <option value="hbA1c">Hemoglobina glicosilada</option>
+                        <option value="lipidico">Perfil lipídico</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Tratamiento</button>
+                    <button type="reset" class="btn btn-secondary"><i class="fas fa-undo"></i> Limpiar</button>
+                    <a href="{{ url_for('medico_dashboard') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>Routine4Life - Sistema de Control Clínico para Diabetes</p>
+        <p>© 2025 - Todos los derechos reservados</p>
+    </footer>
 </body>
 </html>

@@ -368,6 +368,7 @@ class pacientes(Base):
     medico = relationship("medicos", back_populates="pacientes") 
 
 # r4l.citas_medicas
+# r4l.citas_medicas
 class citas_medicas(Base):
     __tablename__ = "citas_medicas"
     __table_args__ = (
@@ -381,27 +382,24 @@ class citas_medicas(Base):
             }
         )
 
-    id_cita = Column(Integer, primary_key = True, autoincrement = True, comment = "IDENTIFICADOR ÚNICO DE LA CITA")
-    id_rol = Column(Integer, ForeignKey("r4l.roles_usuarios.id_rol"), nullable = False, comment = "IDENTIFICADOR DEL ROL (FK, QUIÉN SOLICITA)")
-    id_medico = Column(Integer, ForeignKey("r4l.medicos.id_medico"), nullable = False, comment = "IDENTIFICADOR DEL MÉDICO (FK)")
-    id_paciente = Column(Integer, ForeignKey("r4l.pacientes.id_paciente"), nullable = False, comment = "IDENTIFICADOR DEL PACIENTE (FK)")
-    id_estatus_cita = Column(Integer, ForeignKey("r4l.estatus_citas.id_estatus_cita"), nullable = False, comment = "IDENTIFICADOR DEL ESTATUS DE LA CITA (FK)")
-    fecha = Column(Date, nullable = False, comment = "FECHA DE LA CITA")
-    hora = Column(Time, nullable = False, comment = "HORA DE LA CITA")
-    motivo = Column(String(255), nullable = True, comment = "MOTIVO DE LA CONSULTA")
-    notas = Column(String(255), nullable = True, comment = "NOTAS ADICIONALES")
-    fecha_hora_solicitud = Column(DateTime, nullable = False, comment = "FECHA Y HORA DE SOLICITUD")
+    id_cita = Column(Integer, primary_key=True, autoincrement=True, comment="IDENTIFICADOR ÚNICO DE LA CITA")
+    id_rol = Column(Integer, ForeignKey("r4l.roles_usuarios.id_rol"), nullable=False)
+    id_medico = Column(Integer, ForeignKey("r4l.medicos.id_medico"), nullable=False)
+    id_paciente = Column(Integer, ForeignKey("r4l.pacientes.id_paciente"), nullable=False)
+    id_estatus_cita = Column(Integer, ForeignKey("r4l.estatus_citas.id_estatus_cita"), nullable=False)
+    fecha = Column(Date, nullable=False)
+    hora = Column(Time, nullable=False)
+    motivo = Column(String(255), nullable=True)
+    notas = Column(String(255), nullable=True)
+    fecha_hora_solicitud = Column(DateTime, nullable=False)
 
-    # RELACIÓN: citas_medicas -> roles_usuarios (N:1)
-    rol = relationship("roles_usuarios", back_populates = "citas")
-    # RELACIÓN: citas_medicas -> medicos (N:1)
-    medico = relationship("medicos", back_populates = "citas")
-    # RELACIÓN: citas_medicas -> pacientes (N:1)
-    paciente = relationship("pacientes", back_populates = "citas")
-    # RELACIÓN: citas_medicas -> estatus_citas (N:1)
-    estatus = relationship("estatus_citas", back_populates = "citas")
-    # RELACIÓN: citas_medicas -> consultas_medicas (1:1, OPCIONAL)
-    consulta = relationship("consultas_medicas", back_populates = "cita", uselist = False)
+    # Relaciones
+    rol = relationship("roles_usuarios", back_populates="citas")
+    medico = relationship("medicos", back_populates="citas")
+    paciente = relationship("pacientes", back_populates="citas")
+    estatus = relationship("estatus_citas", back_populates="citas")
+    consulta = relationship("consultas_medicas", back_populates="cita", uselist=False)
+    
 
 # r4l.consultas_medicas
 class consultas_medicas(Base):
@@ -614,3 +612,4 @@ class usuarios(Base):
     medico = relationship("medicos", back_populates = "usuario")
     # RELACIÓN: usuarios -> pacientes (1:1, OPCIONAL)
     paciente = relationship("pacientes", back_populates = "usuario")
+    
