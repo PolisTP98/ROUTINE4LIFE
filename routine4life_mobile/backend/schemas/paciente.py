@@ -4,6 +4,12 @@ from datetime import date, time, datetime
 from typing import List, Optional
 from decimal import Decimal
 
+class SexoResponse(BaseModel):
+    id_sexo: int
+    nombre: str 
+
+    class Config:
+        from_attributes = True
 
 class RegistroAppCreate(BaseModel):
     id_paciente: int  

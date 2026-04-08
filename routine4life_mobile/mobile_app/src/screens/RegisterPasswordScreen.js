@@ -7,13 +7,14 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform, 
-  ScrollView 
+  ScrollView,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/theme';
+import { API_URL } from '../api/config';
 
-// Extracted to prevent re-renders on typing
 const RequirementItem = ({ text, isMet }) => (
   <View style={styles.reqRow}>
     <Ionicons name={isMet ? "checkmark" : "close"} size={16} color={isMet ? COLORS.success : COLORS.error} />
@@ -26,6 +27,8 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [secureTextEntry1, setSecureTextEntry1] = useState(true);
   const [secureTextEntry2, setSecureTextEntry2] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const formData = route.params?.formData || {};
 
@@ -37,12 +40,40 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
 
   const isButtonEnabled = reqLength && reqUpper && reqSpecial && reqNoSeq && doMatch;
 
-  const handleFinalRegister = () => {
-    if (isButtonEnabled) {
-      console.log("Datos listos para enviar:", { ...formData, password });
-      
-      // Navigate back to login with the success parameter
-      navigation.navigate('Login', { registered: true });
+  const handleFinalRegister = async () => {
+    if (!isButtonEnabled) return;
+
+    setErrorMessage('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/auth-movil/registro`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre_completo: formData.fullName,
+          fecha_nacimiento: formData.birthDate,
+          sexo: formData.gender,
+          email: formData.email,
+          telefono: formData.phone,
+          contrasena: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        navigation.navigate('Login', { registered: true });
+      } else {
+        const errorMsg = typeof data.detail === 'string' ? data.detail : 'No se pudo completar el registro.';
+        setErrorMessage(errorMsg);
+      }
+    } catch (error) {
+      setErrorMessage('Error de conexión. Verifica tu red o el servidor.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,7 +87,7 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
           <TouchableOpacity 
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Makes the icon easier to tap
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} 
           >
             <Ionicons name="chevron-back" size={35} color={COLORS.primary} />
           </TouchableOpacity>
@@ -76,7 +107,10 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
                 placeholder="Contraseña"
                 placeholderTextColor={COLORS.inputText + '80'}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrorMessage('');
+                }}
                 secureTextEntry={secureTextEntry1}
               />
               <TouchableOpacity onPress={() => setSecureTextEntry1(!secureTextEntry1)}>
@@ -97,7 +131,10 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
                 placeholder="Confirmar contraseña"
                 placeholderTextColor={COLORS.inputText + '80'}
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  setErrorMessage('');
+                }}
                 secureTextEntry={secureTextEntry2}
               />
               <TouchableOpacity onPress={() => setSecureTextEntry2(!secureTextEntry2)}>
@@ -111,13 +148,21 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.footer}>
+            {errorMessage !== '' && (
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            )}
+
             <TouchableOpacity
-              style={[styles.btn, isButtonEnabled ? styles.btnActive : styles.btnDisabled]}
-              disabled={!isButtonEnabled}
+              style={[styles.btn, isButtonEnabled && !isLoading ? styles.btnActive : styles.btnDisabled]}
+              disabled={!isButtonEnabled || isLoading}
               onPress={handleFinalRegister}
               activeOpacity={0.8}
             >
-              <Text style={styles.btnText}>Registrarse</Text>
+              {isLoading ? (
+                <ActivityIndicator color={COLORS.buttonLight} size="large" />
+              ) : (
+                <Text style={styles.btnText}>Registrarse</Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -126,10 +171,9 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
   );
 };
 
-// Styles updated to remove hardcoded padding on header
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingHorizontal: 20, paddingTop: 10 }, // Adjusted since SafeAreaView handles the top notch now
+  header: { paddingHorizontal: 20, paddingTop: 10 }, 
   scroll: { flexGrow: 1, paddingHorizontal: 30, paddingBottom: 30, alignItems: 'center' },
   title: { fontSize: 50, fontWeight: 'bold', color: COLORS.primary, marginBottom: 40 },
   form: { width: '100%' },
@@ -139,6 +183,7 @@ const styles = StyleSheet.create({
   reqRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 5 },
   reqText: { fontSize: 14, flex: 1, marginLeft: 8, fontWeight: '500' },
   footer: { width: '100%', alignItems: 'center', marginTop: 10 },
+  errorText: { color: COLORS.error, fontSize: 14, fontWeight: '500', marginBottom: 15, textAlign: 'center', paddingHorizontal: 10 },
   btn: { width: '100%', height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center' },
   btnDisabled: { backgroundColor: COLORS.disabled },
   btnActive: { backgroundColor: COLORS.primary },
