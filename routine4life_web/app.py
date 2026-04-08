@@ -22,7 +22,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, date
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import text, extract
+from sqlalchemy import text, extract, func
 
 
 app = Flask(__name__)
@@ -699,16 +699,13 @@ def reportes_generales():
         total_pacientes = db.query(pacientes).count()
         total_consultas = db.query(consultas_medicas).count()
         
-        # Consultas por mes - CORREGIDO
+        # Consultas por mes (ya lo tenías)
         consultas = db.query(consultas_medicas).all()
-        
         consultas_por_mes_dict = {}
         for consulta in consultas:
             if consulta.fecha:
                 mes_key = consulta.fecha.strftime('%Y-%m')
-                if mes_key not in consultas_por_mes_dict:
-                    consultas_por_mes_dict[mes_key] = 0
-                consultas_por_mes_dict[mes_key] += 1
+                consultas_por_mes_dict[mes_key] = consultas_por_mes_dict.get(mes_key, 0) + 1
         
         consultas_mes_data = []
         for mes_key in sorted(consultas_por_mes_dict.keys(), reverse=True)[:6]:
@@ -719,8 +716,41 @@ def reportes_generales():
                 'mes': f"{nombre_mes} {anio}",
                 'total': consultas_por_mes_dict[mes_key]
             })
-        
         consultas_mes_data.reverse()
+        
+        # NUEVO: Pacientes por tipo de diabetes
+        pacientes_por_diabetes = db.query(
+            tipos_diabetes.nombre,
+            func.count(pacientes.id_paciente)
+        ).outerjoin(tipos_diabetes, pacientes.id_tipo_diabetes == tipos_diabetes.id_tipo_diabetes
+        ).group_by(tipos_diabetes.nombre).all()
+        
+        labels_diabetes = [row[0] if row[0] else "No especificado" for row in pacientes_por_diabetes]
+        data_diabetes = [row[1] for row in pacientes_por_diabetes]
+        
+        # NUEVO: Pacientes por sexo
+        pacientes_por_sexo = db.query(
+            sexos.nombre,
+            func.count(pacientes.id_paciente)
+        ).outerjoin(sexos, pacientes.id_sexo == sexos.id_sexo
+        ).group_by(sexos.nombre).all()
+        
+        labels_sexo = [row[0] for row in pacientes_por_sexo]
+        data_sexo = [row[1] for row in pacientes_por_sexo]
+        
+        # NUEVO: Top 5 médicos con más consultas
+        top_medicos = db.query(
+            medicos.id_medico,
+            medicos.email,
+            func.count(consultas_medicas.id_consulta)
+        ).join(consultas_medicas, medicos.id_medico == consultas_medicas.id_medico
+        ).group_by(medicos.id_medico, medicos.email
+        ).order_by(func.count(consultas_medicas.id_consulta).desc()).limit(5).all()
+        
+        # Médicos para el filtro del formulario
+        medicos_list = db.query(medicos).options(
+            joinedload(medicos.datos_personales)
+        ).filter(medicos.id_rol == 2).all()
         
         db.close()
         
@@ -730,7 +760,13 @@ def reportes_generales():
                              total_recepcionistas=total_recepcionistas,
                              total_pacientes=total_pacientes,
                              total_consultas=total_consultas,
-                             consultas_por_mes=consultas_mes_data)
+                             consultas_por_mes=consultas_mes_data,
+                             labels_diabetes=labels_diabetes,
+                             data_diabetes=data_diabetes,
+                             labels_sexo=labels_sexo,
+                             data_sexo=data_sexo,
+                             top_medicos=top_medicos,
+                             medicos=medicos_list)
                              
     except Exception as e:
         db.close()
@@ -745,7 +781,7 @@ def generar_reporte():
         return redirect(url_for('dashboard'))
 
     db = Session(bind=engine)
-
+    
     try:
         tipo = request.args.get('tipo_reporte')
         medico_id = request.args.get('medico_id')
@@ -753,40 +789,45 @@ def generar_reporte():
         fecha_fin = request.args.get('fecha_fin')
 
         datos = []
+        titulo = ""
 
-        # 🔹 REPORTE: Pacientes por médico
         if tipo == "pacientes_medico":
+            titulo = "Pacientes por Médico"
             query = db.query(
-                pacientes.nombre,
-                pacientes.apellido_paterno,
-                pacientes.apellido_materno,
-                medicos.nombre.label("medico")
-            ).join(medicos, pacientes.id_medico == medicos.id)
-
+                pacientes.nombre_completo,
+                pacientes.codigo,
+                medicos.email.label("medico_email")
+            ).join(medicos, pacientes.id_medico == medicos.id_medico)
+            
             if medico_id:
-                query = query.filter(medicos.id == medico_id)
-
+                query = query.filter(medicos.id_medico == medico_id)
+            
             datos = query.all()
 
-        # 🔹 REPORTE: Consultas por fecha
         elif tipo == "consultas_fecha":
-            query = db.query(consultas_medicas)
-
+            titulo = "Consultas por Fecha"
+            query = db.query(consultas_medicas).options(
+                joinedload(consultas_medicas.paciente),
+                joinedload(consultas_medicas.medico).joinedload(medicos.datos_personales)
+            )
+            
             if fecha_inicio and fecha_fin:
-                query = query.filter(
-                    consultas_medicas.fecha.between(fecha_inicio, fecha_fin)
-                )
-
+                query = query.filter(consultas_medicas.fecha.between(fecha_inicio, fecha_fin))
+            
             datos = query.all()
+        else:
+            flash('Tipo de reporte no válido', 'warning')
+            db.close()
+            return redirect(url_for('reportes_generales'))
 
         db.close()
-
-        return render_template(
-            "reporte_pdf.html",
-            datos=datos,
-            tipo=tipo
-        )
-
+        
+        return render_template("reporte_pdf.html",
+                               titulo=titulo,
+                               tipo=tipo,
+                               datos=datos,
+                               fecha_generacion=datetime.now().strftime("%d/%m/%Y %H:%M"))
+                               
     except Exception as e:
         db.close()
         flash(f'Error al generar reporte: {str(e)}', 'danger')
