@@ -2,22 +2,6 @@ version: '3.8'
 
 services:
 
-# ----------------------------
-# | BASE DE DATOS (SQL SERVER)|
-# ----------------------------
-  sql_server:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: db_r4life
-    ports:
-      - "14333:1433" 
-    environment:
-      - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=Routine4Life_2026!
-    networks:
-      - app_network
-    volumes:
-      - sqlserver_data:/var/opt/mssql
-    restart: unless-stopped
 
   # ----------------------------
   # | BASE DE DATOS (SQL SERVER)|
