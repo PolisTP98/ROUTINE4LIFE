@@ -179,6 +179,7 @@ const RegisterScreen = ({ navigation }) => {
                       setFormData({ 
                         ...formData, 
                         gender: item.nombre, 
+                        id_sexo: item.id_sexo 
                       });
                       setShowGenderModal(false);
                     }}
