@@ -16,7 +16,7 @@
         <!-- Menu Lateral -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Routine4Life">
+                <img src="{{ url_for('static', filename='img/logo2.png') }}" alt="Routine4Life">
                 <h2>Routine4Life</h2>
                 <p>Sistema de Control Clinico para Diabetes</p>
             </div>
@@ -290,7 +290,7 @@
         .sidebar-header img {
             height: 65px;
             margin-bottom: 1rem;
-            filter: brightness(0) invert(1);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
 
         .sidebar-header h2 {
@@ -378,7 +378,7 @@
         .main-content {
             margin-left: 280px;
             flex: 1;
-            background: #ffffff;
+            background: transparent;  /* ← CAMBIADO: hereda el verde del body */
             min-height: 100vh;
         }
 

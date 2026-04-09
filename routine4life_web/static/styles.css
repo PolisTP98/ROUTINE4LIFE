@@ -4,10 +4,11 @@
     box-sizing: border-box;
 }
 
+/* ===== NUEVO FONDO VERDE CLARO PARA TODO EL SISTEMA (excepto login) ===== */
 body {
+    background: #a7d4a7;  /* Verde menta muy claro */
     font-family: 'Inter', sans-serif;
-    background: #ffffff; /* Fondo blanco sólido */
-    color: #333;
+    color: #1e293b;
     min-height: 100vh;
 }
 
@@ -98,13 +99,13 @@ body {
 }
 
 /* ============================================
-   CONTAINER DASHBOARD - FONDO BLANCO
+   CONTAINER DASHBOARD - FONDO TRANSPARENTE (hereda el verde)
    ============================================ */
 .dashboard-container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 2rem;
-    background: #ffffff; /* Fondo blanco */
+    background: transparent;
 }
 
 /* ============================================
@@ -952,21 +953,21 @@ body {
     padding: 1.5rem;
     color: #64748b;
     font-size: 0.7rem;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid rgba(0,0,0,0.05);
     margin-top: 2rem;
-    background: white;
+    background: transparent;
     border-radius: 0 0 20px 20px;
 }
 
 /* ============================================
-   LOGIN PAGE - MANTENER EL GRADIENTE
+   LOGIN PAGE - MANTENER EL GRADIENTE Y FONDO CON IMAGEN
    ============================================ */
 .login-page {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: #ffffff;
+    background: #ffffff; /* fallback */
 }
 
 .login-card {
@@ -1275,7 +1276,7 @@ body {
 .main-content {
     margin-left: 280px;
     flex: 1;
-    background: #ffffff; /* Fondo blanco */
+    background: transparent;
     min-height: 100vh;
 }
 
@@ -1332,7 +1333,7 @@ body {
 
 .content-wrapper {
     padding: 2rem;
-    background: #ffffff; /* Fondo blanco */
+    background: transparent;
 }
 
 /* ============================================
@@ -1575,7 +1576,7 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     padding: 2rem;
-    background: #ffffff;
+    background: transparent;
 }
 
 .form-container {
