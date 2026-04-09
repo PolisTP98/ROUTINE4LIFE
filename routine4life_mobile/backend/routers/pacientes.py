@@ -1,11 +1,16 @@
 # routine4life_mobile/backend/routers/pacientes.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
+from sqlalchemy import func, cast, Date
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from shared.database import get_db
 from routine4life_mobile.backend.schemas import paciente as schemas
 from routine4life_mobile.backend.crud import paciente as crud
 from typing import List
+from shared import models
+from datetime import datetime
+import bcrypt
+
 
 router = APIRouter(
     prefix="/auth-movil", 
@@ -176,3 +181,62 @@ def registrar_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
+
+@router.get("/buscar-paciente")
+def buscar_paciente(nombre: str, fecha: str, db: Session = Depends(get_db)):
+
+    # 🔹 Limpiar datos del frontend
+    nombre = nombre.strip().lower()
+
+    try:
+        fecha = datetime.strptime(fecha, "%Y-%m-%d").date()
+    except:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido (YYYY-MM-DD)")
+
+    print("NOMBRE FRONT:", nombre)
+    print("FECHA FRONT:", fecha)
+
+    paciente = db.query(models.pacientes).filter(
+        func.lower(func.trim(models.pacientes.nombre_completo)).like(f"%{nombre}%"),
+        cast(models.pacientes.fecha_nacimiento, Date) == fecha
+    ).first()
+
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+
+    return {
+        "id_paciente": paciente.id_paciente,
+        "nombre_completo": paciente.nombre_completo,
+        "fecha_nacimiento": str(paciente.fecha_nacimiento)
+    }
+    
+    
+from fastapi import Body
+import bcrypt
+
+@router.post("/login")
+def login(data: dict = Body(...), db: Session = Depends(get_db)):
+
+    email = data.get("email")
+    contrasena = data.get("contrasena")
+
+    if not email or not contrasena:
+        raise HTTPException(status_code=400, detail="Email y contraseña requeridos")
+
+    usuario = db.query(models.usuarios).filter(
+    models.usuarios.id_paciente == data.get("id_paciente")
+    ).first()
+
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Verificar contraseña
+    if not bcrypt.checkpw(contrasena.encode('utf-8'), usuario.contrasena.encode('utf-8')):
+        raise HTTPException(status_code=401, detail="Contraseña incorrecta")
+
+    return {
+        "mensaje": "Login exitoso",
+        "id_usuario": usuario.id_usuario,
+        "id_paciente": usuario.id_paciente
+    }

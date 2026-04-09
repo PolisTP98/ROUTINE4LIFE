@@ -32,6 +32,13 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
 
   const formData = route.params?.formData || {};
 
+  // 🔥 FORMATEO DE FECHA
+  const formatDate = (date) => {
+    const cleanDate = date.replace(/\s/g, '');
+    const [day, month, year] = cleanDate.split('/');
+    return `${year}-${month}-${day}`;
+  };
+
   const reqLength = password.length >= 8;
   const reqUpper = /[A-Z]/.test(password);
   const reqSpecial = /[0-9!@#$/()={}=.,;:_]/.test(password);
@@ -53,24 +60,30 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          id_paciente: parseInt(formData.id_paciente), // 🔥 NUEVO
+          id_sexo: formData.id_sexo,
+          id_pais: 1,
+          id_estatus_usuario: 1,
           nombre_completo: formData.fullName,
-          fecha_nacimiento: formData.birthDate,
-          sexo: formData.gender,
+          fecha_nacimiento: formatDate(formData.birthDate),
           email: formData.email,
-          telefono: formData.phone,
-          contrasena: password,
+          telefono: formData.phone
         }),
       });
 
       const data = await response.json();
+      console.log("RESPUESTA BACKEND:", data);
 
       if (response.ok) {
         navigation.navigate('Login', { registered: true });
       } else {
-        const errorMsg = typeof data.detail === 'string' ? data.detail : 'No se pudo completar el registro.';
+        const errorMsg = typeof data.detail === 'string'
+          ? data.detail
+          : 'No se pudo completar el registro.';
         setErrorMessage(errorMsg);
       }
     } catch (error) {
+      console.error(error);
       setErrorMessage('Error de conexión. Verifica tu red o el servidor.');
     } finally {
       setIsLoading(false);
@@ -84,20 +97,12 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} 
-          >
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="chevron-back" size={35} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
-          contentContainerStyle={styles.scroll} 
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView contentContainerStyle={styles.scroll}>
           <Text style={styles.title}>Registrarse</Text>
           
           <View style={styles.form}>
@@ -119,10 +124,10 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
             </View>
 
             <View style={styles.reqList}>
-              <RequirementItem text="La contraseña debe tener mínimo 8 caracteres" isMet={reqLength} />
-              <RequirementItem text="La contraseña debe incluir letras en mayúscula" isMet={reqUpper} />
-              <RequirementItem text="La contraseña debe incluir números y caracteres especiales" isMet={reqSpecial} />
-              <RequirementItem text="No debe tener más de dos caracteres repetidos o números en secuencia" isMet={reqNoSeq} />
+              <RequirementItem text="Mínimo 8 caracteres" isMet={reqLength} />
+              <RequirementItem text="Mayúsculas" isMet={reqUpper} />
+              <RequirementItem text="Números o símbolos" isMet={reqSpecial} />
+              <RequirementItem text="Sin repeticiones excesivas" isMet={reqNoSeq} />
             </View>
 
             <View style={styles.inputWrapper}>
@@ -156,7 +161,6 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
               style={[styles.btn, isButtonEnabled && !isLoading ? styles.btnActive : styles.btnDisabled]}
               disabled={!isButtonEnabled || isLoading}
               onPress={handleFinalRegister}
-              activeOpacity={0.8}
             >
               {isLoading ? (
                 <ActivityIndicator color={COLORS.buttonLight} size="large" />

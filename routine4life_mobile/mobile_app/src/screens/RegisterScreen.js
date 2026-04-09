@@ -10,7 +10,8 @@ import {
   ScrollView,
   Modal,
   FlatList,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,7 +31,44 @@ const RegisterScreen = ({ navigation }) => {
   const [genders, setGenders] = useState([]);
   const [showGenderModal, setShowGenderModal] = useState(false);
   const [isLoadingGenders, setIsLoadingGenders] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
+  // 🔥 FORMATEO ROBUSTO DE FECHA
+  const formatDate = (date) => {
+  try {
+    if (!date) return null;
+
+    // 🔥 eliminar espacios
+    const clean = date.replace(/\s/g, '');
+
+    // dividir
+    const parts = clean.split('/');
+
+    if (parts.length !== 3) return null;
+
+    let [day, month, year] = parts;
+
+    // validar números
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+
+    // completar ceros
+    day = day.padStart(2, '0');
+    month = month.padStart(2, '0');
+
+    // validar rango básico
+    if (day < 1 || day > 31 || month < 1 || month > 12 || year.length !== 4) {
+      return null;
+    }
+
+    return `${year}-${month}-${day}`;
+
+  } catch {
+    return null;
+  }
+};
+
+
+  // 🔥 CARGAR SEXOS
   useEffect(() => {
     const fetchGenders = async () => {
       setIsLoadingGenders(true);
@@ -63,6 +101,55 @@ const RegisterScreen = ({ navigation }) => {
 
   const handleNotImplemented = (msg) => alert(`${msg} aún no implementado`);
 
+  // 🔥 FUNCIÓN CLAVE
+  const buscarPaciente = async () => {
+    if (!isButtonEnabled) return;
+
+    const fechaFormateada = formatDate(formData.birthDate);
+
+    // 🚨 VALIDACIÓN
+    if (!fechaFormateada) {
+      Alert.alert("Error", "Formato de fecha inválido. Usa DD/MM/AAAA");
+      return;
+    }
+
+    console.log("NOMBRE:", formData.fullName);
+    console.log("FECHA ORIGINAL:", formData.birthDate);
+    console.log("FECHA FORMATEADA:", fechaFormateada);
+
+    setIsSearching(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/auth-movil/buscar-paciente?nombre=${encodeURIComponent(formData.fullName)}&fecha=${fechaFormateada}`
+      );
+
+      const data = await response.json();
+
+      console.log("RESPUESTA BACKEND:", data);
+
+      if (response.ok) {
+        navigation.navigate('RegisterPassword', {
+          formData: {
+            ...formData,
+            id_paciente: data.id_paciente
+          }
+        });
+      } else {
+        Alert.alert(
+          "Error",
+          "Paciente no encontrado. Verifica nombre y fecha EXACTOS."
+        );
+      }
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "No se pudo conectar al servidor.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView 
@@ -88,18 +175,17 @@ const RegisterScreen = ({ navigation }) => {
             <View style={styles.inputWithIcon}>
               <TextInput
                 style={styles.flexInput}
-                placeholder="DD / MM / AAAA"
+                placeholder="DD/MM/AAAA"
                 placeholderTextColor={COLORS.inputText + '80'}
                 onChangeText={(v) => updateField('birthDate', v)}
               />
               <Ionicons name="calendar-outline" size={32} color={COLORS.primary} />
             </View>
 
-            {/* Selector de Sexo */}
+            {/* SEXO */}
             <TouchableOpacity 
               style={styles.inputWithIcon} 
               onPress={() => setShowGenderModal(true)}
-              activeOpacity={0.7}
             >
               <Text style={[styles.flexInput, { color: formData.gender ? COLORS.inputText : COLORS.inputText + '80' }]}>
                 {formData.gender || "Sexo"}
@@ -136,12 +222,17 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.footer}>
             <TouchableOpacity
               style={[styles.btn, isButtonEnabled ? styles.btnActive : styles.btnDisabled]}
-              disabled={!isButtonEnabled}
-              onPress={() => navigation.navigate('RegisterPassword', { formData })} 
-              activeOpacity={0.8}
+              disabled={!isButtonEnabled || isSearching}
+              onPress={buscarPaciente}
             >
-              <Text style={styles.btnText}>Continuar</Text>
-              <Ionicons name="chevron-forward" size={35} color={COLORS.buttonLight} />
+              {isSearching ? (
+                <ActivityIndicator color={COLORS.buttonLight} size="large" />
+              ) : (
+                <>
+                  <Text style={styles.btnText}>Continuar</Text>
+                  <Ionicons name="chevron-forward" size={35} color={COLORS.buttonLight} />
+                </>
+              )}
             </TouchableOpacity>
 
             <Text style={styles.loginLink}>
@@ -151,23 +242,14 @@ const RegisterScreen = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Modal para Seleccionar Sexo */}
-      <Modal
-        visible={showGenderModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowGenderModal(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
-          onPress={() => setShowGenderModal(false)}
-        >
+      {/* MODAL SEXO */}
+      <Modal visible={showGenderModal} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowGenderModal(false)}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Selecciona tu sexo</Text>
             
             {isLoadingGenders ? (
-              <ActivityIndicator size="large" color={COLORS.primary} style={{ marginVertical: 20 }} />
+              <ActivityIndicator size="large" color={COLORS.primary} />
             ) : (
               <FlatList
                 data={genders}
@@ -187,7 +269,6 @@ const RegisterScreen = ({ navigation }) => {
                     <Text style={styles.modalOptionText}>{item.nombre}</Text>
                   </TouchableOpacity>
                 )}
-                ListEmptyComponent={<Text style={{textAlign: 'center', marginVertical: 10}}>No hay opciones disponibles</Text>}
               />
             )}
           </View>
