@@ -20,9 +20,14 @@ from shared.models import (
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text, extract, func
+import bcrypt
+import secrets
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 app = Flask(__name__)
@@ -50,6 +55,34 @@ def load_user(user_id):
     if medico_data:
         return UserMedico(medico_data)
     return None
+
+def verificar_password(password_plana, password_db):
+    try:
+        if not password_db:
+            return False
+
+        # Hash bcrypt
+        if password_db.startswith("$2b$"):
+            return bcrypt.checkpw(
+                password_plana.encode('utf-8'),
+                password_db.encode('utf-8')
+            )
+
+        # Hash pbkdf2 (Werkzeug antiguo)
+        elif password_db.startswith("pbkdf2:"):
+            return check_password_hash(password_db, password_plana)
+        
+        # Hash scrypt (Werkzeug nuevo)
+        elif password_db.startswith("scrypt:"):
+            return check_password_hash(password_db, password_plana)
+
+        else:
+            print("HASH INVÁLIDO:", password_db[:50])
+            return False
+
+    except Exception as e:
+        print("Error verificando password:", e)
+        return False
 
 # ==================== RUTAS PÚBLICAS ====================
 
@@ -102,7 +135,7 @@ def login():
                 db.close()
                 return render_template("login.html")
             
-            if check_password_hash(usuario.contrasena, password):
+            if verificar_password(password, usuario.contrasena):
                 if medico_data.id_estatus_usuario == 1:
                     user = UserMedico(medico_data)
                     login_user(user)
@@ -258,11 +291,130 @@ def registro():
 @app.route("/recuperar_contrasena", methods=['GET', 'POST'])
 def recuperar_contrasena():
     if request.method == 'POST':
-        email = request.form.get('email')
-        flash('Si el correo existe en nuestro sistema, recibirás instrucciones.', 'info')
-        return redirect(url_for('login'))
+        email = request.form.get('email', '').strip()
+        
+        if not email:
+            flash('Por favor, ingresa tu correo electrónico.', 'warning')
+            return redirect(url_for('recuperar_contrasena'))
+        
+        db = Session(bind=engine)
+        
+        try:
+            # Buscar si el email existe en medicos
+            medico = db.query(medicos).filter(medicos.email == email).first()
+            
+            if not medico:
+                # Por seguridad, mostramos el mismo mensaje aunque no exista
+                flash('Si el correo existe en nuestro sistema, recibirás instrucciones.', 'info')
+                db.close()
+                return redirect(url_for('login'))
+            
+            # Generar token único para restablecer contraseña
+            token = secrets.token_urlsafe(32)
+            
+            # Guardar token en la base de datos
+            usuario = db.query(usuarios).filter(usuarios.id_medico == medico.id_medico).first()
+            if usuario:
+                usuario.reset_token = token
+                usuario.reset_token_expiry = datetime.now() + timedelta(hours=1)
+                db.commit()
+            
+            # Construir enlace de restablecimiento
+            reset_url = url_for('restablecer_contrasena', token=token, _external=True)
+            
+            # Mostrar en consola (modo desarrollo)
+            print(f"[INFO] Token generado para {email}: {token}")
+            print(f"[INFO] Enlace de restablecimiento: {reset_url}")
+            print(f"[INFO] Para probar, copia este enlace en tu navegador: {reset_url}")
+            
+            flash('Si el correo existe en nuestro sistema, recibirás instrucciones.', 'info')
+            db.close()
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            db.rollback()
+            db.close()
+            print(f"Error en recuperación: {str(e)}")
+            flash('Ocurrió un error. Por favor, intenta más tarde.', 'danger')
+            return redirect(url_for('recuperar_contrasena'))
     
     return render_template("recuperar_contrasena.html")
+
+
+@app.route("/restablecer_contrasena/<token>", methods=['GET', 'POST'])
+def restablecer_contrasena(token):
+    """Vista para restablecer la contraseña con el token"""
+    
+    db = Session(bind=engine)
+    
+    if request.method == 'POST':
+        nueva_contrasena = request.form.get('nueva_contrasena')
+        confirmar_contrasena = request.form.get('confirmar_contrasena')
+        
+        if not nueva_contrasena or not confirmar_contrasena:
+            flash('Por favor, completa todos los campos.', 'warning')
+            db.close()
+            return redirect(url_for('restablecer_contrasena', token=token))
+        
+        if nueva_contrasena != confirmar_contrasena:
+            flash('Las contraseñas no coinciden.', 'danger')
+            db.close()
+            return redirect(url_for('restablecer_contrasena', token=token))
+        
+        if len(nueva_contrasena) < 6:
+            flash('La contraseña debe tener al menos 6 caracteres.', 'warning')
+            db.close()
+            return redirect(url_for('restablecer_contrasena', token=token))
+        
+        try:
+            # Buscar usuario por token
+            usuario = db.query(usuarios).filter(
+                usuarios.reset_token == token,
+                usuarios.reset_token_expiry > datetime.now()
+            ).first()
+            
+            if not usuario:
+                flash('El enlace ha expirado o es inválido. Por favor, solicita un nuevo restablecimiento.', 'danger')
+                db.close()
+                return redirect(url_for('recuperar_contrasena'))
+            
+            # Actualizar contraseña
+            from werkzeug.security import generate_password_hash
+            usuario.contrasena = generate_password_hash(nueva_contrasena)
+            usuario.reset_token = None
+            usuario.reset_token_expiry = None
+            db.commit()
+            
+            flash('Contraseña actualizada correctamente. Ya puedes iniciar sesión.', 'success')
+            db.close()
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            db.rollback()
+            db.close()
+            print(f"Error al restablecer: {str(e)}")
+            flash('Ocurrió un error. Por favor, intenta más tarde.', 'danger')
+            return redirect(url_for('recuperar_contrasena'))
+    
+    # Verificar que el token sea válido antes de mostrar el formulario
+    try:
+        usuario = db.query(usuarios).filter(
+            usuarios.reset_token == token,
+            usuarios.reset_token_expiry > datetime.now()
+        ).first()
+        
+        if not usuario:
+            flash('El enlace ha expirado o es inválido. Por favor, solicita un nuevo restablecimiento.', 'danger')
+            db.close()
+            return redirect(url_for('recuperar_contrasena'))
+        
+        db.close()
+        return render_template("restablecer_contrasena.html", token=token)
+        
+    except Exception as e:
+        db.close()
+        flash('Error al verificar el enlace. Por favor, intenta nuevamente.', 'danger')
+        return redirect(url_for('recuperar_contrasena'))
 
 @app.route("/logout")
 @login_required
@@ -951,14 +1103,6 @@ def nuevo_paciente():
         try:
             fecha_nac = datetime.strptime(request.form.get('fecha_nacimiento'), '%Y-%m-%d').date()
             
-            # ELIMINA ESTA VALIDACIÓN DE EDAD
-            # Validar edad - COMENTAR O ELIMINAR ESTAS LÍNEAS
-            # hoy = date.today()
-            # edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
-            # if edad < 18:
-            #     flash('El paciente debe ser mayor de 18 años', 'warning')
-            #     db.close()
-            #     return redirect(url_for('nuevo_paciente'))
             
             # Generar código automático
             ultimo_paciente = db.query(pacientes).order_by(pacientes.id_paciente.desc()).first()
@@ -1348,6 +1492,9 @@ def nueva_cita():
         flash('No tienes permisos para agendar citas.', 'warning')
         return redirect(url_for('dashboard'))
     
+    # Obtener paciente_id de la URL (si viene desde detalle_paciente)
+    paciente_id = request.args.get('paciente_id', type=int)
+    
     db = Session(bind=engine)
     
     if request.method == 'POST':
@@ -1367,13 +1514,13 @@ def nueva_cita():
             if fecha < date.today():
                 flash('No se pueden agendar citas en fechas pasadas', 'warning')
                 db.close()
-                return redirect(url_for('nueva_cita'))
+                return redirect(url_for('nueva_cita', paciente_id=id_paciente))
             
             # Validar horario (8:00 a 20:00)
             if hora.hour < 8 or hora.hour > 20 or (hora.hour == 20 and hora.minute > 0):
                 flash('Horario disponible: 8:00 a 20:00', 'warning')
                 db.close()
-                return redirect(url_for('nueva_cita'))
+                return redirect(url_for('nueva_cita', paciente_id=id_paciente))
             
             # Obtener datos para el mensaje
             medico = db.query(medicos).filter(medicos.id_medico == id_medico).first()
@@ -1408,13 +1555,14 @@ def nueva_cita():
             db.close()
             
             flash(f'Cita agendada: {paciente.nombre_completo} con {nombre_medico} para el {fecha} a las {hora.strftime("%H:%M")}', 'success')
-            return redirect(url_for('dashboard'))
+            # Redirigir al detalle del paciente después de agendar
+            return redirect(url_for('detalle_paciente', id=id_paciente))
             
         except Exception as e:
             db.rollback()
             flash(f'Error al agendar cita: {str(e)}', 'danger')
             db.close()
-            return redirect(url_for('nueva_cita'))
+            return redirect(url_for('nueva_cita', paciente_id=request.form.get('id_paciente', '')))
     
     # GET: cargar datos según el rol
     if current_user.id_rol == 1:  # Administrador
@@ -1441,7 +1589,8 @@ def nueva_cita():
         db.close()
         return render_template("nueva_cita.html",
                              medicos=medicos_list,
-                             pacientes_por_medico=pacientes_por_medico)
+                             pacientes_por_medico=pacientes_por_medico,
+                             paciente_seleccionado=paciente_id)  # ← Pasar el ID
     
     else:  # Médico (rol 2)
         medicos_list = [current_user]
@@ -1450,10 +1599,22 @@ def nueva_cita():
             pacientes.id_estatus_usuario == 1
         ).all()
         
+        # Si hay un paciente_id, preseleccionarlo
+        paciente_seleccionado = None
+        if paciente_id:
+            # Verificar que el paciente pertenezca al médico
+            paciente_existe = db.query(pacientes).filter(
+                pacientes.id_paciente == paciente_id,
+                pacientes.id_medico == current_user.id
+            ).first()
+            if paciente_existe:
+                paciente_seleccionado = paciente_id
+        
         db.close()
         return render_template("nueva_cita.html",
                              medicos=medicos_list,
-                             pacientes=pacientes_list)
+                             pacientes=pacientes_list,
+                             paciente_seleccionado=paciente_seleccionado)  # ← Pasar el ID
         
 # ==================== ADMIN - GESTION DE CITAS ====================
 

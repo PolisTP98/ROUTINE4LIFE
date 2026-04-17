@@ -112,8 +112,9 @@
                 
                 <div class="button-group">
                     <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Agendar Cita</button>
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancelar</a>
-                </div>
+                <a href="{{ url_for('detalle_paciente', id=paciente_seleccionado or 0) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancelar
+                </a>
             </form>
         </div>
     </div>

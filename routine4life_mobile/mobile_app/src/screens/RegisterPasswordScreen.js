@@ -48,47 +48,52 @@ const RegisterPasswordScreen = ({ navigation, route }) => {
   const isButtonEnabled = reqLength && reqUpper && reqSpecial && reqNoSeq && doMatch;
 
   const handleFinalRegister = async () => {
-    if (!isButtonEnabled) return;
+  if (!isButtonEnabled) return;
 
-    setErrorMessage('');
-    setIsLoading(true);
+  setErrorMessage('');
+  setIsLoading(true);
 
+  try {
+    const response = await fetch(`${API_URL}/auth-movil/registro-completo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id_paciente: parseInt(formData.id_paciente),
+        email: formData.email,
+        telefono: formData.phone,
+        contrasena: password,
+        nombre_completo: formData.fullName,
+        fecha_nacimiento: formatDate(formData.birthDate)
+      }),
+    });
+
+    // 🔥 LEER EL TEXTO PLANO PRIMERO
+    const textResponse = await response.text();
+    console.log("RESPUESTA TEXTO:", textResponse);
+    
+    // Intentar parsear como JSON
     try {
-      const response = await fetch(`${API_URL}/auth-movil/registro`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id_paciente: parseInt(formData.id_paciente), // 🔥 NUEVO
-          id_sexo: formData.id_sexo,
-          id_pais: 1,
-          id_estatus_usuario: 1,
-          nombre_completo: formData.fullName,
-          fecha_nacimiento: formatDate(formData.birthDate),
-          email: formData.email,
-          telefono: formData.phone
-        }),
-      });
-
-      const data = await response.json();
-      console.log("RESPUESTA BACKEND:", data);
-
+      const data = JSON.parse(textResponse);
+      console.log("RESPUESTA JSON:", data);
+      
       if (response.ok) {
         navigation.navigate('Login', { registered: true });
       } else {
-        const errorMsg = typeof data.detail === 'string'
-          ? data.detail
-          : 'No se pudo completar el registro.';
-        setErrorMessage(errorMsg);
+        setErrorMessage(data.detail || 'No se pudo completar el registro.');
       }
-    } catch (error) {
-      console.error(error);
-      setErrorMessage('Error de conexión. Verifica tu red o el servidor.');
-    } finally {
-      setIsLoading(false);
+    } catch (e) {
+      console.error("No es JSON válido:", textResponse);
+      setErrorMessage(`Error del servidor: ${textResponse.substring(0, 100)}`);
     }
-  };
+  } catch (error) {
+    console.error(error);
+    setErrorMessage('Error de conexión. Verifica tu red o el servidor.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>

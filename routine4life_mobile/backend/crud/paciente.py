@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from shared import models 
 from routine4life_mobile.backend.schemas import paciente as schemas
 from datetime import date, datetime
-import bcrypt
+from werkzeug.security import generate_password_hash
 
 def registrar_cuenta_movil(db: Session, registro: schemas.RegistroAppCreate):
     db_registro_app = models.pacientes_aplicacion(
@@ -115,11 +115,7 @@ def crear_registro_paciente(db: Session, registro: schemas.RegistroPacienteCreat
     return nuevo_registro
 
 def obtener_hash_contrasena(contrasena: str):
-    contrasena_bytes = contrasena.encode('utf-8')
-    
-    hash_bytes = bcrypt.hashpw(contrasena_bytes, bcrypt.gensalt())
-    
-    return hash_bytes.decode('utf-8')
+    return generate_password_hash(contrasena)
 
 def crear_credenciales_usuario(db: Session, usuario: schemas.UsuarioCreate):
     nuevo_usuario = models.usuarios(

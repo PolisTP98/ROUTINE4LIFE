@@ -2,4 +2,4 @@
 
 // Sustituye 192.168.1.X con tu Dirección IPv4 real
 // Mantén el puerto 8000 si es el que usa tu contenedor Docker
-export const API_URL = 'http://192.168.100.95:8000';
+export const API_URL = 'http://172.20.10.2:8000';

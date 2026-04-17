@@ -6,39 +6,248 @@
     <title>Recuperar Contraseña | Routine4Life</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body.recuperar-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .recuperar-container {
+            max-width: 450px;
+            width: 100%;
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .logo-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo-icon i {
+            font-size: 32px;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+        
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        
+        .flash {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .flash-success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        
+        .flash-error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .flash-warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        
+        .flash-info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #1e293b;
+            font-size: 14px;
+        }
+        
+        .form-group label i {
+            margin-right: 8px;
+            color: #667eea;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        
+        .btn-enviar {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-enviar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(102,126,234,0.5);
+        }
+        
+        .login-links {
+            text-align: center;
+            margin-top: 24px;
+        }
+        
+        .login-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+        
+        .login-links a:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+        
+        .security-badge {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        .security-badge i {
+            margin-right: 8px;
+            color: #10b981;
+        }
+        
+        /* Evitar cualquier elemento fantasma que cause el problema */
+        .recuperar-container * {
+            user-select: none; /* Evita selección de texto que pueda causar efectos raros */
+        }
+        
+        .recuperar-container input,
+        .recuperar-container button {
+            user-select: auto; /* Permite selección en inputs y botones */
+        }
+    </style>
 </head>
 <body class="recuperar-page">
-    <div class="recuperar-container" style="max-width: 450px; margin: 0 auto; background: white; border-radius: 24px; padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
-        <div style="text-align: center; margin-bottom: 32px;">
-            <div class="logo-icon" style="width: 70px; height: 70px; background: linear-gradient(135deg, #1E3A5F, #48A9A5); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-                <i class="fas fa-key" style="font-size: 32px; color: white;"></i>
+    <div class="recuperar-container">
+        <div style="text-align: center;">
+            <div class="logo-icon">
+                <i class="fas fa-key"></i>
             </div>
-            <h1 style="font-size: 28px; color: #1E3A5F;">Recuperar contraseña</h1>
-            <p style="color: #6B6B6B; margin-top: 8px;">Ingrese su correo para recuperar su contraseña</p>
+            <h1>Recuperar contraseña</h1>
+            <p class="subtitle">Ingrese su correo para recuperar su contraseña</p>
         </div>
         
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash flash-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
         
         <form method="POST" action="{{ url_for('recuperar_contrasena') }}">
             <div class="form-group">
                 <label><i class="fas fa-envelope"></i> Correo electrónico</label>
-                <input type="email" name="email" placeholder="tu@correo.com" required style="padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
+                <input type="email" name="email" placeholder="tu@correo.com" required>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;"><i class="fas fa-paper-plane"></i> Enviar instrucciones</button>
+            <button type="submit" class="btn-enviar">
+                <i class="fas fa-paper-plane"></i> Enviar instrucciones
+            </button>
         </form>
         
-        <div class="login-links" style="text-align: center; margin-top: 24px;">
-            <a href="{{ url_for('login') }}"><i class="fas fa-arrow-left"></i> Volver al inicio de sesión</a>
+        <div class="login-links">
+            <a href="{{ url_for('login') }}">
+                <i class="fas fa-arrow-left"></i> Volver al inicio de sesión
+            </a>
         </div>
         
-        <div class="security-badge" style="text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #E2E8F0;">
+        <div class="security-badge">
             <i class="fas fa-shield-alt"></i> Recibirás un enlace para restablecer tu contraseña
         </div>
     </div>
@@ -48,9 +257,13 @@
             const flashes = document.querySelectorAll('.flash');
             flashes.forEach(function(flash) {
                 setTimeout(function() {
-                    flash.style.transition = 'opacity 0.3s';
-                    flash.style.opacity = '0';
-                    setTimeout(function() { if(flash && flash.parentElement) flash.remove(); }, 300);
+                    if (flash && flash.parentElement) {
+                        flash.style.transition = 'opacity 0.3s';
+                        flash.style.opacity = '0';
+                        setTimeout(function() { 
+                            if(flash && flash.parentElement) flash.remove(); 
+                        }, 300);
+                    }
                 }, 4000);
             });
         }, 100);

@@ -9,7 +9,7 @@ from routine4life_mobile.backend.crud import paciente as crud
 from typing import List
 from shared import models
 from datetime import datetime
-import bcrypt
+from werkzeug.security import check_password_hash
 
 
 router = APIRouter(
@@ -224,19 +224,132 @@ def login(data: dict = Body(...), db: Session = Depends(get_db)):
     if not email or not contrasena:
         raise HTTPException(status_code=400, detail="Email y contraseña requeridos")
 
-    usuario = db.query(models.usuarios).filter(
-    models.usuarios.id_paciente == data.get("id_paciente")
+    # Buscar directamente en pacientes_aplicacion
+    paciente = db.query(models.pacientes_aplicacion).filter(
+        models.pacientes_aplicacion.email == email
     ).first()
-
-    if not usuario:
+    
+    if not paciente:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Buscar el usuario asociado para la contraseña
+    usuario = db.query(models.usuarios).filter(
+        models.usuarios.id_paciente == paciente.id_paciente
+    ).first()
+    
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Credenciales no encontradas")
 
     # Verificar contraseña
-    if not bcrypt.checkpw(contrasena.encode('utf-8'), usuario.contrasena.encode('utf-8')):
+    if not check_password_hash(usuario.contrasena, contrasena):
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
     return {
         "mensaje": "Login exitoso",
         "id_usuario": usuario.id_usuario,
-        "id_paciente": usuario.id_paciente
+        "id_paciente": paciente.id_paciente,
+        "nombre_completo": paciente.nombre_completo
+    }
+    
+@router.post("/registro-completo")
+def registro_completo(data: schemas.RegistroCompletoCreate, db: Session = Depends(get_db)):
+    """
+    Registro completo para pacientes que ya existen en el sistema web.
+    Crea automáticamente pacientes_aplicacion y usuarios en un solo paso.
+    """
+    from werkzeug.security import generate_password_hash
+    from datetime import date
+    
+    id_paciente = data.id_paciente
+    email = data.email
+    telefono = data.telefono
+    contrasena = data.contrasena
+    nombre_completo = data.nombre_completo
+    fecha_nacimiento_str = data.fecha_nacimiento
+    
+    # Validaciones
+    if not all([id_paciente, email, telefono, contrasena]):
+        raise HTTPException(
+            status_code=400, 
+            detail="Faltan datos: id_paciente, email, telefono y contrasena son requeridos"
+        )
+    
+    # Verificar que el paciente existe en tabla pacientes
+    paciente = db.query(models.pacientes).filter(
+        models.pacientes.id_paciente == id_paciente
+    ).first()
+    
+    if not paciente:
+        raise HTTPException(
+            status_code=404, 
+            detail="Paciente no encontrado en el sistema. Contacta a tu médico."
+        )
+    
+    # Validar fecha si viene
+    if fecha_nacimiento_str:
+        try:
+            fecha_nacimiento = datetime.strptime(fecha_nacimiento_str, "%Y-%m-%d").date()
+        except:
+            fecha_nacimiento = paciente.fecha_nacimiento
+    else:
+        fecha_nacimiento = paciente.fecha_nacimiento
+    
+    # Usar nombre del paciente si no se proporcionó
+    if not nombre_completo:
+        nombre_completo = paciente.nombre_completo
+    
+    # 1. Crear o actualizar en pacientes_aplicacion
+    paciente_app = db.query(models.pacientes_aplicacion).filter(
+        models.pacientes_aplicacion.id_paciente == id_paciente
+    ).first()
+    
+    if not paciente_app:
+        paciente_app = models.pacientes_aplicacion(
+            id_paciente=id_paciente,
+            id_sexo=paciente.id_sexo,
+            id_pais=1,
+            id_estatus_usuario=1,
+            nombre_completo=nombre_completo,
+            fecha_nacimiento=fecha_nacimiento,
+            email=email,
+            telefono=telefono,
+            fecha_registro=date.today()
+        )
+        db.add(paciente_app)
+        db.flush()
+        mensaje_app = "Creado registro en aplicación"
+    else:
+        # Actualizar email y teléfono si ya existía
+        paciente_app.email = email
+        paciente_app.telefono = telefono
+        db.flush()
+        mensaje_app = "Actualizado registro existente"
+    
+    # 2. Verificar si ya tiene credenciales
+    usuario_existente = db.query(models.usuarios).filter(
+        models.usuarios.id_paciente == id_paciente
+    ).first()
+    
+    if usuario_existente:
+        # Actualizar contraseña
+        usuario_existente.contrasena = generate_password_hash(contrasena)
+        mensaje_pass = "Contraseña actualizada"
+    else:
+        # Crear nuevas credenciales
+        nuevo_usuario = models.usuarios(
+            id_rol=3,  # Paciente
+            id_paciente=id_paciente,
+            contrasena=generate_password_hash(contrasena),
+            fecha_registro=date.today()
+        )
+        db.add(nuevo_usuario)
+        mensaje_pass = "Credenciales creadas"
+    
+    db.commit()
+    
+    return {
+        "mensaje": "Registro completado exitosamente",
+        "detalle": f"{mensaje_app}, {mensaje_pass}",
+        "id_paciente": id_paciente,
+        "email": email
     }

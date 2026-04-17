@@ -4,9 +4,9 @@
     box-sizing: border-box;
 }
 
-/* ===== NUEVO FONDO VERDE CLARO PARA TODO EL SISTEMA (excepto login) ===== */
+/* ===== NUEVO FONDO AZUL SUAVE PARA TODO EL SISTEMA (excepto login) ===== */
 body {
-    background: #a7d4a7;  /* Verde menta muy claro */
+    background: #d4e4f7;  /* Azul muy suave */
     font-family: 'Inter', sans-serif;
     color: #1e293b;
     min-height: 100vh;
@@ -99,7 +99,7 @@ body {
 }
 
 /* ============================================
-   CONTAINER DASHBOARD - FONDO TRANSPARENTE (hereda el verde)
+   CONTAINER DASHBOARD - FONDO TRANSPARENTE (hereda el azul)
    ============================================ */
 .dashboard-container {
     max-width: 1400px;
@@ -967,7 +967,7 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: #ffffff; /* fallback */
+    background: #ffffff;
 }
 
 .login-card {
@@ -1192,7 +1192,7 @@ body {
 .sidebar-header img {
     height: 50px;
     margin-bottom: 0.5rem;
-    filter: brightness(0) invert(1);
+    /* filter: brightness(0) invert(1);  ← Comentado para que se vea el logo original */
 }
 
 .sidebar-header h2 {

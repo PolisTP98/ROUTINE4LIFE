@@ -168,3 +168,11 @@ class UsuarioResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class RegistroCompletoCreate(BaseModel):
+    id_paciente: int
+    email: str
+    telefono: str
+    contrasena: str
+    nombre_completo: Optional[str] = None
+    fecha_nacimiento: Optional[str] = None

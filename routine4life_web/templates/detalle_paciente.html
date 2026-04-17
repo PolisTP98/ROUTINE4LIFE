@@ -7,6 +7,76 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* Estilos para botón pequeño de agendar cita */
+        .btn-agendar-small {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        
+        .btn-agendar-small:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(102,126,234,0.3);
+        }
+        
+        /* Botón de ver consultas centrado */
+        .btn-ver-consultas {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #10b981;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        
+        .btn-ver-consultas:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        /* Centrar contenido en empty state */
+        .empty-state-modern {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        /* Botón volver estilo formulario (izquierda) */
+        .btn-back-top {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-back-top:hover {
+            background: #e2e8f0;
+            transform: translateX(-2px);
+        }
+    </style>
 </head>
 <body class="dashboard-body">
     <!-- Header sin boton de salir -->
@@ -27,6 +97,11 @@
     </header>
     
     <div class="dashboard-container">
+        <!-- Botón Volver arriba a la izquierda (como en formularios) -->
+        <a href="{{ url_for('dashboard') }}" class="btn-back-top">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        </a>
+        
         <!-- Mensajes Flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -95,13 +170,13 @@
                 </div>
             </div>
             
+            <!-- Botón Historial de Consultas -->
             <div class="button-group" style="padding: 0 1.5rem 1.5rem 1.5rem; margin: 0;">
                 <a href="{{ url_for('historial_consulta', id=paciente.id_paciente) }}" class="btn btn-secondary"><i class="fas fa-history"></i> Historial de Consultas</a>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
             </div>
         </div>
         
-        <!-- Citas Programadas - Sin el enlace lateral -->
+        <!-- Citas Programadas -->
         <div class="table-card">
             <div class="table-header">
                 <h3><i class="fas fa-calendar-alt"></i> Citas Programadas</h3>
@@ -133,7 +208,9 @@
             <div class="empty-state-modern">
                 <i class="fas fa-calendar-times"></i>
                 <p>No hay citas programadas para este paciente</p>
-                <a href="{{ url_for('nueva_cita') }}" class="btn btn-primary" style="margin-top: 1rem;">Agendar cita</a>
+                <a href="{{ url_for('nueva_cita', paciente_id=paciente.id_paciente) }}" class="btn-agendar-small">
+                    <i class="fas fa-calendar-plus"></i> Agendar Cita
+                </a>
             </div>
             {% endif %}
         </div>
@@ -142,25 +219,25 @@
         <div class="table-card">
             <div class="table-header">
                 <h3><i class="fas fa-history"></i> Ultimas Consultas</h3>
-                <a href="{{ url_for('historial_consulta', id=paciente.id_paciente) }}" class="view-all-link">Ver historial completo <i class="fas fa-arrow-right"></i></a>
             </div>
             
             {% if consultas %}
             <div class="table-wrapper">
                 <table class="modern-table">
                     <thead>
-                        70<tr
+                        <tr>
                             <th>Fecha</th>
                             <th>Glucosa Ayunas</th>
                             <th>Glucosa Postprandial</th>
                             <th>Presion</th>
                             <th>Peso</th>
                             <th>Notas</th>
-                        </thead>
+                        </tr>
+                    </thead>
                     <tbody>
                         {% for consulta in consultas[:5] %}
-                        <tr
-                            70<td>{{ consulta.fecha }}</td>
+                        <tr>
+                            <td>{{ consulta.fecha }}</td>
                             <td data-label="Glucosa Ayunas">{{ consulta.glucosa_ayunas or '-' }}</td>
                             <td data-label="Glucosa Postprandial">{{ consulta.glucosa_postprandial or '-' }}</td>
                             <td data-label="Presion">{% if consulta.presion_sistolica and consulta.presion_diastolica %}{{ consulta.presion_sistolica }}/{{ consulta.presion_diastolica }}{% else %}-{% endif %}</td>
@@ -175,6 +252,9 @@
             <div class="empty-state-modern">
                 <i class="fas fa-notes-medical"></i>
                 <p>No hay consultas registradas para este paciente.</p>
+                <a href="{{ url_for('historial_consulta', id=paciente.id_paciente) }}" class="btn-ver-consultas">
+                    <i class="fas fa-eye"></i> Ver Consultas
+                </a>
             </div>
             {% endif %}
         </div>
